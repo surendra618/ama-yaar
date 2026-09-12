@@ -10,6 +10,7 @@ function redactUri(uri) {
 
 async function connectDB() {
   mongoose.set('strictQuery', true);
+  mongoose.set('bufferCommands', false);
 
   try {
     // Attempt connecting to the configured MongoDB URI with a short timeout
