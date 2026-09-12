@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const app = require\\('./backend/src/app.js'\\); console.log\\('app OK, type=', typeof app\\);\")",
+      "Bash(grep -n \"^console.log\\(\\\\`Backend modules\" scaffold.js)"
+    ]
+  }
+}
