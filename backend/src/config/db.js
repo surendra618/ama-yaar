@@ -30,7 +30,11 @@ async function connectDB() {
       console.log('[db] In-Memory database populated with seed data.');
     } catch (memErr) {
       console.error('[db] Failed to start in-memory MongoDB:', memErr.message);
-      process.exit(1);
+      if (process.env.VERCEL) {
+        console.warn('[db] Running on Vercel without persistent MongoDB connection.');
+      } else {
+        process.exit(1);
+      }
     }
   }
 }
