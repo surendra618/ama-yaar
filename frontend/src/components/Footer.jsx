@@ -21,12 +21,16 @@ const YoutubeIcon = (props) => (
 
 export default function Footer() {
   return (
-    <footer className="bg-[#f0f0f0] text-black border-t border-black/10">
+    <footer className="bg-[#f0f0f0] text-black border-t border-black/10 overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-12">
         {/* Main Grid */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
           {/* Brand Info Column */}
-          <div className="md:col-span-5 lg:col-span-5">
+          <div
+            data-aos="fade-right"
+            data-aos-duration="700"
+            className="md:col-span-5 lg:col-span-5"
+          >
             <Link to="/" className="inline-block leading-none group">
               <img
                 src="/logo.png"
@@ -68,7 +72,7 @@ export default function Footer() {
           {/* Spacing / Column items */}
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-7 lg:col-span-7 md:pl-6">
             {/* HELP */}
-            <div>
+            <div data-aos="fade-up" data-aos-delay="100" data-aos-duration="600">
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">HELP</h4>
               <ul className="space-y-3 text-xs sm:text-sm text-black/60">
                 <li>
@@ -91,7 +95,7 @@ export default function Footer() {
             </div>
 
             {/* FAQ */}
-            <div>
+            <div data-aos="fade-up" data-aos-delay="200" data-aos-duration="600">
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">FAQ</h4>
               <ul className="space-y-3 text-xs sm:text-sm text-black/60">
                 <li>
@@ -113,7 +117,7 @@ export default function Footer() {
             </div>
 
             {/* COMPANY */}
-            <div>
+            <div data-aos="fade-up" data-aos-delay="300" data-aos-duration="600">
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">COMPANY</h4>
               <ul className="space-y-3 text-xs sm:text-sm text-black/60">
                 <li>
@@ -138,7 +142,11 @@ export default function Footer() {
         </div>
 
         {/* Bottom copyright line */}
-        <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-black/10 pt-6 text-xs text-black/50 sm:flex-row">
+        <div
+          data-aos="fade-up"
+          data-aos-delay="350"
+          className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-black/10 pt-6 text-xs text-black/50 sm:flex-row"
+        >
           <p>© {new Date().getFullYear()} AMAYAAR. All rights reserved.</p>
           <p className="text-xs text-black/50 font-medium">Style Ka Lafda</p>
         </div>

@@ -13,6 +13,11 @@ const InstagramIcon = (props) => (
 );
 import { fetchProducts, fetchCategories, fetchBanners } from '../../products/productsSlice';
 import InstagramBanner from '../../../components/InstagramBanner';
+import EditorialBanner from '../../../components/EditorialBanner';
+import WorkoutShowcaseBanner from '../../../components/WorkoutShowcaseBanner';
+import { motion } from 'framer-motion';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 const HERO_SLIDES = [
   {
@@ -142,6 +147,138 @@ const REVIEWS = [
   },
 ];
 
+const categoryContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const categoryCardVariants = {
+  hidden: { opacity: 0, y: 45, scale: 0.94 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 100,
+      damping: 14,
+    },
+  },
+};
+
+const productGridVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.13,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+const productCardVariants = {
+  hidden: { opacity: 0, x: -80, scale: 0.92 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 85,
+      damping: 13,
+      mass: 0.75,
+    },
+  },
+};
+
+function TypewriterBannerTitle({ line1, line2, line3, highlightColor = '#facc15', textColor = 'text-white' }) {
+  const ref = useRef(null);
+  const [typed1, setTyped1] = useState('');
+  const [typed2, setTyped2] = useState('');
+  const [typed3, setTyped3] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started) {
+          setStarted(true);
+        }
+      },
+      { threshold: 0.25 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [started]);
+
+  useEffect(() => {
+    if (!started) return;
+
+    // Delay typing slightly so card has time to slide in first
+    const startDelay = setTimeout(() => {
+      setIsTyping(true);
+
+      // 1. Type line1
+      let t1 = 0;
+      const int1 = setInterval(() => {
+        t1++;
+        setTyped1(line1.slice(0, t1));
+        if (t1 >= line1.length) {
+          clearInterval(int1);
+
+          // 2. Type line2
+          let t2 = 0;
+          const int2 = setInterval(() => {
+            t2++;
+            setTyped2(line2.slice(0, t2));
+            if (t2 >= line2.length) {
+              clearInterval(int2);
+
+              // 3. Type line3
+              let t3 = 0;
+              const int3 = setInterval(() => {
+                t3++;
+                setTyped3(line3.slice(0, t3));
+                if (t3 >= line3.length) {
+                  clearInterval(int3);
+                  setIsTyping(false);
+                }
+              }, 60);
+            }
+          }, 55);
+        }
+      }, 50);
+    }, 450);
+
+    return () => clearTimeout(startDelay);
+  }, [started, line1, line2, line3]);
+
+  return (
+    <h3
+      ref={ref}
+      className={`mt-3 font-black leading-[1.05] uppercase min-h-[3.3em] select-none ${textColor}`}
+      style={{ fontSize: 'clamp(1.6rem,3.5vw,2.4rem)' }}
+    >
+      <span className="block drop-shadow-sm">{started ? typed1 : line1}</span>
+      <span className="block drop-shadow-sm">{started ? typed2 : line2}</span>
+      <span style={{ color: highlightColor }} className="drop-shadow-sm">
+        {started ? typed3 : line3}
+        {isTyping && typed3.length < line3.length && (
+          <span className="inline-block w-[3px] h-[0.8em] bg-current ml-1 rounded-full animate-pulse" />
+        )}
+      </span>
+    </h3>
+  );
+}
+
 export default function HomePage() {
   const dispatch = useDispatch();
   const { items: products, categories, banners } = useSelector((state) => state.products);
@@ -197,6 +334,16 @@ export default function HomePage() {
     dispatch(fetchBanners());
   }, [dispatch]);
 
+  // Initialize AOS animation library
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 50,
+    });
+  }, []);
+
   // Automatic auto-scroll for category slider rail
   useEffect(() => {
     const timer = setInterval(() => {
@@ -243,6 +390,10 @@ export default function HomePage() {
         })
     : CATEGORY_ITEMS;
 
+  useEffect(() => {
+    AOS.refresh();
+  }, [displayCategories]);
+
   return (
     <div className="bg-white">
       {/* 1. Hero Auto-Rotating Slider */}
@@ -282,17 +433,30 @@ export default function HomePage() {
           )
         ))}
 
-        {/* LEFT Text Content */}
+        {/* LEFT Text Content with AOS & Framer Motion Transitions */}
         <div className="absolute inset-0 flex items-center z-20 py-6">
           <div className="mx-auto w-full max-w-7xl px-8 sm:px-12 lg:px-16">
-            <div className="max-w-[520px] drop-shadow-md">
+            <motion.div
+              key={currentHeroSlide}
+              initial={{ opacity: 0, x: -45 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.65, ease: 'easeOut' }}
+              className="max-w-[520px] drop-shadow-md"
+            >
               {/* Eyebrow */}
-              <span className="mb-2 inline-block text-[12px] font-black uppercase tracking-[0.28em] text-white transition-all duration-500 drop-shadow">
+              <span
+                data-aos="fade-down"
+                data-aos-delay="100"
+                className="mb-2 inline-block text-[12px] font-black uppercase tracking-[0.28em] text-white drop-shadow"
+              >
                 {activeSlide.eyebrow}
               </span>
 
+              {/* Main Headline */}
               <h1
-                className="font-display leading-[0.95] tracking-tight text-white transition-all duration-500 drop-shadow-lg uppercase"
+                data-aos="fade-right"
+                data-aos-delay="200"
+                className="font-display leading-[0.95] tracking-tight text-white drop-shadow-lg uppercase"
                 style={{ fontSize: 'clamp(2.25rem, 4.8vw, 4.2rem)', fontWeight: 900, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
               >
                 {activeSlide.title1}
@@ -316,16 +480,26 @@ export default function HomePage() {
                 )}
               </h1>
 
-              <p className="mt-2.5 text-[13px] sm:text-[14px] font-semibold text-white/90 tracking-wide leading-relaxed drop-shadow">
+              {/* Subtitle */}
+              <p
+                data-aos="fade-right"
+                data-aos-delay="300"
+                className="mt-2.5 text-[13px] sm:text-[14px] font-semibold text-white/90 tracking-wide leading-relaxed drop-shadow"
+              >
                 {activeSlide.subtitle}
               </p>
 
-              <div className="mt-7 flex items-center gap-3.5 flex-wrap">
+              {/* CTA Action Buttons */}
+              <div
+                data-aos="fade-up"
+                data-aos-delay="400"
+                className="mt-7 flex items-center gap-3.5 flex-wrap"
+              >
                 <Link
-                  to="/products"
+                  to={activeSlide.link || '/products'}
                   className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-[11px] font-black tracking-widest text-black uppercase shadow-lg transition hover:bg-neutral-100 hover:scale-105 active:scale-95"
                 >
-                  SHOP NOW
+                  {activeSlide.buttonText || 'SHOP NOW'}
                 </Link>
                 <Link
                   to="/products"
@@ -336,7 +510,11 @@ export default function HomePage() {
               </div>
 
               {/* Stats Row */}
-              <div className="mt-5 flex items-center gap-7 sm:gap-8">
+              <div
+                data-aos="fade-up"
+                data-aos-delay="500"
+                className="mt-5 flex items-center gap-7 sm:gap-8"
+              >
                 {[['500+', 'Products'], ['50K+', 'Happy Customers'], ['Free', 'Shipping']].map(([val, label]) => (
                   <div key={label}>
                     <p className="text-base sm:text-lg font-black text-white leading-none">{val}</p>
@@ -344,7 +522,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -383,85 +561,111 @@ export default function HomePage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* 2. Category Cards Slider Rail */}
         <section className="py-12 sm:py-16">
-          <div className="mb-6 flex items-center justify-between">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="mb-6 flex items-center justify-between"
+          >
             <span className="text-xs font-black uppercase tracking-[0.2em] text-neutral-400">Shop By Category</span>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => scrollCategory('left')}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-900 hover:text-white hover:border-neutral-900 active:scale-95"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition-all duration-300 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 hover:scale-110 active:scale-90"
                   aria-label="Scroll left"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => scrollCategory('right')}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-900 hover:text-white hover:border-neutral-900 active:scale-95"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition-all duration-300 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 hover:scale-110 active:scale-90"
                   aria-label="Scroll right"
                 >
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
-              <Link to="/products" className="text-xs font-bold text-neutral-500 hover:text-black transition hover:underline">
+              <Link to="/products" className="text-xs font-bold text-neutral-500 hover:text-black transition-colors duration-200 hover:underline">
                 See all
               </Link>
             </div>
-          </div>
+          </motion.div>
 
-          <div
+          <motion.div
             ref={categoryRailRef}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.15 }}
+            variants={categoryContainerVariants}
             onMouseEnter={() => { isCategoryHoveredRef.current = true; }}
             onMouseLeave={() => { isCategoryHoveredRef.current = false; }}
             className="flex items-start gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-6 pt-2 snap-x snap-mandatory scroll-smooth"
           >
             {displayCategories.map((item) => (
-              <Link
+              <motion.div
                 key={item.name}
-                to={`/products?category=${item.slug}`}
-                className={`group relative block shrink-0 w-[240px] sm:w-[280px] snap-start overflow-hidden rounded-2xl bg-neutral-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${item.cardStyle}`}
+                variants={categoryCardVariants}
+                whileHover={{ y: -8, transition: { duration: 0.25 } }}
+                className={`shrink-0 w-[240px] sm:w-[280px] snap-start ${item.cardStyle}`}
               >
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = item.fallback;
-                  }}
-                />
-                {/* Scrim gradient overlay */}
-                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                <Link
+                  to={`/products?category=${item.slug}`}
+                  className="group relative block h-full w-full overflow-hidden rounded-2xl bg-neutral-900"
+                >
+                  {/* Subtle light sweep shimmer on hover */}
+                  <div className="card-shine" />
 
-                {/* Bottom Card Content: Title Left + Arrow Right */}
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4 sm:p-5">
-                  <span className="text-sm sm:text-base font-extrabold leading-tight text-white drop-shadow-md pr-2">
-                    {item.name.split(' ').map((word, wIdx) => (
-                      <span key={wIdx} className="block">{word}</span>
-                    ))}
-                  </span>
-                  <span className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full border border-white/40 bg-black/30 text-white backdrop-blur-xs transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:border-white group-hover:scale-110">
-                    <ArrowRight className="h-4 w-4" />
-                  </span>
-                </div>
-              </Link>
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = item.fallback;
+                    }}
+                  />
+                  {/* Scrim gradient overlay */}
+                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-500 group-hover:opacity-95" />
+
+                  {/* Bottom Card Content: Title Left + Arrow Right */}
+                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4 sm:p-5">
+                    <span className="text-sm sm:text-base font-extrabold leading-tight text-white drop-shadow-md pr-2 transition-transform duration-300 group-hover:-translate-y-1">
+                      {item.name.split(' ').map((word, wIdx) => (
+                        <span key={wIdx} className="block">{word}</span>
+                      ))}
+                    </span>
+                    <span className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full border border-white/40 bg-black/30 text-white backdrop-blur-xs transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:border-white group-hover:scale-115 group-hover:rotate-[-15deg]">
+                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                    </span>
+                  </div>
+                </Link>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </section>
+      </div>
 
+      {/* Workout Showcase 3D Editorial Squad Banner — Placed directly ABOVE Products */}
+      <WorkoutShowcaseBanner />
 
-
-
-
-        {/* 4. Fresh fits grid */}
-        <section className="pb-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* 4. Fresh fits grid (Products Section) */}
+        <section className="pb-16 pt-8 sm:pt-12">
           {/* Heading */}
-          <div className="text-center mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            className="text-center mb-10"
+          >
             <h2 className="font-display text-3xl sm:text-4xl leading-tight tracking-wide text-black font-black">
               FRESH FITS FOR <span className="font-script italic font-normal">Your</span>
               <br />
               <span className="font-script italic font-normal">Next</span> OUTFITS
             </h2>
-          </div>
+          </motion.div>
 
           {/* Product Grid */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -489,7 +693,23 @@ export default function HomePage() {
                 : localImages[i % localImages.length];
 
               return (
-                <div key={product?._id || i} className="group relative flex flex-col overflow-hidden rounded-2xl bg-neutral-100 aspect-[3/4] shadow-sm hover:shadow-xl transition-all duration-300">
+                <motion.div
+                  key={product?._id || i}
+                  initial={{ opacity: 0, x: -75, scale: 0.93 }}
+                  whileInView={{ opacity: 1, x: 0, scale: 1 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 85,
+                    damping: 13,
+                    delay: (i % 4) * 0.1,
+                  }}
+                  whileHover={{ y: -8, transition: { duration: 0.25 } }}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl bg-neutral-100 aspect-[3/4] shadow-sm hover:shadow-xl transition-shadow duration-300"
+                >
+                  {/* Subtle light sweep shimmer on hover */}
+                  <div className="card-shine" />
+
                   <Link
                     to={product?._id ? `/products/${product.slug || product._id}` : '/products'}
                     className="relative block h-full w-full overflow-hidden"
@@ -497,7 +717,7 @@ export default function HomePage() {
                     <img
                       src={productImg}
                       alt={product?.name || 'Oversized Stylish Men T-shirt'}
-                      className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
+                      className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-108"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length];
@@ -509,7 +729,7 @@ export default function HomePage() {
                       onClick={(e) => {
                         e.preventDefault();
                       }}
-                      className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-rose-500 shadow-md transition hover:scale-110 active:scale-95"
+                      className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-rose-500 shadow-md transition-transform duration-200 hover:scale-120 active:scale-90"
                       title="Add to Wishlist"
                     >
                       <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" />
@@ -518,7 +738,7 @@ export default function HomePage() {
                     {/* Bottom Floating White Pill Box */}
                     <div className="absolute inset-x-2.5 bottom-2.5 z-10 flex items-center justify-between rounded-xl bg-white p-2.5 shadow-lg border border-slate-100/80 transition-transform duration-300 group-hover:scale-[1.02]">
                       <div className="min-w-0 flex-1 pr-1">
-                        <p className="truncate text-[11px] font-extrabold text-slate-900 leading-tight">
+                        <p className="truncate text-[11px] font-extrabold text-slate-900 leading-tight transition-colors duration-200 group-hover:text-black">
                           {product?.name || 'Oversized Stylish Men T-shirt'}
                         </p>
                         <div className="mt-0.5 flex items-center gap-1 flex-wrap text-[11px]">
@@ -535,40 +755,56 @@ export default function HomePage() {
                       </div>
 
                       {/* Right Chevron / Arrow inside button */}
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-900 transition group-hover:bg-slate-900 group-hover:text-white">
-                        <ArrowRight className="h-3.5 w-3.5" />
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-900 transition-all duration-300 group-hover:bg-slate-900 group-hover:text-white group-hover:scale-110">
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
                       </span>
                     </div>
                   </Link>
-                </div>
+                </motion.div>
               );
             })}
           </div>
 
           {/* View all button */}
-          <div className="mt-10 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-10 text-center"
+          >
             <Link
               to="/products"
-              className="inline-flex items-center gap-2 rounded-full bg-black px-8 py-3 text-xs font-black tracking-widest text-white uppercase hover:bg-black/80 transition"
+              className="group inline-flex items-center gap-2 rounded-full bg-black px-8 py-3 text-xs font-black tracking-widest text-white uppercase hover:bg-neutral-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-md"
             >
-              View all products <ArrowRight className="h-3.5 w-3.5" />
+              <span>View all products</span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
             </Link>
-          </div>
+          </motion.div>
         </section>
 
 
         {/* 5. Promo split banners */}
-        <section className="grid grid-cols-1 gap-6 pb-16 sm:grid-cols-2">
+        <section className="grid grid-cols-1 gap-6 pb-16 sm:grid-cols-2 overflow-hidden">
 
-          {/* Card 1 — Dark / Black */}
-          <div className="relative overflow-hidden rounded-3xl bg-[#111]" style={{ minHeight: '520px' }}>
+          {/* Card 1 — Dark / Black (Slides in from LEFT) */}
+          <motion.div
+            initial={{ opacity: 0, x: -100 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ type: 'spring', stiffness: 75, damping: 14 }}
+            className="group relative overflow-hidden rounded-3xl bg-[#111]"
+            style={{ minHeight: '520px' }}
+          >
+            {/* Subtle light sweep shimmer on hover */}
+            <div className="card-shine" />
 
             {/* Right: Model image — LARGE */}
             <div className="absolute right-0 top-0 bottom-0 flex items-center justify-end" style={{ width: '72%' }}>
               <img
                 src="/model-nirvana.jpg"
                 alt="Model"
-                className="h-full w-auto object-cover object-top"
+                className="h-full w-auto object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
                 style={{ filter: 'drop-shadow(-12px 0 32px rgba(0,0,0,0.9))' }}
               />
             </div>
@@ -584,46 +820,72 @@ export default function HomePage() {
                   <span className="text-[#facc15] text-sm">★★</span>
                 </div>
                 <span className="text-[11px] font-black uppercase tracking-[0.22em] text-[#facc15]">Top Selling</span>
-                <h3 className="mt-3 font-black leading-[1.05] text-white uppercase" style={{ fontSize: 'clamp(1.6rem,3.5vw,2.4rem)' }}>
-                  PREMIUM<br />OVERSIZED<br />
-                  <span className="text-[#facc15]">T-SHIRT</span>
-                </h3>
+                <TypewriterBannerTitle
+                  line1="PREMIUM"
+                  line2="OVERSIZED"
+                  line3="T-SHIRT"
+                  highlightColor="#facc15"
+                  textColor="text-white"
+                />
               </div>
 
               <ul className="space-y-2 my-5">
-                {['100% Cotton', 'Premium Zipper', 'Oversized Fit', 'All Day Comfort', 'Premium Quality'].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-[11px] font-medium text-white/70">
+                {['100% Cotton', 'Premium Zipper', 'Oversized Fit', 'All Day Comfort', 'Premium Quality'].map((f, fIdx) => (
+                  <motion.li
+                    key={f}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.7 + fIdx * 0.08, duration: 0.4 }}
+                    className="flex items-center gap-2 text-[11px] font-medium text-white/80 transition-transform duration-200 hover:translate-x-1.5 cursor-default"
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#facc15]" />
                     {f}
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
 
-              <div>
-                <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-white/35 mb-2">
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 1.15, duration: 0.5 }}
+              >
+                <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-white/50 mb-2">
                   Limited Stock — Order Now!
                 </span>
-                <button
-                  className="px-6 py-2.5 text-[11px] font-black uppercase tracking-widest text-black transition hover:brightness-110 active:scale-95 rounded-full shadow-md"
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative overflow-hidden group/btn px-7 py-2.5 text-[11px] font-black uppercase tracking-widest text-black transition-all duration-300 hover:brightness-110 rounded-full shadow-md"
                   style={{ background: 'linear-gradient(90deg,#facc15,#f59e0b)' }}
                 >
-                  ORDER NOW
-                </button>
-              </div>
+                  {/* Glossy light-sweep shine on hover */}
+                  <span className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/50 to-transparent -skew-x-25 transition-all duration-700 ease-out group-hover/btn:left-[200%]" />
+                  <span className="relative z-10">ORDER NOW</span>
+                </motion.button>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Card 2 — Light / Cream */}
-          <div
-            className="relative overflow-hidden rounded-3xl"
+          {/* Card 2 — Light / Cream (Slides in from RIGHT) */}
+          <motion.div
+            initial={{ opacity: 0, x: 100 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ type: 'spring', stiffness: 75, damping: 14 }}
+            className="group relative overflow-hidden rounded-3xl"
             style={{ minHeight: '520px', background: 'linear-gradient(135deg,#f5f0e8 0%,#e8e0d0 100%)' }}
           >
+            {/* Subtle light sweep shimmer on hover */}
+            <div className="card-shine" />
+
             {/* Right: Model image — LARGE */}
             <div className="absolute right-0 top-0 bottom-0 flex items-center justify-end" style={{ width: '72%' }}>
               <img
                 src="/side09.png"
                 alt="Model"
-                className="h-full w-auto object-cover object-top"
+                className="h-full w-auto object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
                 style={{ filter: 'drop-shadow(-10px 0 20px rgba(0,0,0,0.12))' }}
               />
             </div>
@@ -639,36 +901,58 @@ export default function HomePage() {
                   <span className="text-amber-700 text-sm">★★</span>
                 </div>
                 <span className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-700">Limited Edition</span>
-                <h3 className="mt-3 font-black leading-[1.05] text-[#1a1a1a] uppercase" style={{ fontSize: 'clamp(1.6rem,3.5vw,2.4rem)' }}>
-                  PREMIUM<br />ZIPPER<br />
-                  <span className="text-amber-700">SHIRT</span>
-                </h3>
+                <TypewriterBannerTitle
+                  line1="PREMIUM"
+                  line2="ZIPPER"
+                  line3="SHIRT"
+                  highlightColor="#b45309"
+                  textColor="text-[#1a1a1a]"
+                />
               </div>
 
               <ul className="space-y-2 my-5">
-                {['100% Cotton', 'Premium Zipper', 'Comfort Fit', 'All Day Comfort', 'Trending Design'].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-[11px] font-medium text-black/60">
+                {['100% Cotton', 'Premium Zipper', 'Comfort Fit', 'All Day Comfort', 'Trending Design'].map((f, fIdx) => (
+                  <motion.li
+                    key={f}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.7 + fIdx * 0.08, duration: 0.4 }}
+                    className="flex items-center gap-2 text-[11px] font-medium text-black/75 transition-transform duration-200 hover:translate-x-1.5 cursor-default"
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-amber-700" />
                     {f}
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
 
-              <div>
-                <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-black/30 mb-2">
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 1.15, duration: 0.5 }}
+              >
+                <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-black/40 mb-2">
                   Only A Few Made
                 </span>
-                <button
-                  className="px-6 py-2.5 text-[11px] font-black uppercase tracking-widest text-white transition hover:opacity-90 active:scale-95 rounded-full shadow-md bg-[#1a1a1a]"
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative overflow-hidden group/btn px-7 py-2.5 text-[11px] font-black uppercase tracking-widest text-white transition-all duration-300 hover:opacity-90 rounded-full shadow-md bg-[#1a1a1a]"
                 >
-                  LIMITED EDITION
-                </button>
-              </div>
+                  {/* Glossy light-sweep shine on hover */}
+                  <span className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-25 transition-all duration-700 ease-out group-hover/btn:left-[200%]" />
+                  <span className="relative z-10">LIMITED EDITION</span>
+                </motion.button>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
         </section>
       </div>
+
+      {/* Editorial Streetwear 3D Card Banner */}
+      <EditorialBanner />
 
 
       {/* 6. Instagram carousel — infinite auto-scroll (Full Width Black Row) */}
@@ -760,25 +1044,54 @@ export default function HomePage() {
 
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* 7. Customer reviews */}
-        <section className="py-16">
-          <div className="mb-8 flex items-center justify-between">
+        {/* 7. Customer reviews with AOS Animation & Functional Scroll */}
+        <section className="py-16 overflow-hidden">
+          <div
+            data-aos="fade-up"
+            data-aos-duration="600"
+            className="mb-8 flex items-center justify-between"
+          >
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-black flex items-center flex-wrap">
               <span className="font-display uppercase tracking-tight">OUR HAPPY</span>
               <span className="font-script italic font-normal ml-3 sm:ml-4">Customers</span>
             </h2>
             <div className="flex items-center gap-3 text-black">
-              <button className="p-1.5 hover:opacity-60 transition" aria-label="Previous">
-                <ArrowLeft className="h-6 w-6 stroke-[2.5]" />
+              <button
+                onClick={() => {
+                  const rail = document.getElementById('customer-reviews-rail');
+                  if (rail) rail.scrollBy({ left: -320, behavior: 'smooth' });
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-xs transition-all duration-300 hover:bg-black hover:text-white hover:border-black active:scale-90"
+                aria-label="Previous review"
+              >
+                <ArrowLeft className="h-4 w-4" />
               </button>
-              <button className="p-1.5 hover:opacity-60 transition" aria-label="Next">
-                <ArrowRight className="h-6 w-6 stroke-[2.5]" />
+              <button
+                onClick={() => {
+                  const rail = document.getElementById('customer-reviews-rail');
+                  if (rail) rail.scrollBy({ left: 320, behavior: 'smooth' });
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-xs transition-all duration-300 hover:bg-black hover:text-white hover:border-black active:scale-90"
+                aria-label="Next review"
+              >
+                <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>
-          <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
-            {REVIEWS.map((r) => (
-              <div key={r.name} className="min-w-[280px] max-w-[320px] shrink-0 rounded-2xl border border-black/15 bg-white p-6 shadow-sm">
+
+          <div
+            id="customer-reviews-rail"
+            className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+          >
+            {REVIEWS.map((r, idx) => (
+              <motion.div
+                key={r.name + idx}
+                data-aos="fade-up"
+                data-aos-delay={idx * 120}
+                data-aos-duration="700"
+                whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                className="min-w-[280px] max-w-[320px] shrink-0 snap-start rounded-2xl border border-black/10 bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-300"
+              >
                 <div className="flex items-center gap-1 text-amber-400">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
@@ -789,7 +1102,7 @@ export default function HomePage() {
                   <CheckCircle2 className="h-4 w-4 fill-[#00c853] text-white" />
                 </div>
                 <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-black/70 font-normal">{r.text}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>

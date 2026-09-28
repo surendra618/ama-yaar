@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@1,6..96,600;1,6..96,700;1,800&family=Outfit:wght@600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@600;700;800&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@1,6..96,600;1,6..96,700;1,800&family=Michroma&family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700;800&family=Syncopate:wght@400;700&family=Syne:wght@400;500;600;700;800&family=Unbounded:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -32,10 +32,14 @@
     background: #94a3b8;
 }
 
-/* ── Infinite marquee scroll for Instagram carousel ── */
+/* ── Infinite marquee scroll for Instagram carousel & editorial banners ── */
 @keyframes marquee-scroll {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+@keyframes marquee-scroll-reverse {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
 }
 .marquee-track {
   animation: marquee-scroll 28s linear infinite;
@@ -43,6 +47,39 @@
 }
 .marquee-track:hover {
   animation-play-state: paused;
+}
+.marquee-track-fast {
+  animation: marquee-scroll 44s linear infinite;
+  will-change: transform;
+}
+.marquee-track-reverse {
+  animation: marquee-scroll-reverse 44s linear infinite;
+  will-change: transform;
+}
+.marquee-track-slow {
+  animation: marquee-scroll 55s linear infinite;
+  will-change: transform;
+}
+.marquee-track-reverse-slow {
+  animation: marquee-scroll-reverse 55s linear infinite;
+  will-change: transform;
+}
+
+/* Card Light Sweep Shimmer */
+.card-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.18), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+  transition: left 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 15;
+}
+.group:hover .card-shine {
+  left: 160%;
 }
 
 .glass-nav {

@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   Search,
   ShoppingBag,
+  Heart,
   User,
   Menu,
   X,
@@ -138,15 +139,26 @@ export default function Navbar() {
             <button onClick={() => setMobileMenuOpen((v) => !v)} className="text-black md:hidden" aria-label="Search">
               <Search className="h-[18px] w-[18px]" />
             </button>
-            <form onSubmit={handleSearch} className="relative hidden lg:block">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search"
-                className="w-32 border-b border-transparent bg-transparent py-1 pl-6 text-xs text-black placeholder-black/40 focus:border-black focus:outline-none"
-              />
-              <Search className="pointer-events-none absolute left-0 top-1 h-4 w-4 text-black" />
+            <form onSubmit={handleSearch} className="relative hidden lg:block group">
+              <div className="relative flex items-center">
+                <Search className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-neutral-400 transition-colors duration-200 group-focus-within:text-black" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search fits..."
+                  className="w-36 rounded-full border border-neutral-300 bg-white py-1.5 pl-8 pr-7 text-xs font-medium text-black placeholder:text-neutral-400 shadow-xs transition-colors duration-200 hover:border-neutral-400 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/5"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-300/80 text-neutral-700 hover:bg-neutral-400 hover:text-black transition"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                )}
+              </div>
             </form>
 
             {isAuthenticated && (
@@ -242,13 +254,7 @@ export default function Navbar() {
             )}
 
             <Link to="/account/wishlist" className="relative hidden text-black sm:block" title="Wishlist">
-              <svg viewBox="0 0 24 24" fill="none" className="h-[20px] w-[20px]">
-                <path
-                  d="M12 21s-7.5-4.6-10-9.1C.5 8.6 2 5 5.6 5c2 0 3.4 1 4.4 2.4C11 6 12.4 5 14.4 5 18 5 19.5 8.6 22 11.9 19.5 16.4 12 21 12 21z"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                />
-              </svg>
+              <Heart className="h-[20px] w-[20px] text-black transition-transform duration-200 hover:scale-110" strokeWidth={1.8} />
               {wishlistItems.length > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-black text-[9px] font-bold text-white">
                   {wishlistItems.length}
@@ -271,14 +277,25 @@ export default function Navbar() {
         {mobileMenuOpen && (
           <div className="border-t border-black/10 bg-white p-4 md:hidden">
             <form onSubmit={handleSearch} className="relative mb-4">
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-full border border-black/20 py-2 pl-10 pr-4 text-xs focus:border-black focus:outline-none"
-              />
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-black/40" />
+              <div className="relative flex items-center">
+                <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-neutral-400" />
+                <input
+                  type="text"
+                  placeholder="Search fits, styles, products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-full border border-neutral-300 bg-white py-2.5 pl-10 pr-9 text-xs font-medium text-black placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/5 transition"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-300 text-neutral-700 hover:text-black transition"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                )}
+              </div>
             </form>
             <div className="space-y-1">
               {navLinks.map((l) => (
