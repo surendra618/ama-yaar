@@ -81,34 +81,28 @@ async function create(data) {
   if (!data.slug && data.name) {
     data.slug = slugify(data.name);
   }
-  try {
-    return await Category.create(data);
-  } catch (err) {
-    return { _id: `cat_${Date.now()}`, ...data };
-  }
+  return await Category.create(data);
 }
 
 async function update(id, data) {
   if (data.name && !data.slug) {
     data.slug = slugify(data.name);
   }
-  try {
-    const doc = await Category.findByIdAndUpdate(id, data, { new: true, runValidators: true });
-    if (!doc) throw new ApiError(404, 'Category not found');
-    return doc;
-  } catch (err) {
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
     return { _id: id, ...data };
   }
+  const doc = await Category.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  if (!doc) throw new ApiError(404, 'Category not found');
+  return doc;
 }
 
 async function remove(id) {
-  try {
-    const doc = await Category.findByIdAndDelete(id);
-    if (!doc) throw new ApiError(404, 'Category not found');
-    return doc;
-  } catch (err) {
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
     return { _id: id };
   }
+  const doc = await Category.findByIdAndDelete(id);
+  if (!doc) throw new ApiError(404, 'Category not found');
+  return doc;
 }
 
 module.exports = { list, getByIdOrSlug, create, update, remove };
