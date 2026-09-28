@@ -103,8 +103,11 @@ const productsSlice = createSlice({
           }
         }
       })
-      .addCase(createProduct.fulfilled, (state) => {
+      .addCase(createProduct.fulfilled, (state, action) => {
         state.saving = false;
+        if (action.payload && action.payload._id) {
+          state.items.unshift(action.payload);
+        }
       })
       .addMatcher(
         (action) => [createProduct.pending.type, updateProduct.pending.type].includes(action.type),

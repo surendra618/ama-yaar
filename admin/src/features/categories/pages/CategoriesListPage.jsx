@@ -30,6 +30,17 @@ export default function CategoriesListPage() {
     if (!result.error) setToDelete(null);
   };
 
+  const getImageUrl = (image) => {
+    if (!image) return '';
+    if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:')) {
+      return image;
+    }
+    const backendUrl = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace('/api/v1', '')
+      : 'http://localhost:5000';
+    return `${backendUrl}${image.startsWith('/') ? '' : '/'}${image}`;
+  };
+
   const columns = [
     {
       key: 'name',
@@ -39,7 +50,7 @@ export default function CategoriesListPage() {
           {c.image ? (
             <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200/60">
               <img
-                src={c.image}
+                src={getImageUrl(c.image)}
                 alt={c.name}
                 className="h-full w-full object-cover"
                 onError={(e) => {

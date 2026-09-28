@@ -76,6 +76,12 @@ const categoriesSlice = createSlice({
       .addCase(fetchCategoryById.fulfilled, (state, action) => {
         state.current = action.payload;
       })
+      .addCase(createCategory.fulfilled, (state, action) => {
+        state.saving = false;
+        if (action.payload && action.payload._id) {
+          state.items.unshift(action.payload);
+        }
+      })
       .addCase(updateCategory.fulfilled, (state, action) => {
         state.saving = false;
         if (action.payload && action.payload._id) {
@@ -85,17 +91,14 @@ const categoriesSlice = createSlice({
           }
         }
       })
+      .addCase(deleteCategory.fulfilled, (state, action) => {
+        state.items = state.items.filter((item) => item._id !== action.payload);
+      })
       .addMatcher(
         (a) => [createCategory.pending.type, updateCategory.pending.type].includes(a.type),
         (state) => {
           state.saving = true;
           state.error = null;
-        }
-      )
-      .addMatcher(
-        (a) => [createCategory.fulfilled.type, updateCategory.fulfilled.type].includes(a.type),
-        (state) => {
-          state.saving = false;
         }
       )
       .addMatcher(

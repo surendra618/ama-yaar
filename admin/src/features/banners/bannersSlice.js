@@ -73,6 +73,12 @@ const bannersSlice = createSlice({
       .addCase(deleteBanner.fulfilled, (state, action) => {
         state.items = state.items.filter((b) => b._id !== action.payload);
       })
+      .addCase(createBanner.fulfilled, (state, action) => {
+        state.saving = false;
+        if (action.payload && action.payload._id) {
+          state.items.unshift(action.payload);
+        }
+      })
       .addCase(updateBanner.fulfilled, (state, action) => {
         state.saving = false;
         if (action.payload && action.payload._id) {
