@@ -15,6 +15,9 @@ import { fetchProducts, fetchCategories, fetchBanners } from '../../products/pro
 import InstagramBanner from '../../../components/InstagramBanner';
 import EditorialBanner from '../../../components/EditorialBanner';
 import WorkoutShowcaseBanner from '../../../components/WorkoutShowcaseBanner';
+import BrandDnaShowcase from '../../../components/BrandDnaShowcase';
+import DualPromoBanners from '../../../components/DualPromoBanners';
+import StyleLabShowcase from '../../../components/StyleLabShowcase';
 import { motion } from 'framer-motion';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -951,8 +954,14 @@ export default function HomePage() {
         </section>
       </div>
 
+      {/* Dual Big Drop Promo Banners Carousel */}
+      <DualPromoBanners />
+
       {/* Editorial Streetwear 3D Card Banner */}
       <EditorialBanner />
+
+      {/* Interactive Outfit Combo & Mix-Match Builder */}
+      <StyleLabShowcase />
 
 
       {/* 6. Instagram carousel — infinite auto-scroll (Full Width Black Row) */}
@@ -1042,6 +1051,8 @@ export default function HomePage() {
         </p>
       </section>
 
+      {/* 6.5 Brand DNA & Streetwear Quality Showcase */}
+      <BrandDnaShowcase />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* 7. Customer reviews with AOS Animation & Functional Scroll */}
