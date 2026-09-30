@@ -65,6 +65,7 @@ export default function ProductDetailsPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     dispatch(clearProductDetails());
     dispatch(fetchProductDetails(slug));
   }, [dispatch, slug]);
@@ -101,9 +102,9 @@ export default function ProductDetailsPage() {
   const rawImages = (product.images || [])
     .filter(Boolean)
     .map((img) => (img.startsWith('http') || img.startsWith('data:') ? img : img.startsWith('/uploads') ? `http://localhost:5000${img}` : img));
-  const displayImages = rawImages.length >= 4
-    ? rawImages
-    : [...rawImages, ...PLACEHOLDER_GALLERY].slice(0, 4);
+  const displayImages = rawImages.length === 0
+    ? PLACEHOLDER_GALLERY
+    : Array.from({ length: 4 }, (_, i) => rawImages[i % rawImages.length]);
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -181,7 +182,7 @@ export default function ProductDetailsPage() {
             
             {/* Main Featured Image Container with Interactive Zoom */}
             <div
-              className="relative aspect-square w-full overflow-hidden bg-neutral-100 cursor-zoom-in select-none group"
+              className="relative aspect-square w-full overflow-hidden rounded-sm border border-neutral-200/70 bg-neutral-100 cursor-zoom-in select-none group"
               onMouseEnter={() => setIsHoveringZoom(true)}
               onMouseLeave={() => setIsHoveringZoom(false)}
               onMouseMove={handleMouseMove}
@@ -189,7 +190,7 @@ export default function ProductDetailsPage() {
               <img
                 src={displayImages[selectedImage] || displayImages[0]}
                 alt={product.name}
-                className="h-full w-full object-cover object-center transition-transform duration-150 ease-out"
+                className="h-full w-full object-cover object-center transition-transform duration-150 ease-out rounded-sm"
                 style={{
                   transform: isHoveringZoom ? 'scale(2.2)' : 'scale(1)',
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
@@ -216,10 +217,10 @@ export default function ProductDetailsPage() {
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
-                  className={`relative aspect-square overflow-hidden border transition-all duration-200 ${
+                  className={`relative aspect-square overflow-hidden rounded-sm border transition-all duration-200 ${
                     selectedImage === idx
-                      ? 'border-black ring-1 ring-black scale-[0.98] opacity-100'
-                      : 'border-transparent opacity-65 hover:opacity-100'
+                      ? 'border-neutral-900 opacity-100 shadow-2xs'
+                      : 'border-neutral-200 opacity-70 hover:opacity-100 hover:border-neutral-300'
                   }`}
                 >
                   <img
@@ -227,9 +228,6 @@ export default function ProductDetailsPage() {
                     alt={`Thumbnail ${idx + 1}`}
                     className="h-full w-full object-cover"
                   />
-                  {selectedImage === idx && (
-                    <div className="absolute inset-0 bg-black/5" />
-                  )}
                 </button>
               ))}
             </div>

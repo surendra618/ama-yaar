@@ -23,11 +23,6 @@ export const registerUser = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       const { data } = await api.post('/auth/register', formData);
-      localStorage.setItem('ay_access_token', data.data.accessToken);
-      if (data.data.refreshToken) {
-        localStorage.setItem('ay_refresh_token', data.data.refreshToken);
-      }
-      localStorage.setItem('ay_user', JSON.stringify(data.data.user));
       return data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -116,11 +111,8 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
+      .addCase(registerUser.fulfilled, (state) => {
         state.loading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.accessToken;
-        state.isAuthenticated = true;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;

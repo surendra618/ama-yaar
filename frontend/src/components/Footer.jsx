@@ -86,10 +86,14 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <span className="cursor-pointer hover:text-black transition">Privacy Policy</span>
+                  <Link to="/privacy-policy" className="hover:text-black transition">
+                    Privacy Policy
+                  </Link>
                 </li>
                 <li>
-                  <span className="cursor-pointer hover:text-black transition">Terms &amp; Conditions</span>
+                  <Link to="/terms" className="hover:text-black transition">
+                    Terms &amp; Conditions
+                  </Link>
                 </li>
               </ul>
             </div>

@@ -20,7 +20,13 @@ export default function RegisterPage() {
     dispatch(clearError());
     const result = await dispatch(registerUser(form));
     if (registerUser.fulfilled.match(result)) {
-      navigate('/', { replace: true });
+      navigate('/login', {
+        replace: true,
+        state: {
+          registeredEmail: form.email,
+          registeredSuccess: 'Account created successfully! Please enter your password to sign in.',
+        },
+      });
     }
   };
 

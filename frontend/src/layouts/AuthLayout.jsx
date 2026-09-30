@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { ShieldCheck, Zap, Heart, Flame, Sparkles, Truck, Crown } from 'lucide-react';
+import ScrollToTop from '../components/ScrollToTop';
 
 export default function AuthLayout() {
   const location = useLocation();
@@ -7,6 +8,7 @@ export default function AuthLayout() {
 
   return (
     <div className="al-root">
+      <ScrollToTop />
       {/* ══════════════ LEFT PANEL — DARK GRADIENT ══════════════ */}
       <div className="al-left">
         {/* Background gradient & blobs */}

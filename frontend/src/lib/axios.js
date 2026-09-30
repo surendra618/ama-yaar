@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const defaultBaseUrl = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.MODE === 'production' 
-    ? 'https://backend-three-zeta-68.vercel.app/api/v1' 
+    ? 'https://ama-yaar.vercel.app/api/v1' 
     : 'http://localhost:5000/api/v1');
 
 const api = axios.create({
@@ -71,7 +71,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+        const baseUrl = defaultBaseUrl;
         const { data } = await axios.post(`${baseUrl}/auth/refresh-token`, { token: refreshToken });
 
         const newAccessToken = data.data.accessToken;

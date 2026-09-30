@@ -566,37 +566,31 @@ export default function Navbar() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white p-2 shadow-2xl ring-1 ring-black/10 z-50">
-                    <div className="border-b border-black/10 p-3 bg-neutral-50 rounded-lg mb-1">
-                      <p className="truncate text-xs font-bold text-black">{user?.name}</p>
-                      <p className="truncate text-[11px] text-black/50">{user?.email}</p>
+                  <div className="absolute right-0 mt-3 w-56 bg-white p-2.5 shadow-lg border border-neutral-200 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    {/* User Info Header */}
+                    <div className="p-3 bg-neutral-50 mb-1.5">
+                      <p className="truncate text-xs font-black text-neutral-900 tracking-tight">{user?.name}</p>
+                      <p className="truncate text-[11px] font-medium text-neutral-500 mt-0.5">{user?.email}</p>
                     </div>
-                    <div className="py-1">
+
+                    {/* Menu Items: Only Profile & Sign Out */}
+                    <div className="space-y-1">
                       <Link
                         to="/account/profile"
-                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-black hover:bg-black/5 transition"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
                       >
-                        <User className="h-4 w-4 text-neutral-500" /> My Profile
+                        <User className="h-4 w-4 text-neutral-600" /> My Profile
                       </Link>
-                      <Link
-                        to="/account/orders"
-                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-black hover:bg-black/5 transition"
-                      >
-                        <Package className="h-4 w-4 text-neutral-500" /> My Orders
-                      </Link>
-                      <Link
-                        to="/account/addresses"
-                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-black hover:bg-black/5 transition"
-                      >
-                        <MapPin className="h-4 w-4 text-neutral-500" /> Addresses
-                      </Link>
-                    </div>
-                    <div className="border-t border-black/10 pt-1">
+
                       <button
-                        onClick={handleLogout}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition"
                       >
-                        <LogOut className="h-4 w-4" /> Sign Out
+                        <LogOut className="h-4 w-4 text-rose-600" /> Sign Out
                       </button>
                     </div>
                   </div>

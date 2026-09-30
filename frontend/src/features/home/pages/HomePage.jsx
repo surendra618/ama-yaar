@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ArrowRight, ArrowLeft, ArrowUpRight, Heart, Play, Star, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toggleWishlist } from '../../wishlist/wishlistSlice';
 
 // lucide-react no longer ships brand marks.
 const InstagramIcon = (props) => (
@@ -284,7 +285,10 @@ function TypewriterBannerTitle({ line1, line2, line3, highlightColor = '#facc15'
 
 export default function HomePage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { items: products, categories, banners } = useSelector((state) => state.products);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { items: wishlistItems } = useSelector((state) => state.wishlist || { items: [] });
   const categoryRailRef = useRef(null);
   const isCategoryHoveredRef = useRef(false);
 
@@ -695,6 +699,22 @@ export default function HomePage() {
                   : rawImg
                 : localImages[i % localImages.length];
 
+              const isWishlisted = (wishlistItems || []).some(
+                (wItem) => (wItem._id || wItem) === product?._id || (wItem.slug && wItem.slug === product?.slug)
+              );
+
+              const handleWishlistClick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isAuthenticated) {
+                  navigate('/login');
+                  return;
+                }
+                if (product?._id) {
+                  dispatch(toggleWishlist(product._id));
+                }
+              };
+
               return (
                 <motion.div
                   key={product?._id || i}
@@ -729,13 +749,11 @@ export default function HomePage() {
 
                     {/* Top Right Heart Wishlist Button */}
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                      }}
-                      className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-rose-500 shadow-md transition-transform duration-200 hover:scale-120 active:scale-90"
-                      title="Add to Wishlist"
+                      onClick={handleWishlistClick}
+                      className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-md transition-transform duration-200 hover:scale-120 active:scale-90"
+                      title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
                     >
-                      <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" />
+                      <Heart className={`h-3.5 w-3.5 ${isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-slate-600 hover:text-rose-500'}`} />
                     </button>
 
                     {/* Bottom Floating White Pill Box */}

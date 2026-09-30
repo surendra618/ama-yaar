@@ -20,6 +20,8 @@ import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
 import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage';
 import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage';
+import TermsPage from '../features/legal/pages/TermsPage';
+import PrivacyPolicyPage from '../features/legal/pages/PrivacyPolicyPage';
 
 export const router = createBrowserRouter([
   {
@@ -31,6 +33,8 @@ export const router = createBrowserRouter([
       { path: '/cart', element: <CartPage /> },
       { path: '/checkout', element: <CheckoutPage /> },
       { path: '/orders/:id', element: <OrderDetailsPage /> },
+      { path: '/terms', element: <TermsPage /> },
+      { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
       
       // Redirects for direct navigation or old URLs
       { path: '/orders', element: <Navigate to="/account/orders" replace /> },
