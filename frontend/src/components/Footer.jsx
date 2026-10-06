@@ -29,7 +29,7 @@ export default function Footer() {
           <div
             data-aos="fade-right"
             data-aos-duration="700"
-            className="md:col-span-5 lg:col-span-5"
+            className="md:col-span-4 lg:col-span-4"
           >
             <Link to="/" className="inline-block leading-none group">
               <img
@@ -70,11 +70,43 @@ export default function Footer() {
           </div>
 
           {/* Spacing / Column items */}
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-7 lg:col-span-7 md:pl-6">
-            {/* HELP */}
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 md:col-span-8 lg:col-span-8 md:pl-4">
+            {/* SHOP FITS */}
             <div data-aos="fade-up" data-aos-delay="100" data-aos-duration="600">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">SHOP FITS</h4>
+              <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
+                <li>
+                  <Link to="/products?isNewArrival=true" className="hover:text-black transition">
+                    New Arrivals
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/products?category=oversized-printed" className="hover:text-black transition">
+                    Oversized Tees
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/products?search=cargo" className="hover:text-black transition">
+                    Cargo &amp; Pants
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/products?search=acid+wash" className="hover:text-black transition">
+                    Acid Wash Fits
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/products?isBestSeller=true" className="hover:text-black transition">
+                    Best Sellers
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* HELP */}
+            <div data-aos="fade-up" data-aos-delay="150" data-aos-duration="600">
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">HELP</h4>
-              <ul className="space-y-3 text-xs sm:text-sm text-black/60">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
                   <Link to="/account/orders" className="hover:text-black transition">
                     Track your order
@@ -83,6 +115,11 @@ export default function Footer() {
                 <li>
                   <Link to="/account/profile" className="hover:text-black transition">
                     Customer support
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="hover:text-black transition">
+                    Shipping &amp; Returns
                   </Link>
                 </li>
                 <li>
@@ -98,44 +135,68 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* FAQ */}
+            {/* FAQ & ACCOUNT */}
             <div data-aos="fade-up" data-aos-delay="200" data-aos-duration="600">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">FAQ</h4>
-              <ul className="space-y-3 text-xs sm:text-sm text-black/60">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">FAQ &amp; ACCOUNT</h4>
+              <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
                   <Link to="/account/profile" className="hover:text-black transition">
-                    Account
+                    My Account
                   </Link>
                 </li>
                 <li>
                   <Link to="/account/orders" className="hover:text-black transition">
-                    Orders
+                    Order History
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/account/wishlist" className="hover:text-black transition">
+                    Wishlist Fits
                   </Link>
                 </li>
                 <li>
                   <Link to="/products" className="hover:text-black transition">
-                    Search
+                    Size &amp; Fit Guide
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/products" className="hover:text-black transition">
+                    Search Catalog
                   </Link>
                 </li>
               </ul>
             </div>
 
             {/* COMPANY */}
-            <div data-aos="fade-up" data-aos-delay="300" data-aos-duration="600">
+            <div data-aos="fade-up" data-aos-delay="250" data-aos-duration="600">
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">COMPANY</h4>
-              <ul className="space-y-3 text-xs sm:text-sm text-black/60">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
-                  <span className="cursor-pointer hover:text-black transition">About us</span>
+                  <Link to="/about" className="hover:text-black transition">
+                    About Us
+                  </Link>
                 </li>
                 <li>
-                  <span className="cursor-pointer hover:text-black transition">Contact us</span>
+                  <Link to="/contact" className="hover:text-black transition">
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/careers" className="hover:text-black transition">
+                    Careers
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/blog" className="hover:text-black transition">
+                    AMA YAAR Blog
+                  </Link>
                 </li>
                 <li>
                   <a
                     href="http://localhost:5174"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-black transition"
+                    className="inline-flex items-center gap-1 hover:text-black font-bold transition text-purple-700"
                   >
                     Admin Portal &rarr;
                   </a>

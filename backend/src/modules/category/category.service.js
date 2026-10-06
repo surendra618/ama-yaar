@@ -54,10 +54,10 @@ async function list(query = {}) {
       }));
     }
 
-    return categoriesWithCounts.length > 0 ? categoriesWithCounts : fallbackCategories;
+    return categoriesWithCounts;
   } catch (err) {
-    console.warn('[category.service] Query error, using fallback:', err.message);
-    return fallbackCategories;
+    console.warn('[category.service] Query error:', err.message);
+    return [];
   }
 }
 
@@ -70,10 +70,9 @@ async function getByIdOrSlug(idOrSlug) {
     if (!doc) {
       doc = await Category.findOne({ slug: idOrSlug }).populate('parent');
     }
-    if (!doc) return fallbackCategories[0];
-    return doc;
+    return doc || null;
   } catch (err) {
-    return fallbackCategories[0];
+    return null;
   }
 }
 

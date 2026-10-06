@@ -18,6 +18,11 @@ const adminRoutes = require('../modules/admin');
 const uploadRoutes = require('../modules/upload');
 const reportRoutes = require('../modules/report');
 
+const reelRoutes = require('../modules/reel');
+const editorialLookRoutes = require('../modules/editorialLook');
+const blogRoutes = require('../modules/blog');
+const { contactRoutes } = require('../modules/contact');
+
 const router = express.Router();
 
 router.use('/auth', authRoutes);
@@ -31,6 +36,10 @@ router.use('/payments', paymentRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/coupons', couponRoutes);
 router.use('/banners', bannerRoutes);
+router.use('/reels', reelRoutes);
+router.use('/editorial-looks', editorialLookRoutes);
+router.use('/blogs', blogRoutes);
+router.use('/contacts', contactRoutes);
 router.use('/addresses', addressRoutes);
 router.use('/returns', returnRequestRoutes);
 router.use('/notifications', notificationRoutes);

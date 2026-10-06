@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { ArrowRight, ArrowLeft, ArrowUpRight, Heart, Play, Star, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft, ArrowUpRight, Heart, Play, Star, CheckCircle2, ChevronLeft, ChevronRight, Volume2, VolumeX, Pause, X, ShoppingBag, Quote } from 'lucide-react';
 import { toggleWishlist } from '../../wishlist/wishlistSlice';
 
 // lucide-react no longer ships brand marks.
@@ -16,9 +16,12 @@ import { fetchProducts, fetchCategories, fetchBanners } from '../../products/pro
 import InstagramBanner from '../../../components/InstagramBanner';
 import EditorialBanner from '../../../components/EditorialBanner';
 import WorkoutShowcaseBanner from '../../../components/WorkoutShowcaseBanner';
-import BrandDnaShowcase from '../../../components/BrandDnaShowcase';
-import DualPromoBanners from '../../../components/DualPromoBanners';
-import StyleLabShowcase from '../../../components/StyleLabShowcase';
+import TopPicksBanner from '../../../components/TopPicksBanner';
+
+
+
+
+import HeroBanner from '../components/HeroBanner';
 import { motion } from 'framer-motion';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -72,6 +75,413 @@ const PLACEHOLDER_IMAGES = [
   'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=600&q=80',
   'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&q=80',
 ];
+
+const REEL_ITEMS = [
+  {
+    id: 1,
+    title: 'Oversized Stylish Men T-shirt',
+    price: 450,
+    mrp: 899,
+    discount: '50% OFF',
+    views: '18.4K views',
+    badge: 'Top Selling',
+    poster: '/model01.png',
+    altPoster: '/model04.png',
+    video: '/video/video5.mp4',
+    altVideo: '/video/video5.mp4',
+  },
+  {
+    id: 2,
+    title: 'Vintage Acid Wash Graphic Tee',
+    price: 599,
+    mrp: 1199,
+    discount: '50% OFF',
+    views: '24.1K views',
+    badge: 'Trending Drop',
+    poster: '/model04.png',
+    altPoster: '/model03.png',
+    video: '/video/video1.mp4',
+    altVideo: '/video/video1.mp4',
+  },
+  {
+    id: 3,
+    title: 'Urban Streetwear Heavyweight Tee',
+    price: 499,
+    mrp: 999,
+    discount: '50% OFF',
+    views: '31.8K views',
+    badge: 'Best Value',
+    poster: '/model03.png',
+    altPoster: '/model01.png',
+    video: '/video/video2.mp4',
+    altVideo: '/video/video2.mp4',
+  },
+  {
+    id: 4,
+    title: 'Original Artwork Oversized Fit',
+    price: 550,
+    mrp: 1099,
+    discount: '50% OFF',
+    views: '12.9K views',
+    badge: 'Limited Drop',
+    poster: '/model07.jpg',
+    altPoster: '/model08.jpg',
+    video: '/video/video3.mp4',
+    altVideo: '/video/video3.mp4',
+  },
+  {
+    id: 5,
+    title: 'Street Culture Denim Jacket Outfit',
+    price: 899,
+    mrp: 1799,
+    discount: '50% OFF',
+    views: '45.3K views',
+    badge: 'Hot Right Now',
+    poster: '/model05.jpg',
+    altPoster: '/model01.png',
+    video: '/video/video3%20(2).mp4',
+    altVideo: '/video/video3 (2).mp4',
+  },
+];
+
+function AnimatedReelMotion({ title }) {
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-neutral-900 flex flex-col items-center justify-center text-slate-400">
+      <div className="absolute inset-0 bg-gradient-to-b from-neutral-900 via-neutral-950 to-neutral-900 pointer-events-none" />
+      <div className="z-10 flex flex-col items-center gap-2">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-white shadow-inner">
+          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+        </span>
+        <span className="text-[11px] font-medium text-slate-400">Loading Video...</span>
+      </div>
+    </div>
+  );
+}
+
+function ReelCard({ item, onOpenModal, reelsCount }) {
+  const navigate = useNavigate();
+  const videoRef = useRef(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+      const promise = videoRef.current.play();
+      if (promise !== undefined) {
+        promise.catch(() => {
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play().catch(() => setHasError(true));
+          }
+        });
+      }
+    }
+  }, [isMuted]);
+
+  const handleProductClick = (e) => {
+    e.stopPropagation();
+    if (item.productId) {
+      navigate(`/products/${item.productId}`);
+    } else {
+      navigate('/products');
+    }
+  };
+
+  const aspectClass = reelsCount === 4 ? 'aspect-[9/11.2]' : 'aspect-[9/14]';
+
+  return (
+    <div className="group flex flex-col cursor-pointer select-none overflow-hidden rounded-none border-[0.2px] border-white/15 shadow-md">
+      {/* Card video container */}
+      <div
+        onClick={handleProductClick}
+        className={`relative ${aspectClass} w-full overflow-hidden bg-neutral-950`}
+      >
+        {hasError ? (
+          <AnimatedReelMotion title={item.title} />
+        ) : (
+          /* Live video plays continuously by default */
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted={isMuted}
+            playsInline
+            onError={() => setHasError(true)}
+            className="h-full w-full object-cover"
+          >
+            <source src={item.video} type="video/mp4" />
+            <source src={item.altVideo} type="video/mp4" />
+            <source src="/Recording 2026-09-30 160246.mp4" type="video/mp4" />
+          </video>
+        )}
+
+        {/* Top Left Red Ribbon Badge — Anchored to left edge slightly lower down */}
+        <span className="absolute left-0 top-2.5 z-20 rounded-r-full bg-[#b80000] px-3 py-1 text-[11px] font-normal text-white shadow-xs pointer-events-none leading-none">
+          {item.badge || 'Top selling'}
+        </span>
+
+        {/* Top Right Heart Wishlist Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            alert('Added to Wishlist!');
+          }}
+          className="absolute right-2 top-2 z-30 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-xs hover:bg-white transition"
+          title="Add to Wishlist"
+        >
+          <Heart className="h-3.5 w-3.5 text-slate-700" />
+        </button>
+
+        {/* Solid White Center Play Icon */}
+        <span className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <span className="flex h-12 w-12 items-center justify-center transition-transform duration-300 group-hover:scale-115">
+            <svg viewBox="0 0 24 24" className="h-10 w-10 fill-white text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          </span>
+        </span>
+
+        {/* Smooth Gradient Overlay for text readability */}
+        <div className="absolute inset-x-0 bottom-0 z-10 h-2/5 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
+
+        {/* Top Overlay Row inside video: Views count on Left + 2 Thumbnails on Right */}
+        <div className="absolute bottom-16 left-2.5 right-2.5 z-20 flex items-end justify-between gap-1.5 pointer-events-none">
+          {/* Eye Icon & View Count on Left */}
+          <div className="flex items-center gap-1 text-white/90 font-bold whitespace-nowrap shrink-0 mb-0.5">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.2]">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <span className="text-[10.5px] sm:text-[11.5px] tracking-wide font-extrabold">{item.views || '13.6K views'}</span>
+          </div>
+
+          {/* 2 Separate Model Thumbnails on Right — Identical Size & Border */}
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <img
+              src={item.poster || '/model01.png'}
+              alt="Product 1 Thumbnail"
+              title={item.title}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (item.productId) {
+                  navigate(`/products/${item.productId}`);
+                } else {
+                  onOpenModal(item);
+                }
+              }}
+              className="h-11 w-10 sm:h-12 sm:w-10.5 rounded-none border-2 border-white object-cover object-center shadow-md bg-neutral-900 shrink-0 cursor-pointer hover:scale-105 transition"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80';
+              }}
+            />
+            <img
+              src={item.altPoster || '/model04.png'}
+              alt="Product 2 Thumbnail"
+              title={item.product2Title || item.title}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (item.product2Id) {
+                  navigate(`/products/${item.product2Id}`);
+                } else if (item.productId) {
+                  navigate(`/products/${item.productId}`);
+                } else {
+                  onOpenModal(item);
+                }
+              }}
+              className="h-11 w-10 sm:h-12 sm:w-10.5 rounded-none border-2 border-white object-cover object-center shadow-md bg-neutral-900 shrink-0 cursor-pointer hover:scale-105 transition"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80';
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 100% Full-width Edge-to-Edge Translucent Title & Price Box — Reel video visible underneath */}
+        <div
+          onClick={handleProductClick}
+          className="absolute inset-x-0 bottom-0 z-20 bg-black/40 backdrop-blur-xs px-3 py-2 border-t border-white/10 flex flex-col gap-0.5 cursor-pointer hover:bg-black/65 transition"
+        >
+          <p className="truncate text-[12px] sm:text-[12.5px] font-bold text-white leading-tight drop-shadow-md">
+            {item.title}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold text-white text-[13.5px] sm:text-[14.5px] drop-shadow-md">
+              Rs. {Number(item.price || 450).toFixed(2)}
+            </span>
+            <span className="text-[10px] sm:text-[11px] text-white/70 line-through font-normal drop-shadow-sm">
+              Rs. {Number(item.mrp || 899).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Clean Full-width Centered Dark Button Bar */}
+      <button
+        onClick={handleProductClick}
+        className="w-full py-2.5 text-center text-[12px] font-bold uppercase tracking-wider text-white bg-[#222222] hover:bg-black transition cursor-pointer border-t border-neutral-800 flex items-center justify-center gap-1.5"
+      >
+        <span>{item.productId ? 'View Product' : 'Add to cart'}</span>
+      </button>
+    </div>
+  );
+}
+
+function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
+  const navigate = useNavigate();
+  const modalVideoRef = useRef(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    if (modalVideoRef.current) {
+      modalVideoRef.current.muted = isMuted;
+      const promise = modalVideoRef.current.play();
+      if (promise !== undefined) {
+        promise.catch(() => {
+          if (modalVideoRef.current) {
+            modalVideoRef.current.muted = true;
+            setIsMuted(true);
+            modalVideoRef.current.play().catch(() => setHasError(true));
+          }
+        });
+      }
+    }
+  }, [reel, isMuted]);
+
+  if (!reel) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 backdrop-blur-xl p-2 sm:p-4 animate-in fade-in duration-200">
+      {/* Modal Wrapper */}
+      <div className="relative flex h-full max-h-[85vh] w-full max-w-[420px] flex-col overflow-hidden bg-neutral-950 shadow-2xl border border-white/20">
+
+        {/* Top Header */}
+        <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between p-4 bg-gradient-to-b from-black/90 to-transparent">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#facc15] font-black text-black text-xs shadow-md">
+              AY
+            </span>
+            <div>
+              <p className="text-xs font-black text-white tracking-wide">amayaan.in</p>
+              <p className="text-[10px] text-white/60 font-semibold">{reel.views}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black transition border border-white/20"
+            >
+              {isMuted ? <VolumeX className="h-4 w-4 text-white/80" /> : <Volume2 className="h-4 w-4 text-[#facc15]" />}
+            </button>
+            <button
+              onClick={onClose}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black transition border border-white/20 text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Center Video Player */}
+        <div
+          className="relative flex-1 bg-black overflow-hidden cursor-pointer"
+          onClick={() => {
+            if (modalVideoRef.current) {
+              if (isPlaying) {
+                modalVideoRef.current.pause();
+                setIsPlaying(false);
+              } else {
+                modalVideoRef.current.play().catch(() => setHasError(true));
+                setIsPlaying(true);
+              }
+            }
+          }}
+        >
+          {hasError ? (
+            <AnimatedReelMotion title={reel.title} />
+          ) : (
+            <video
+              ref={modalVideoRef}
+              autoPlay
+              loop
+              muted={isMuted}
+              playsInline
+              onError={() => setHasError(true)}
+              className="h-full w-full object-cover"
+            >
+              <source src={reel.video} type="video/mp4" />
+              <source src={reel.altVideo} type="video/mp4" />
+              <source src="/Recording 2026-09-30 160246.mp4" type="video/mp4" />
+            </video>
+          )}
+
+          {!isPlaying && !hasError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#facc15]/90 text-black shadow-2xl">
+                <Play className="h-8 w-8 fill-black ml-1" />
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation Side Controls */}
+        <button
+          onClick={onPrev}
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black transition border border-white/20"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          onClick={onNext}
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black transition border border-white/20"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+
+        {/* Bottom Product Reel Shopping Drawer */}
+        <div className="relative z-30 bg-neutral-900/95 border-t border-white/10 p-4 backdrop-blur-md space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black bg-[#facc15]">
+              {reel.badge}
+            </span>
+            <span className="text-xs font-bold text-emerald-400">{reel.discount}</span>
+          </div>
+
+          <div
+            className={reel.productId ? 'cursor-pointer hover:opacity-90' : ''}
+            onClick={() => {
+              if (reel.productId) {
+                onClose();
+                navigate(`/products/${reel.productId}`);
+              }
+            }}
+          >
+            <h4 className="text-sm font-black text-white tracking-wide truncate flex items-center gap-1.5">
+              <span>{reel.title}</span>
+              {reel.productId && <ArrowUpRight className="h-4 w-4 text-[#facc15] shrink-0" />}
+            </h4>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-base font-black text-white">Rs. {reel.price}</span>
+              <span className="text-xs text-white/40 line-through font-medium">Rs. {reel.mrp}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+
+
 
 const CATEGORY_ITEMS = [
   {
@@ -135,19 +545,43 @@ const CATEGORY_ITEMS = [
 const REVIEWS = [
   {
     name: 'Vansh Singh',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
     text: 'Polo T-shirt ka fabric premium feel deta hai. Office casual ho ya outing, look kaafi classy aur stylish lagta hai. Definitely buying more!',
   },
   {
     name: 'Arjun Yadav',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
     text: 'Henley T-shirt meri favourite purchase rahi! Comfortable, stylish aur perfect fitting. Quality dekhkar honestly expectations se better laga.',
   },
   {
     name: 'Sunil Kashyap',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80',
     text: 'Oversized t-shirt ka fabric kaafi soft hai aur fitting bhi achhi hai. Pehli baar order kiya tha, but quality expected se better nikli.',
   },
   {
+    name: 'Rohan Verma',
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&q=80',
+    text: 'Amaze quality! Zipper jacket ki fitting aur stitching bilkul top notch hai. Delivery fast thi aur packaging premium lagti hai.',
+  },
+  {
     name: 'Ved Singh',
-    text: 'Polo T-shirt ka fabric premium feel deta hai. Office casual ho ya outing, look kaafi classy aur stylish lagta hai. Definitely buying more!',
+    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&q=80',
+    text: 'Heavyweight graphic tee ka print aur fabric unmatched hai. Wash ke baad bhi color aur shape fade nahi hota.',
+  },
+  {
+    name: 'Kabir Sharma',
+    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&q=80',
+    text: 'Minimal streetwear look ke liye ye brand best hai. Comfort level 10/10. Definitely recommendation worthy!',
+  },
+  {
+    name: 'Aditya Gupta',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&q=80',
+    text: 'Fabric aur drop shoulder design exact trendy vibe deta hai. Ordering again for my brothers!',
+  },
+  {
+    name: 'Aarav Mehta',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&q=80',
+    text: 'Super impressed with the fitting and material softness. Best online shopping experience so far.',
   },
 ];
 
@@ -293,6 +727,86 @@ export default function HomePage() {
   const isCategoryHoveredRef = useRef(false);
 
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [selectedReelIndex, setSelectedReelIndex] = useState(null);
+  const [dbReels, setDbReels] = useState([]);
+  const [reelsDisplayCount, setReelsDisplayCount] = useState(() => {
+    return Number(localStorage.getItem('reels_display_count')) || 4;
+  });
+
+  useEffect(() => {
+    const handleSettingChange = () => {
+      const stored = Number(localStorage.getItem('reels_display_count')) || 4;
+      setReelsDisplayCount(stored);
+    };
+
+    let bc;
+    try {
+      bc = new BroadcastChannel('reels_setting_channel');
+      bc.onmessage = (e) => {
+        if (e.data && e.data.displayCount) {
+          setReelsDisplayCount(e.data.displayCount);
+          localStorage.setItem('reels_display_count', e.data.displayCount.toString());
+        }
+      };
+    } catch (_) { }
+
+    window.addEventListener('reels_setting_changed', handleSettingChange);
+    window.addEventListener('storage', handleSettingChange);
+
+    return () => {
+      window.removeEventListener('reels_setting_changed', handleSettingChange);
+      window.removeEventListener('storage', handleSettingChange);
+      if (bc) bc.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    const loadReels = () => {
+      fetch('http://localhost:5000/api/v1/reels')
+        .then((res) => res.json())
+        .then((resData) => {
+          if (resData.data) {
+            const reelList = Array.isArray(resData.data) ? resData.data : resData.data.reels || [];
+            if (reelList.length > 0) {
+              setDbReels(reelList);
+            }
+            const count = resData.displayCount || resData.data.displayCount;
+            if (count) {
+              setReelsDisplayCount(count);
+              localStorage.setItem('reels_display_count', count.toString());
+            }
+          }
+        })
+        .catch(() => { });
+    };
+
+    loadReels();
+
+    window.addEventListener('focus', loadReels);
+    const interval = setInterval(loadReels, 4000);
+    return () => {
+      window.removeEventListener('focus', loadReels);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const displayReels = dbReels.length > 0
+    ? dbReels.map((r, idx) => ({
+      id: r._id || idx,
+      productId: r.product?._id || r.product || null,
+      product2Id: r.product2?._id || r.product2 || null,
+      product2Title: r.product2?.name || '',
+      title: r.product?.name || r.title,
+      price: r.product?.price || r.price,
+      mrp: r.product?.mrp || r.mrp,
+      discount: r.discount || '50% OFF',
+      views: r.views || '15.2K views',
+      badge: r.badge || 'Top Selling',
+      poster: r.poster?.startsWith('http') ? r.poster : r.poster?.startsWith('/uploads') ? `http://localhost:5000${r.poster}` : (r.product?.images?.[0] || r.poster),
+      altPoster: r.altPoster?.startsWith('http') ? r.altPoster : r.altPoster?.startsWith('/uploads') ? `http://localhost:5000${r.altPoster}` : (r.product2?.images?.[0] || r.altPoster || '/model04.png'),
+      video: r.video?.startsWith('http') ? r.video : r.video?.startsWith('/uploads') ? `http://localhost:5000${r.video}` : r.video,
+    }))
+    : REEL_ITEMS;
 
   // Dynamic slides from uploaded admin banners or default slides
   const activeBanners = banners && banners.length > 0
@@ -301,23 +815,23 @@ export default function HomePage() {
 
   const displaySlides = activeBanners.length > 0
     ? activeBanners.map((b) => {
-        const fullImg = b.image?.startsWith('http')
-          ? b.image
-          : b.image?.startsWith('/')
+      const fullImg = b.image?.startsWith('http')
+        ? b.image
+        : b.image?.startsWith('/')
           ? `http://localhost:5000${b.image}`
           : `http://localhost:5000/${b.image}`;
-        return {
-          bgImage: fullImg,
-          eyebrow: b.badge || 'Featured Collection 2026',
-          title1: b.title || 'EXCLUSIVE DROP',
-          title2: '',
-          titleHighlight: '',
-          subtitle: b.subtitle || 'Discover premium fits crafted for everyday impact.',
-          accentColor: '#facc15',
-          link: b.link || '/products',
-          buttonText: b.buttonText || 'SHOP NOW',
-        };
-      })
+      return {
+        bgImage: fullImg,
+        eyebrow: b.badge || 'Featured Collection 2026',
+        title1: b.title || 'EXCLUSIVE DROP',
+        title2: '',
+        titleHighlight: '',
+        subtitle: b.subtitle || 'Discover premium fits crafted for everyday impact.',
+        accentColor: '#facc15',
+        link: b.link || '/products',
+        buttonText: b.buttonText || 'SHOP NOW',
+      };
+    })
     : HERO_SLIDES;
 
   // Auto-rotate Hero Banner every 4.2 seconds
@@ -328,6 +842,21 @@ export default function HomePage() {
     return () => clearInterval(heroTimer);
   }, [displaySlides.length]);
 
+  // Auto-scroll Customer Reviews Rail every 3.2 seconds
+  useEffect(() => {
+    const reviewsTimer = setInterval(() => {
+      const rail = document.getElementById('customer-reviews-rail');
+      if (rail) {
+        if (rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 15) {
+          rail.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          rail.scrollBy({ left: 360, behavior: 'smooth' });
+        }
+      }
+    }, 3200);
+    return () => clearInterval(reviewsTimer);
+  }, []);
+
   const scrollCategory = (direction) => {
     if (categoryRailRef.current) {
       const amount = direction === 'left' ? -320 : 320;
@@ -336,7 +865,7 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    dispatch(fetchProducts({ limit: 12 }));
+    dispatch(fetchProducts({ limit: 15 }));
     dispatch(fetchCategories());
     dispatch(fetchBanners());
   }, [dispatch]);
@@ -368,7 +897,7 @@ export default function HomePage() {
   }, []);
 
   const rail = products.slice(0, 4);
-  const grid = products.slice(0, 12);
+  const grid = products.slice(0, 15);
 
   const activeSlide = displaySlides[currentHeroSlide % displaySlides.length] || displaySlides[0];
 
@@ -382,19 +911,19 @@ export default function HomePage() {
 
   const displayCategories = allCatList.length > 0
     ? [...allCatList]
-        .sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0))
-        .map((c, idx) => {
-          const catImg = c.image
-            ? (c.image.startsWith('http') || c.image.startsWith('data:') ? c.image : c.image.startsWith('/uploads') ? `http://localhost:5000${c.image}` : c.image)
-            : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
-          return {
-            name: c.name,
-            image: catImg,
-            fallback: CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.fallback || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80',
-            slug: c.slug || c._id,
-            cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
-          };
-        })
+      .sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0))
+      .map((c, idx) => {
+        const catImg = c.image
+          ? (c.image.startsWith('http') || c.image.startsWith('data:') ? c.image : c.image.startsWith('/uploads') ? `http://localhost:5000${c.image}` : c.image)
+          : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
+        return {
+          name: c.name,
+          image: catImg,
+          fallback: CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.fallback || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80',
+          slug: c.slug || c._id,
+          cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
+        };
+      })
     : CATEGORY_ITEMS;
 
   useEffect(() => {
@@ -403,169 +932,11 @@ export default function HomePage() {
 
   return (
     <div className="bg-white">
-      {/* 1. Hero Auto-Rotating Slider */}
-      <section className="relative w-full overflow-hidden bg-neutral-950 min-h-[380px] sm:min-h-[460px] lg:min-h-[500px] h-[58vh]">
-
-        {/* Background Images Layer with Smooth Fade */}
-        {displaySlides.map((slide, idx) => (
-          <img
-            key={idx}
-            src={slide.bgImage}
-            alt={slide.title1}
-            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-in-out ${idx === (currentHeroSlide % displaySlides.length) ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
-              }`}
-          />
-        ))}
-
-        {/* Scrim Overlays - Minimal background overlay so image is clear */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/15 to-transparent z-10" />
-
-        {/* Model Cutout Layer with Smooth Crossfade & Scale */}
-        {HERO_SLIDES.map((slide, idx) => (
-          slide.modelImage && (
-            <div
-              key={idx}
-              className={`absolute right-4 bottom-0 h-[95%] w-[38%] sm:w-[32%] flex items-end justify-end pointer-events-none z-20 transition-all duration-700 ease-out ${idx === currentHeroSlide
-                ? 'opacity-100 translate-y-0 scale-100'
-                : 'opacity-0 translate-y-6 scale-95'
-                }`}
-            >
-              <img
-                src={slide.modelImage}
-                alt="Fashion Model"
-                className="h-full w-auto object-contain object-bottom"
-                style={{ filter: 'drop-shadow(-16px 0 30px rgba(0,0,0,0.6))' }}
-              />
-            </div>
-          )
-        ))}
-
-        {/* LEFT Text Content with AOS & Framer Motion Transitions */}
-        <div className="absolute inset-0 flex items-center z-20 py-6">
-          <div className="mx-auto w-full max-w-7xl px-8 sm:px-12 lg:px-16">
-            <motion.div
-              key={currentHeroSlide}
-              initial={{ opacity: 0, x: -45 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.65, ease: 'easeOut' }}
-              className="max-w-[520px] drop-shadow-md"
-            >
-              {/* Eyebrow */}
-              <span
-                data-aos="fade-down"
-                data-aos-delay="100"
-                className="mb-2 inline-block text-[12px] font-black uppercase tracking-[0.28em] text-white drop-shadow"
-              >
-                {activeSlide.eyebrow}
-              </span>
-
-              {/* Main Headline */}
-              <h1
-                data-aos="fade-right"
-                data-aos-delay="200"
-                className="font-display leading-[0.95] tracking-tight text-white drop-shadow-lg uppercase"
-                style={{ fontSize: 'clamp(2.25rem, 4.8vw, 4.2rem)', fontWeight: 900, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
-              >
-                {activeSlide.title1}
-                {activeSlide.title2 && (
-                  <>
-                    <br />
-                    {activeSlide.title2}
-                  </>
-                )}
-                {activeSlide.titleHighlight && (
-                  <>
-                    <br />
-                    EVERY{' '}
-                    <span
-                      className="font-script italic font-normal transition-colors duration-700 capitalize"
-                      style={{ fontSize: 'clamp(2.1rem, 4.4vw, 3.6rem)', color: activeSlide.accentColor || '#facc15' }}
-                    >
-                      {activeSlide.titleHighlight}
-                    </span>
-                  </>
-                )}
-              </h1>
-
-              {/* Subtitle */}
-              <p
-                data-aos="fade-right"
-                data-aos-delay="300"
-                className="mt-2.5 text-[13px] sm:text-[14px] font-semibold text-white/90 tracking-wide leading-relaxed drop-shadow"
-              >
-                {activeSlide.subtitle}
-              </p>
-
-              {/* CTA Action Buttons */}
-              <div
-                data-aos="fade-up"
-                data-aos-delay="400"
-                className="mt-7 flex items-center gap-3.5 flex-wrap"
-              >
-                <Link
-                  to={activeSlide.link || '/products'}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-[11px] font-black tracking-widest text-black uppercase shadow-lg transition hover:bg-neutral-100 hover:scale-105 active:scale-95"
-                >
-                  {activeSlide.buttonText || 'SHOP NOW'}
-                </Link>
-                <Link
-                  to="/products"
-                  className="inline-flex items-center gap-2 rounded-full border-2 border-white/60 px-7 py-3 text-[11px] font-black tracking-widest text-white uppercase transition hover:border-white hover:bg-white/10 hover:scale-105 active:scale-95"
-                >
-                  EXPLORE ALL
-                </Link>
-              </div>
-
-              {/* Stats Row */}
-              <div
-                data-aos="fade-up"
-                data-aos-delay="500"
-                className="mt-5 flex items-center gap-7 sm:gap-8"
-              >
-                {[['500+', 'Products'], ['50K+', 'Happy Customers'], ['Free', 'Shipping']].map(([val, label]) => (
-                  <div key={label}>
-                    <p className="text-base sm:text-lg font-black text-white leading-none">{val}</p>
-                    <p className="mt-1 text-[10px] font-bold text-white/70 uppercase tracking-wider">{label}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Carousel Indicators & Controls — Minimalist Clean Design (No Big Box) */}
-        <div className="absolute bottom-5 right-6 sm:right-12 z-30 flex items-center gap-2">
-          {displaySlides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentHeroSlide(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 drop-shadow ${i === (currentHeroSlide % displaySlides.length) ? 'w-5 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/80'
-                }`}
-              aria-label={`Go to slide ${i + 1}`}
-            />
-          ))}
-
-          <div className="flex items-center gap-1 ml-1.5">
-            <button
-              onClick={() => setCurrentHeroSlide((prev) => (prev === 0 ? displaySlides.length - 1 : prev - 1))}
-              className="flex h-5 w-5 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/20 transition drop-shadow"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="h-3 w-3" />
-            </button>
-            <button
-              onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % displaySlides.length)}
-              className="flex h-5 w-5 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/20 transition drop-shadow"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-      </section>
+      {/* 1. Futuristic Creative Website Hero Banner */}
+      <HeroBanner />
 
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1680px] px-3 sm:px-6 lg:px-8">
         {/* 2. Category Cards Slider Rail */}
         <section className="py-12 sm:py-16">
           <motion.div
@@ -607,21 +978,20 @@ export default function HomePage() {
             variants={categoryContainerVariants}
             onMouseEnter={() => { isCategoryHoveredRef.current = true; }}
             onMouseLeave={() => { isCategoryHoveredRef.current = false; }}
-            className="flex items-start gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-6 pt-2 snap-x snap-mandatory scroll-smooth"
+            className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-hide pb-6 pt-2 snap-x snap-mandatory scroll-smooth"
           >
             {displayCategories.map((item) => (
               <motion.div
                 key={item.name}
                 variants={categoryCardVariants}
                 whileHover={{ y: -8, transition: { duration: 0.25 } }}
-                className={`shrink-0 w-[240px] sm:w-[280px] snap-start ${item.cardStyle}`}
+                className={`shrink-0 w-[220px] sm:w-[250px] lg:w-[calc(20%-1rem)] min-w-[210px] snap-start ${item.cardStyle}`}
               >
                 <Link
                   to={`/products?category=${item.slug}`}
                   className="group relative block h-full w-full overflow-hidden rounded-2xl bg-neutral-900"
                 >
-                  {/* Subtle light sweep shimmer on hover */}
-                  <div className="card-shine" />
+
 
                   <img
                     src={item.image}
@@ -656,7 +1026,7 @@ export default function HomePage() {
       {/* Workout Showcase 3D Editorial Squad Banner — Placed directly ABOVE Products */}
       <WorkoutShowcaseBanner />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1680px] px-3 sm:px-6 lg:px-8">
         {/* 4. Fresh fits grid (Products Section) */}
         <section className="pb-16 pt-8 sm:pt-12">
           {/* Heading */}
@@ -674,9 +1044,9 @@ export default function HomePage() {
             </h2>
           </motion.div>
 
-          {/* Product Grid */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {(grid.length ? grid : Array.from({ length: 12 })).map((product, i) => {
+          {/* Product Grid - 5 Cards per row (3 rows = 15 cards) */}
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {(grid.length ? grid : Array.from({ length: 15 })).map((product, i) => {
               const localImages = [
                 '/model01.png',
                 '/model04.png',
@@ -695,8 +1065,8 @@ export default function HomePage() {
                 ? rawImg.startsWith('http') || rawImg.startsWith('data:')
                   ? rawImg
                   : rawImg.startsWith('/uploads')
-                  ? `http://localhost:5000${rawImg}`
-                  : rawImg
+                    ? `http://localhost:5000${rawImg}`
+                    : rawImg
                 : localImages[i % localImages.length];
 
               const isWishlisted = (wishlistItems || []).some(
@@ -725,13 +1095,12 @@ export default function HomePage() {
                     type: 'spring',
                     stiffness: 85,
                     damping: 13,
-                    delay: (i % 4) * 0.1,
+                    delay: (i % 5) * 0.1,
                   }}
-                  whileHover={{ y: -8, transition: { duration: 0.25 } }}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl bg-neutral-100 aspect-[3/4] shadow-sm hover:shadow-xl transition-shadow duration-300"
+                  whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                  className="group relative flex flex-col overflow-hidden rounded-md bg-neutral-100 aspect-[3/4] shadow-xs hover:shadow-md transition-shadow duration-300"
                 >
-                  {/* Subtle light sweep shimmer on hover */}
-                  <div className="card-shine" />
+
 
                   <Link
                     to={product?._id ? `/products/${product.slug || product._id}` : '/products'}
@@ -757,20 +1126,17 @@ export default function HomePage() {
                     </button>
 
                     {/* Bottom Floating White Pill Box */}
-                    <div className="absolute inset-x-2.5 bottom-2.5 z-10 flex items-center justify-between rounded-xl bg-white p-2.5 shadow-lg border border-slate-100/80 transition-transform duration-300 group-hover:scale-[1.02]">
+                    <div className="absolute inset-x-2.5 bottom-2.5 z-10 flex items-center justify-between rounded-md bg-white p-2.5 shadow-md border border-slate-100/80 transition-transform duration-300 group-hover:scale-[1.02]">
                       <div className="min-w-0 flex-1 pr-1">
                         <p className="truncate text-[11px] font-extrabold text-slate-900 leading-tight transition-colors duration-200 group-hover:text-black">
                           {product?.name || 'Oversized Stylish Men T-shirt'}
                         </p>
-                        <div className="mt-0.5 flex items-center gap-1 flex-wrap text-[11px]">
+                        <div className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap truncate text-[11px]">
                           <span className="font-black text-rose-600">
                             Rs. {(product?.price || 450).toLocaleString('en-IN')}.00
                           </span>
                           <span className="text-[10px] text-slate-400 line-through font-medium">
                             Rs. {(product?.mrp || 899).toLocaleString('en-IN')}.00
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-500">
-                            (50% OFF)
                           </span>
                         </div>
                       </div>
@@ -796,281 +1162,59 @@ export default function HomePage() {
           >
             <Link
               to="/products"
-              className="group inline-flex items-center gap-2 rounded-full bg-black px-8 py-3 text-xs font-black tracking-widest text-white uppercase hover:bg-neutral-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-md"
+              className="group inline-flex items-center gap-2 rounded-full bg-black px-8 py-3 text-xs font-black tracking-widest text-white uppercase hover:bg-neutral-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-xs"
             >
               <span>View all products</span>
               <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
             </Link>
           </motion.div>
         </section>
-
-
-        {/* 5. Promo split banners */}
-        <section className="grid grid-cols-1 gap-6 pb-16 sm:grid-cols-2 overflow-hidden">
-
-          {/* Card 1 — Dark / Black (Slides in from LEFT) */}
-          <motion.div
-            initial={{ opacity: 0, x: -100 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.25 }}
-            transition={{ type: 'spring', stiffness: 75, damping: 14 }}
-            className="group relative overflow-hidden rounded-3xl bg-[#111]"
-            style={{ minHeight: '520px' }}
-          >
-            {/* Subtle light sweep shimmer on hover */}
-            <div className="card-shine" />
-
-            {/* Right: Model image — LARGE */}
-            <div className="absolute right-0 top-0 bottom-0 flex items-center justify-end" style={{ width: '72%' }}>
-              <img
-                src="/model-nirvana.jpg"
-                alt="Model"
-                className="h-full w-auto object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
-                style={{ filter: 'drop-shadow(-12px 0 32px rgba(0,0,0,0.9))' }}
-              />
-            </div>
-
-            {/* Radial glow behind model */}
-            <div className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 h-80 w-80 rounded-full"
-              style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.18), transparent 70%)' }} />
-
-            {/* Left: Text content */}
-            <div className="relative z-10 flex flex-col justify-between h-full p-8" style={{ minHeight: '520px', width: '52%' }}>
-              <div>
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-[#facc15] text-sm">★★</span>
-                </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.22em] text-[#facc15]">Top Selling</span>
-                <TypewriterBannerTitle
-                  line1="PREMIUM"
-                  line2="OVERSIZED"
-                  line3="T-SHIRT"
-                  highlightColor="#facc15"
-                  textColor="text-white"
-                />
-              </div>
-
-              <ul className="space-y-2 my-5">
-                {['100% Cotton', 'Premium Zipper', 'Oversized Fit', 'All Day Comfort', 'Premium Quality'].map((f, fIdx) => (
-                  <motion.li
-                    key={f}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.7 + fIdx * 0.08, duration: 0.4 }}
-                    className="flex items-center gap-2 text-[11px] font-medium text-white/80 transition-transform duration-200 hover:translate-x-1.5 cursor-default"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#facc15]" />
-                    {f}
-                  </motion.li>
-                ))}
-              </ul>
-
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 1.15, duration: 0.5 }}
-              >
-                <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-white/50 mb-2">
-                  Limited Stock — Order Now!
-                </span>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative overflow-hidden group/btn px-7 py-2.5 text-[11px] font-black uppercase tracking-widest text-black transition-all duration-300 hover:brightness-110 rounded-full shadow-md"
-                  style={{ background: 'linear-gradient(90deg,#facc15,#f59e0b)' }}
-                >
-                  {/* Glossy light-sweep shine on hover */}
-                  <span className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/50 to-transparent -skew-x-25 transition-all duration-700 ease-out group-hover/btn:left-[200%]" />
-                  <span className="relative z-10">ORDER NOW</span>
-                </motion.button>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Card 2 — Light / Cream (Slides in from RIGHT) */}
-          <motion.div
-            initial={{ opacity: 0, x: 100 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.25 }}
-            transition={{ type: 'spring', stiffness: 75, damping: 14 }}
-            className="group relative overflow-hidden rounded-3xl"
-            style={{ minHeight: '520px', background: 'linear-gradient(135deg,#f5f0e8 0%,#e8e0d0 100%)' }}
-          >
-            {/* Subtle light sweep shimmer on hover */}
-            <div className="card-shine" />
-
-            {/* Right: Model image — LARGE */}
-            <div className="absolute right-0 top-0 bottom-0 flex items-center justify-end" style={{ width: '72%' }}>
-              <img
-                src="/side09.png"
-                alt="Model"
-                className="h-full w-auto object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
-                style={{ filter: 'drop-shadow(-10px 0 20px rgba(0,0,0,0.12))' }}
-              />
-            </div>
-
-            {/* Subtle warm glow */}
-            <div className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 h-72 w-72 rounded-full"
-              style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.15), transparent 70%)' }} />
-
-            {/* Left: Text content */}
-            <div className="relative z-10 flex flex-col justify-between h-full p-8" style={{ minHeight: '520px', width: '52%' }}>
-              <div>
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-amber-700 text-sm">★★</span>
-                </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-700">Limited Edition</span>
-                <TypewriterBannerTitle
-                  line1="PREMIUM"
-                  line2="ZIPPER"
-                  line3="SHIRT"
-                  highlightColor="#b45309"
-                  textColor="text-[#1a1a1a]"
-                />
-              </div>
-
-              <ul className="space-y-2 my-5">
-                {['100% Cotton', 'Premium Zipper', 'Comfort Fit', 'All Day Comfort', 'Trending Design'].map((f, fIdx) => (
-                  <motion.li
-                    key={f}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.7 + fIdx * 0.08, duration: 0.4 }}
-                    className="flex items-center gap-2 text-[11px] font-medium text-black/75 transition-transform duration-200 hover:translate-x-1.5 cursor-default"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-amber-700" />
-                    {f}
-                  </motion.li>
-                ))}
-              </ul>
-
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 1.15, duration: 0.5 }}
-              >
-                <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-black/40 mb-2">
-                  Only A Few Made
-                </span>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative overflow-hidden group/btn px-7 py-2.5 text-[11px] font-black uppercase tracking-widest text-white transition-all duration-300 hover:opacity-90 rounded-full shadow-md bg-[#1a1a1a]"
-                >
-                  {/* Glossy light-sweep shine on hover */}
-                  <span className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-25 transition-all duration-700 ease-out group-hover/btn:left-[200%]" />
-                  <span className="relative z-10">LIMITED EDITION</span>
-                </motion.button>
-              </motion.div>
-            </div>
-          </motion.div>
-
-        </section>
       </div>
 
-      {/* Dual Big Drop Promo Banners Carousel */}
-      <DualPromoBanners />
+
+
+
+
+      {/* Our Top Picks Workout Gear Showcase Section */}
+      <TopPicksBanner />
 
       {/* Editorial Streetwear 3D Card Banner */}
       <EditorialBanner />
 
-      {/* Interactive Outfit Combo & Mix-Match Builder */}
-      <StyleLabShowcase />
 
 
-      {/* 6. Instagram carousel — infinite auto-scroll (Full Width Black Row) */}
+
+      {/* 6. Instagram reel cards row — Exactly 5 cards in 1 row on desktop */}
       <section className="w-full bg-[#0a0a0a] py-14 my-10 overflow-hidden">
-        {/* Premium two-tone heading */}
-        <h2 className="mb-10 text-center font-black uppercase px-4">
-          <span className="text-lg sm:text-xl tracking-[0.2em] text-white">SHOP FROM </span>
-          <span className="text-lg sm:text-xl tracking-[0.2em] text-[#facc15]">YOUR</span>
-          <span className="text-lg sm:text-xl tracking-[0.2em] text-white"> INSTAGRAME </span>
-          <span className="text-lg sm:text-xl tracking-[0.2em] text-[#facc15]">FAVORITES</span>
-        </h2>
-
-        {/* Infinite marquee track — overflow hidden on parent, no padding so cards bleed edge */}
-        <div className="overflow-hidden">
-          {/* marquee-track duplicates cards: original + clone = seamless loop */}
-          <div className="marquee-track flex gap-4 w-max">
-            {[...PLACEHOLDER_IMAGES, ...PLACEHOLDER_IMAGES].map((img, i) => (
-              <div
-                key={i}
-                className="w-[155px] sm:w-[175px] shrink-0 cursor-pointer"
-              >
-                {/* Card image */}
-                <div className="relative aspect-[3/4] overflow-hidden bg-neutral-900 shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
-                  <img
-                    src={img}
-                    alt="product"
-                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
-                  />
-
-                  {/* Top Selling gradient badge */}
-                  <span
-                    className="absolute left-2 top-2 px-2 py-[3px] text-[9px] font-black uppercase tracking-widest text-white"
-                    style={{ background: 'linear-gradient(90deg,#facc15,#f97316)' }}
-                  >
-                    Top Selling
-                  </span>
-
-                  {/* Follower count (every 3rd card) */}
-                  {i % 3 === 1 && (
-                    <span className="absolute bottom-2 left-2 bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">
-                      13.6K views
-                    </span>
-                  )}
-
-                  {/* Bottom scrim */}
-                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
-
-                  {/* Play button — glowing yellow */}
-                  <span className="absolute inset-0 flex items-center justify-center">
-                    <span
-                      className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#facc15] transition-all duration-200 hover:scale-110 cursor-pointer"
-                      style={{
-                        background: 'rgba(250,204,21,0.18)',
-                        boxShadow: '0 0 18px 4px rgba(250,204,21,0.25)',
-                      }}
-                    >
-                      <Play className="h-5 w-5 fill-[#facc15] text-[#facc15] ml-0.5" />
-                    </span>
-                  </span>
-                </div>
-
-                {/* Product info */}
-                <div className="mt-3 px-0.5">
-                  <p className="truncate text-[12px] font-semibold text-white/90 leading-snug">
-                    Oversized Stylish Men T-shirt
-                  </p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-[13px] font-black text-white">Rs. 450</span>
-                    <span className="text-[11px] text-white/35 line-through">Rs. 899</span>
-                    <span className="ml-auto text-[10px] font-bold text-green-400">50% OFF</span>
-                  </div>
-                  <button
-                    className="mt-2.5 w-full rounded-md py-2 text-[11px] font-black tracking-widest text-black uppercase transition-all duration-200 hover:brightness-110 hover:shadow-lg active:scale-95"
-                    style={{ background: 'linear-gradient(90deg,#facc15,#fbbf24)' }}
-                  >
-                    Add to cart
-                  </button>
-                </div>
-              </div>
-            ))}
+        {/* Stylish Modern Heading */}
+        <div className="mb-10 text-center px-4 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-2 mb-1.5">
+            <InstagramIcon className="h-4 sm:h-5 w-4 sm:w-5 text-[#facc15]" />
+            <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.3em] text-[#facc15]">
+              LIVE SHOPPING REELS
+            </span>
+          </div>
+          <h2 className="text-lg sm:text-2xl font-black uppercase tracking-[0.18em] text-white">
+            SHOP FROM YOUR INSTAGRAM FAVORITES
+          </h2>
+          <div className="mt-2.5 flex items-center justify-center gap-1.5">
+            <div className="h-0.5 w-10 bg-gradient-to-r from-transparent to-[#facc15]" />
+            <div className="h-1.5 w-1.5 rounded-full bg-[#facc15]" />
+            <div className="h-0.5 w-10 bg-gradient-to-l from-transparent to-[#facc15]" />
           </div>
         </div>
 
-        {/* Pause hint */}
-        <p className="mt-4 text-center text-[10px] text-white/30 tracking-widest uppercase">
-          Hover to pause
-        </p>
+        {/* Dynamic 4 or 5 Card Grid Container */}
+        <div className={`relative mx-auto w-full px-2 sm:px-4 lg:px-6 ${reelsDisplayCount === 5 ? 'max-w-[1980px]' : 'max-w-[1600px]'}`}>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-1.5 lg:gap-1.5 ${reelsDisplayCount === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+            {displayReels.slice(0, reelsDisplayCount).map((item) => (
+              <ReelCard key={item.id} item={item} reelsCount={reelsDisplayCount} />
+            ))}
+          </div>
+        </div>
       </section>
 
-      {/* 6.5 Brand DNA & Streetwear Quality Showcase */}
-      <BrandDnaShowcase />
+
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* 7. Customer reviews with AOS Animation & Functional Scroll */}
@@ -1088,7 +1232,7 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   const rail = document.getElementById('customer-reviews-rail');
-                  if (rail) rail.scrollBy({ left: -320, behavior: 'smooth' });
+                  if (rail) rail.scrollBy({ left: -360, behavior: 'smooth' });
                 }}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-xs transition-all duration-300 hover:bg-black hover:text-white hover:border-black active:scale-90"
                 aria-label="Previous review"
@@ -1098,7 +1242,7 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   const rail = document.getElementById('customer-reviews-rail');
-                  if (rail) rail.scrollBy({ left: 320, behavior: 'smooth' });
+                  if (rail) rail.scrollBy({ left: 360, behavior: 'smooth' });
                 }}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-xs transition-all duration-300 hover:bg-black hover:text-white hover:border-black active:scale-90"
                 aria-label="Next review"
@@ -1110,7 +1254,7 @@ export default function HomePage() {
 
           <div
             id="customer-reviews-rail"
-            className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+            className="flex gap-5 overflow-x-auto pt-3 pb-6 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth"
           >
             {REVIEWS.map((r, idx) => (
               <motion.div
@@ -1119,16 +1263,33 @@ export default function HomePage() {
                 data-aos-delay={idx * 120}
                 data-aos-duration="700"
                 whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className="min-w-[280px] max-w-[320px] shrink-0 snap-start rounded-2xl border border-black/10 bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-300"
+                className="relative min-w-[340px] max-w-[370px] shrink-0 snap-start rounded-md border border-slate-200 bg-white p-6 shadow-xs hover:shadow-md transition-all duration-300"
               >
-                <div className="flex items-center gap-1 text-amber-400">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  ))}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <Quote className="h-8 w-8 text-slate-200/90 stroke-[1.4] rotate-180 shrink-0" />
                 </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="text-base font-bold text-black">{r.name}</span>
-                  <CheckCircle2 className="h-4 w-4 fill-[#00c853] text-white" />
+
+                <div className="mt-4 flex items-center gap-3">
+                  {r.avatar ? (
+                    <img
+                      src={r.avatar}
+                      alt={r.name}
+                      className="h-10 w-10 rounded-full object-cover border border-slate-200 shrink-0 shadow-xs"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white font-bold text-xs">
+                      {r.name.charAt(0)}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-black">{r.name}</span>
+                    <CheckCircle2 className="h-4 w-4 fill-[#00c853] text-white" />
+                  </div>
                 </div>
                 <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-black/70 font-normal">{r.text}</p>
               </motion.div>

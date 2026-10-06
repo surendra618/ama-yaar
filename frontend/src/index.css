@@ -13,6 +13,12 @@
     }
 }
 
+/* Marquee ticker scroll animation */
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
 /* Custom modern scrollbars */
 ::-webkit-scrollbar {
     width: 7px;
@@ -65,21 +71,9 @@
   will-change: transform;
 }
 
-/* Card Light Sweep Shimmer */
+/* Card Light Sweep Shimmer - Disabled as requested */
 .card-shine {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.18), transparent);
-  transform: skewX(-20deg);
-  pointer-events: none;
-  transition: left 0.85s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 15;
-}
-.group:hover .card-shine {
-  left: 160%;
+  display: none !important;
 }
 
 .glass-nav {

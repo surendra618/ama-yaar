@@ -38,6 +38,11 @@ export default function CategoryFormPage() {
         banner: current.banner || '',
         isActive: current.isActive !== false,
       });
+    } else if (!isEdit) {
+      const parentQuery = new URLSearchParams(window.location.search).get('parent');
+      if (parentQuery) {
+        setForm((f) => ({ ...f, parent: parentQuery }));
+      }
     }
   }, [isEdit, current]);
 
@@ -150,24 +155,41 @@ export default function CategoryFormPage() {
             />
           </div>
 
-          {/* Parent Category */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Parent Category <span className="text-slate-400 font-normal">(Optional)</span>
-            </label>
+          {/* Parent Category / Hierarchy Selection */}
+          <div className="rounded-md border border-slate-200 bg-slate-50/80 p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-extrabold text-slate-800">
+                Category Level & Hierarchy
+              </label>
+              {form.parent ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-extrabold text-purple-700 border border-purple-200">
+                  ↳ Creating Child Subcategory
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-800 border border-blue-200">
+                  👑 Creating Main Parent Category
+                </span>
+              )}
+            </div>
+
             <select
               name="parent"
               value={form.parent}
               onChange={handleChange}
-              className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+              className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
             >
-              <option value="">None (Top-Level Category)</option>
+              <option value="">👑 None (Create as Main / Parent Category)</option>
               {parentOptions.map((c) => (
                 <option key={c._id} value={c._id}>
-                  {c.name}
+                  ↳ Make Subcategory under: {c.name} {c.parent ? '(Nested)' : '(Parent)'}
                 </option>
               ))}
             </select>
+
+            <div className="rounded-md bg-white p-2 border border-slate-200/80 text-[11px] text-slate-600 font-medium leading-relaxed space-y-0.5">
+              <p>• <strong className="text-blue-700 font-bold">Main Category</strong>: Appears directly in the Navbar header (e.g. Men, Women, Footwear).</p>
+              <p>• <strong className="text-purple-700 font-bold font-semibold">Subcategory</strong>: Appears in the dropdown megamenu of its parent (e.g. T-Shirts under Men).</p>
+            </div>
           </div>
 
           {/* Category Card Image Upload */}

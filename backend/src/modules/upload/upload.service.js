@@ -5,9 +5,15 @@ const env = require('../../config/env');
 const ApiError = require('../../utils/ApiError');
 
 async function uploadImage(file) {
+  return uploadMediaFile(file);
+}
+
+async function uploadMediaFile(file) {
   if (!file) {
-    throw new ApiError(400, 'No image file provided');
+    throw new ApiError(400, 'No file provided');
   }
+
+  const isVideo = file.mimetype.startsWith('video/');
 
   // Try Cloudinary if configured
   if (env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret) {
@@ -15,7 +21,7 @@ async function uploadImage(file) {
       const base64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
       const result = await cloudinary.uploader.upload(base64, {
         folder: 'ama-yaar',
-        resource_type: 'image',
+        resource_type: isVideo ? 'video' : 'image',
       });
       return {
         url: result.secure_url,
@@ -36,8 +42,9 @@ async function uploadImage(file) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
 
-  const ext = path.extname(file.originalname) || '.jpg';
-  const filename = `img-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+  const prefix = isVideo ? 'video' : 'img';
+  const ext = path.extname(file.originalname) || (isVideo ? '.mp4' : '.jpg');
+  const filename = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
   const filePath = path.join(uploadDir, filename);
 
   fs.writeFileSync(filePath, file.buffer);
@@ -48,4 +55,4 @@ async function uploadImage(file) {
   };
 }
 
-module.exports = { uploadImage };
+module.exports = { uploadImage, uploadMediaFile };

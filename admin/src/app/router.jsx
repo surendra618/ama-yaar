@@ -20,6 +20,10 @@ import PaymentsListPage from '../features/payments/pages/PaymentsListPage';
 import ReturnsListPage from '../features/returns/pages/ReturnsListPage';
 import ReturnDetailsPage from '../features/returns/pages/ReturnDetailsPage';
 import ReportsPage from '../features/reports/pages/ReportsPage';
+import ReelsListPage from '../features/reels/pages/ReelsListPage';
+import EditorialLooksListPage from '../features/editorialLooks/pages/EditorialLooksListPage';
+import BlogsListPage from '../features/blogs/pages/BlogsListPage';
+import ContactMessagesPage from '../features/contacts/pages/ContactMessagesPage';
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +46,11 @@ export const router = createBrowserRouter([
       { path: '/banners', element: <BannersListPage /> },
       { path: '/banners/new', element: <BannerFormPage /> },
       { path: '/banners/:id/edit', element: <BannerFormPage /> },
+      { path: '/reels', element: <ReelsListPage /> },
+      { path: '/editorial-looks', element: <EditorialLooksListPage /> },
+      { path: '/blogs', element: <BlogsListPage /> },
+      { path: '/blog', element: <BlogsListPage /> },
+      { path: '/contact-messages', element: <ContactMessagesPage /> },
       { path: '/payments', element: <PaymentsListPage /> },
       { path: '/returns', element: <ReturnsListPage /> },
       { path: '/returns/:id', element: <ReturnDetailsPage /> },

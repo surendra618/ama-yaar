@@ -22,6 +22,10 @@ import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage';
 import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage';
 import TermsPage from '../features/legal/pages/TermsPage';
 import PrivacyPolicyPage from '../features/legal/pages/PrivacyPolicyPage';
+import AboutPage from '../pages/AboutPage';
+import ContactPage from '../pages/ContactPage';
+import CareersPage from '../pages/CareersPage';
+import BlogPage from '../pages/BlogPage';
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +39,12 @@ export const router = createBrowserRouter([
       { path: '/orders/:id', element: <OrderDetailsPage /> },
       { path: '/terms', element: <TermsPage /> },
       { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
+      { path: '/about', element: <AboutPage /> },
+      { path: '/contact', element: <ContactPage /> },
+      { path: '/careers', element: <CareersPage /> },
+      { path: '/blog', element: <BlogPage /> },
+      { path: '/blogs', element: <BlogPage /> },
+      { path: '/stories', element: <BlogPage /> },
       
       // Redirects for direct navigation or old URLs
       { path: '/orders', element: <Navigate to="/account/orders" replace /> },

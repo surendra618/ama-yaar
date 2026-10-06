@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -344,6 +344,8 @@ export default function Navbar() {
       clearTimeout(leaveTimeoutRef.current);
       leaveTimeoutRef.current = null;
     }
+    setNotifMenuOpen(false);
+    setUserMenuOpen(false);
     setActiveMegaMenu(key);
   };
 
@@ -366,19 +368,149 @@ export default function Navbar() {
     navigate('/');
   };
 
-  const leftNavLinks = [
-    { key: 'SHOP', label: 'SHOP', to: '/products' },
-    { key: 'MEN', label: 'MEN', to: '/products?category=men' },
-    { key: 'WOMEN', label: 'WOMEN', to: '/products?category=women' },
-    { key: 'TRENDING', label: 'TRENDING', to: '/products?isTrending=true' },
-  ];
+  const leftNavLinks = useMemo(() => {
+    const base = [
+      { key: 'SHOP', label: 'SHOP', to: '/products' },
+      { key: 'CATEGORIES', label: 'CATEGORIES', to: '/products' },
+      { key: 'TRENDING', label: 'TRENDING', to: '/products?isTrending=true' },
+    ];
+
+    if (categories && categories.length > 0) {
+      const rootCats = categories.filter((c) => !c.parent && c.isActive !== false);
+
+      if (rootCats.length > 0) {
+        const dynamicCatLinks = rootCats.map((root) => ({
+          key: `CAT_${root._id}`,
+          label: root.name.toUpperCase(),
+          to: `/products?category=${root.slug}`,
+        }));
+
+        return [base[0], base[1], ...dynamicCatLinks, base[2]];
+      }
+    }
+
+    return base;
+  }, [categories]);
 
   const rightNavLinks = [
-    { key: 'CATEGORIES', label: 'CATEGORIES', to: '/products' },
-    { key: 'STORIES', label: 'STORIES', to: '/account/orders' },
+    { key: 'STORIES', label: 'STORIES', to: '/blog' },
   ];
 
-  const currentMenuData = activeMegaMenu ? MEGA_MENU_DATA[activeMegaMenu] : null;
+  const allMenuData = useMemo(() => {
+    const categoriesMenu = { ...MEGA_MENU_DATA.CATEGORIES };
+    const dynamicMenus = {};
+
+    if (categories && categories.length > 0) {
+      const rootCats = categories.filter((c) => !c.parent && c.isActive !== false);
+      const subCats = categories.filter((c) => c.parent && c.isActive !== false);
+
+      if (rootCats.length > 0) {
+        const catCols = [];
+        rootCats.forEach((root) => {
+          const children = subCats.filter(
+            (sub) => (sub.parent?._id || sub.parent)?.toString() === root._id?.toString()
+          );
+
+          if (children.length > 5) {
+            const half = Math.ceil(children.length / 2);
+            catCols.push({
+              heading: root.name,
+              items: children.slice(0, half).map((ch) => ({
+                name: ch.name,
+                to: `/products?category=${ch.slug}`,
+              })),
+            });
+            catCols.push({
+              heading: `${root.name} Essentials`,
+              items: children.slice(half).map((ch) => ({
+                name: ch.name,
+                to: `/products?category=${ch.slug}`,
+              })),
+            });
+          } else {
+            catCols.push({
+              heading: root.name,
+              items:
+                children.length > 0
+                  ? children.map((ch) => ({
+                      name: ch.name,
+                      to: `/products?category=${ch.slug}`,
+                    }))
+                  : [{ name: `Explore ${root.name}`, to: `/products?category=${root.slug}` }],
+            });
+          }
+        });
+        categoriesMenu.columns = catCols;
+
+        rootCats.forEach((root) => {
+          const children = subCats.filter(
+            (sub) => (sub.parent?._id || sub.parent)?.toString() === root._id?.toString()
+          );
+
+          const columns = [];
+          if (children.length > 0) {
+            const chunkSize = Math.max(3, Math.ceil(children.length / 3));
+            for (let i = 0; i < children.length; i += chunkSize) {
+              const chunk = children.slice(i, i + chunkSize);
+              const colIdx = Math.floor(i / chunkSize) + 1;
+              columns.push({
+                heading: colIdx === 1 ? `${root.name} Categories` : `More ${root.name}`,
+                items: chunk.map((ch) => ({
+                  name: ch.name,
+                  to: `/products?category=${ch.slug}`,
+                })),
+              });
+            }
+          } else {
+            columns.push({
+              heading: root.name,
+              items: [{ name: `All ${root.name} Fits`, to: `/products?category=${root.slug}` }],
+            });
+          }
+
+          dynamicMenus[`CAT_${root._id}`] = {
+            title: `${root.name} Collection`,
+            headingName: root.name,
+            slug: root.slug,
+            columns,
+            promos: [
+              {
+                title: root.name.toUpperCase(),
+                subtitle: `Explore ${root.name} Collection`,
+                image: root.image || root.banner || '/fashion-model.jpg',
+                to: `/products?category=${root.slug}`,
+              },
+            ],
+          };
+        });
+      } else {
+        categoriesMenu.columns = [
+          {
+            heading: 'All Categories',
+            items: categories.map((cat) => ({
+              name: cat.name,
+              to: `/products?category=${cat.slug}`,
+            })),
+          },
+        ];
+      }
+    } else {
+      categoriesMenu.columns = [
+        {
+          heading: 'Categories',
+          items: [{ name: 'Explore All Products', to: '/products' }],
+        },
+      ];
+    }
+
+    return {
+      ...MEGA_MENU_DATA,
+      CATEGORIES: categoriesMenu,
+      ...dynamicMenus,
+    };
+  }, [categories]);
+
+  const currentMenuData = activeMegaMenu ? allMenuData[activeMegaMenu] : null;
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white shadow-xs">
@@ -406,7 +538,7 @@ export default function Navbar() {
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
 
-            <div className="hidden items-center gap-7 md:flex">
+            <div className="hidden items-center gap-9 md:flex">
               {leftNavLinks.map((l) => {
                 const isActive = activeMegaMenu === l.key;
                 return (
@@ -445,7 +577,7 @@ export default function Navbar() {
 
           {/* Right: Secondary Links + Search & Actions */}
           <div className="flex items-center gap-4 sm:gap-6">
-            <div className="hidden items-center gap-7 md:flex">
+            <div className="hidden items-center gap-9 md:flex">
               {rightNavLinks.map((l) => {
                 const isActive = activeMegaMenu === l.key;
                 return (
@@ -508,7 +640,11 @@ export default function Navbar() {
             {isAuthenticated && (
               <div className="relative" ref={notifMenuRef}>
                 <button
-                  onClick={() => setNotifMenuOpen((v) => !v)}
+                  onClick={() => {
+                    setActiveMegaMenu(null);
+                    setUserMenuOpen(false);
+                    setNotifMenuOpen((v) => !v);
+                  }}
                   className="relative p-1 text-black hover:opacity-75 transition"
                   title="Notifications"
                 >
@@ -519,7 +655,7 @@ export default function Navbar() {
                 </button>
 
                 {notifMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-80 rounded-xl bg-white p-3 shadow-2xl ring-1 ring-black/10 z-50">
+                  <div className="absolute right-0 mt-3 w-80 rounded-sm bg-white p-3 shadow-sm border border-neutral-200 z-[60] animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between border-b border-black/10 pb-2">
                       <h4 className="text-sm font-bold text-black">Notifications</h4>
                       {unreadCount > 0 && (
@@ -539,9 +675,7 @@ export default function Navbar() {
                           <div
                             key={n._id}
                             onClick={() => dispatch(markNotificationRead(n._id))}
-                            className={`cursor-pointer rounded-lg p-2.5 text-xs transition hover:bg-black/5 ${
-                              !n.isRead ? 'bg-amber-50/60' : ''
-                            }`}
+                            className="cursor-pointer rounded-sm p-2.5 text-xs transition hover:bg-neutral-100 bg-white"
                           >
                             <p className="font-semibold text-black">{n.title}</p>
                             <p className="mt-0.5 text-black/60">{n.message}</p>
@@ -558,7 +692,11 @@ export default function Navbar() {
             {isAuthenticated ? (
               <div className="relative" ref={userMenuRef}>
                 <button
-                  onClick={() => setUserMenuOpen((v) => !v)}
+                  onClick={() => {
+                    setActiveMegaMenu(null);
+                    setNotifMenuOpen(false);
+                    setUserMenuOpen((v) => !v);
+                  }}
                   className="flex items-center gap-1.5 p-1 text-black hover:opacity-75 transition"
                 >
                   <User className="h-[19px] w-[19px]" />
@@ -566,9 +704,9 @@ export default function Navbar() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white p-2.5 shadow-lg border border-neutral-200 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-3 w-56 rounded-sm bg-white p-2.5 shadow-sm border border-neutral-200 z-[60] animate-in fade-in zoom-in-95 duration-150">
                     {/* User Info Header */}
-                    <div className="p-3 bg-neutral-50 mb-1.5">
+                    <div className="p-3 bg-neutral-50 mb-1.5 rounded-sm">
                       <p className="truncate text-xs font-black text-neutral-900 tracking-tight">{user?.name}</p>
                       <p className="truncate text-[11px] font-medium text-neutral-500 mt-0.5">{user?.email}</p>
                     </div>
@@ -578,7 +716,7 @@ export default function Navbar() {
                       <Link
                         to="/account/profile"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
+                        className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black rounded-sm transition"
                       >
                         <User className="h-4 w-4 text-neutral-600" /> My Profile
                       </Link>
@@ -588,7 +726,7 @@ export default function Navbar() {
                           setUserMenuOpen(false);
                           handleLogout();
                         }}
-                        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition"
+                        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-sm transition"
                       >
                         <LogOut className="h-4 w-4 text-rose-600" /> Sign Out
                       </button>
@@ -649,7 +787,7 @@ export default function Navbar() {
               transition={{ duration: 0.15, ease: 'easeOut' }}
               onMouseEnter={() => handleMouseEnter(activeMegaMenu)}
               onMouseLeave={handleMouseLeave}
-              className="absolute left-0 right-0 top-full z-50 w-full border-b border-black/10 bg-white shadow-2xl"
+              className="absolute left-0 right-0 top-full z-50 w-full border-b border-neutral-200/80 bg-white shadow-sm"
             >
               <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
                 {/* Header title inside dropdown */}
@@ -659,7 +797,9 @@ export default function Navbar() {
                   </h3>
                   <Link
                     to={
-                      activeMegaMenu === 'MEN'
+                      currentMenuData?.slug
+                        ? `/products?category=${currentMenuData.slug}`
+                        : activeMegaMenu === 'MEN'
                         ? '/products?category=men'
                         : activeMegaMenu === 'WOMEN'
                         ? '/products?category=women'
@@ -670,7 +810,7 @@ export default function Navbar() {
                     onClick={() => setActiveMegaMenu(null)}
                     className="group inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-black hover:text-neutral-500 transition"
                   >
-                    View All in {activeMegaMenu}
+                    View All in {currentMenuData?.headingName || activeMegaMenu}
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </div>
@@ -737,50 +877,7 @@ export default function Navbar() {
                   </div>
                 </div>
 
-                {/* Bottom Quick Picks Bar */}
-                <div className="mt-6 flex flex-wrap items-center justify-between border-t border-neutral-100 pt-4 text-xs text-neutral-500">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-black uppercase text-[11px]">Quick Picks:</span>
-                    <Link
-                      to="/products?category=oversized-printed"
-                      onClick={() => setActiveMegaMenu(null)}
-                      className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-medium text-neutral-700 hover:bg-black hover:text-white transition"
-                    >
-                      Oversized Heavy Tees
-                    </Link>
-                    <Link
-                      to="/products?search=acid+wash"
-                      onClick={() => setActiveMegaMenu(null)}
-                      className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-medium text-neutral-700 hover:bg-black hover:text-white transition"
-                    >
-                      Acid Wash Series
-                    </Link>
-                    <Link
-                      to="/products?search=cargo"
-                      onClick={() => setActiveMegaMenu(null)}
-                      className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-medium text-neutral-700 hover:bg-black hover:text-white transition"
-                    >
-                      Utility Cargoes
-                    </Link>
-                    <Link
-                      to="/products?category=polo-t-shirt"
-                      onClick={() => setActiveMegaMenu(null)}
-                      className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-medium text-neutral-700 hover:bg-black hover:text-white transition"
-                    >
-                      Polo & Henley
-                    </Link>
-                  </div>
 
-                  <div className="flex items-center gap-4 text-[11px] font-medium">
-                    <span className="text-neutral-600 font-semibold">
-                      100% Heavyweight Cotton
-                    </span>
-                    <span className="text-neutral-300">|</span>
-                    <span className="text-neutral-600 font-semibold">
-                      Free Shipping on ₹999+
-                    </span>
-                  </div>
-                </div>
               </div>
             </motion.div>
           )}
@@ -816,9 +913,9 @@ export default function Navbar() {
 
             {/* Mobile Nav Accordions */}
             <div className="divide-y divide-neutral-100">
-              {Object.keys(MEGA_MENU_DATA).map((key) => {
+              {Object.keys(allMenuData).map((key) => {
                 const isExpanded = mobileExpandedSection === key;
-                const menu = MEGA_MENU_DATA[key];
+                const menu = allMenuData[key];
                 return (
                   <div key={key} className="py-2">
                     <div

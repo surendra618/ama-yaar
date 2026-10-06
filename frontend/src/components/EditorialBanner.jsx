@@ -6,7 +6,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 const LOOKS = [
   {
     id: 1,
-    image: '/cardauto.png',
+    image: '/Streetwear Cutout with Headphones.png',
     fallback: '/boys.png',
     title: 'CARGO HIGH RIB',
     subtitle: 'JOGGER FIT',
@@ -21,7 +21,7 @@ const LOOKS = [
   },
   {
     id: 2,
-    image: '/9b785fa2c182d0e2a6851851c660f942a8e3154e.png',
+    image: '/Ivory Jacket Streetwear Cutout.png',
     fallback: '/boyse.png',
     title: 'TACTICAL CAP & TANK',
     subtitle: 'STREET MATRIX',
@@ -36,7 +36,7 @@ const LOOKS = [
   },
   {
     id: 3,
-    image: '/cardauto.png',
+    image: '/Streetwear Model in Oversized Hoodie.png',
     fallback: '/cardauto.png',
     title: 'RAW VINTAGE FIT',
     subtitle: 'OVERSIZED DRIP',
@@ -51,7 +51,7 @@ const LOOKS = [
   },
   {
     id: 4,
-    image: '/cardauto2.png',
+    image: '/Curly-Haired Model in Beige Polo.png',
     fallback: '/boyse.png',
     title: 'GRAPHIC EAGLE TEE',
     subtitle: 'HEAVYWEIGHT COTTON',
@@ -62,11 +62,11 @@ const LOOKS = [
     category1: 'TRACK PANTS',
     category2: 'RETRO KICKS',
     gradient: 'from-[#211624] via-[#3d2744] to-[#cbbece]',
-    isCutout: false,
+    isCutout: true,
   },
   {
     id: 5,
-    image: '/model-nirvana.jpg',
+    image: '/Stylish Streetwear Man with Backpack.png',
     fallback: '/boyse.png',
     title: 'BOXY POLO SHIRT',
     subtitle: 'SUMMER EDITION',
@@ -77,25 +77,58 @@ const LOOKS = [
     category1: 'DENIM SHORTS',
     category2: 'SNEAKER',
     gradient: 'from-[#17211f] via-[#2c3d39] to-[#bed3cd]',
-    isCutout: false,
+    isCutout: true,
   },
 ];
 
 export default function EditorialBanner() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [dbLooks, setDbLooks] = useState([]);
   const cardRef = useRef(null);
 
-  // Auto-cycle look every 1.5 seconds unless hovered/paused
+  useEffect(() => {
+    fetch('http://localhost:5000/api/v1/editorial-looks')
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.data && resData.data.length > 0) {
+          const parsed = resData.data.map((item, idx) => ({
+            id: item._id || idx,
+            title: item.title,
+            subtitle: item.subtitle,
+            tag: item.tag,
+            season: item.season,
+            drop: item.drop,
+            status: item.status,
+            category1: item.category1,
+            category2: item.category2,
+            image: item.image?.startsWith('http')
+              ? item.image
+              : item.image?.startsWith('/uploads')
+                ? `http://localhost:5000${item.image}`
+                : item.image,
+            fallback: item.fallback || '/boyse.png',
+            gradient: item.gradient || 'from-[#202125] via-[#3a3d44] to-[#bfc4c9]',
+            isCutout: item.isCutout !== undefined ? Boolean(item.isCutout) : true,
+          }));
+          setDbLooks(parsed);
+        }
+      })
+      .catch(() => { });
+  }, []);
+
+  const displayLooks = dbLooks.length > 0 ? dbLooks : LOOKS;
+
+  // Auto-cycle look every 3.8 seconds unless hovered/paused
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % LOOKS.length);
-    }, 1500);
+      setCurrentIndex((prev) => (prev + 1) % displayLooks.length);
+    }, 3800);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, displayLooks.length]);
 
-  const activeLook = LOOKS[currentIndex];
+  const activeLook = displayLooks[currentIndex] || displayLooks[0];
 
   // 3D Tilt calculation
   const mouseX = useMotionValue(0);
@@ -124,12 +157,12 @@ export default function EditorialBanner() {
 
   const handleNext = (e) => {
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev + 1) % LOOKS.length);
+    setCurrentIndex((prev) => (prev + 1) % displayLooks.length);
   };
 
   const handlePrev = (e) => {
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev - 1 + LOOKS.length) % LOOKS.length);
+    setCurrentIndex((prev) => (prev - 1 + displayLooks.length) % displayLooks.length);
   };
 
   // Repeated text strings for continuous infinite marquee
@@ -140,39 +173,6 @@ export default function EditorialBanner() {
     <section className="relative w-full py-12 sm:py-16 bg-[#edf0f4] overflow-hidden select-none">
 
       {/* ── 1. Background Continuous Marquee Typography (Outer Section Tracks) ── */}
-      {/* Top Marquee Row — Outer background track (z-0) */}
-      <div
-        className="pointer-events-none absolute top-[9%] sm:top-[12%] left-0 right-0 overflow-hidden z-0"
-        style={{
-          maskImage: 'linear-gradient(to right, #000 0%, #000 min(calc(50% + 80px), calc(50% + 22vw)), transparent min(calc(50% + 210px), calc(50% + 45vw)))',
-          WebkitMaskImage: 'linear-gradient(to right, #000 0%, #000 min(calc(50% + 80px), calc(50% + 22vw)), transparent min(calc(50% + 210px), calc(50% + 45vw)))',
-        }}
-      >
-        <div className="w-full overflow-hidden whitespace-nowrap flex">
-          <div className="flex shrink-0 items-center marquee-track-reverse">
-            <span
-              className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/85 pr-8"
-              style={{
-                fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif',
-              }}
-            >
-              {topMarqueeText.repeat(4)}
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center marquee-track-reverse" aria-hidden="true">
-            <span
-              className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/85 pr-8"
-              style={{
-                fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif',
-              }}
-            >
-              {topMarqueeText.repeat(4)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Marquee Row — Single continuous straight line, in front of lower card (z-30) */}
       <div
         className="pointer-events-none absolute bottom-[9%] sm:bottom-[12%] left-0 right-0 overflow-hidden z-30"
         style={{
@@ -224,38 +224,28 @@ export default function EditorialBanner() {
             stiffness: 90,
             damping: 16,
           }}
-          className="group relative w-full max-w-[340px] sm:max-w-[380px] md:max-w-[420px] h-[500px] sm:h-[550px] md:h-[580px] rounded-[32px] sm:rounded-[36px] overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.2)] cursor-pointer"
+          className="group relative w-full max-w-[340px] sm:max-w-[380px] md:max-w-[420px] h-[500px] sm:h-[550px] md:h-[580px] rounded-[32px] sm:rounded-[36px] shadow-[0_24px_60px_rgba(0,0,0,0.2)] cursor-pointer"
         >
           {/* Fixed Editorial Card Gradient Background */}
-          <div
-            className="absolute inset-0 bg-gradient-to-b from-[#222327] via-[#43454d] to-[#c2c6cb] transition-transform duration-700 ease-out group-hover:scale-105 z-0"
-          />
+          <div className="absolute inset-0 rounded-[32px] sm:rounded-[36px] overflow-hidden z-0">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#222327] via-[#43454d] to-[#c2c6cb] transition-transform duration-700 ease-out group-hover:scale-105" />
+          </div>
 
-          {/* Top Marquee inside the card — Over card background, UNDER model image (z-[5]) */}
-          <div
-            className="pointer-events-none absolute top-[9%] sm:top-[12%] left-1/2 -translate-x-1/2 w-screen overflow-hidden z-[5]"
-            style={{
-              maskImage: 'linear-gradient(to right, #000 0%, #000 min(calc(50% + 80px), calc(50% + 22vw)), transparent min(calc(50% + 210px), calc(50% + 45vw)))',
-              WebkitMaskImage: 'linear-gradient(to right, #000 0%, #000 min(calc(50% + 80px), calc(50% + 22vw)), transparent min(calc(50% + 210px), calc(50% + 45vw)))',
-            }}
-          >
+          {/* Top Marquee (Comes from left outside card, passes BELOW model image z-[3], ends at right edge of card right-0) */}
+          <div className="pointer-events-none absolute top-[12%] sm:top-[15%] right-0 -left-[100vw] overflow-hidden z-[3]">
             <div className="w-full overflow-hidden whitespace-nowrap flex">
               <div className="flex shrink-0 items-center marquee-track-reverse">
                 <span
-                  className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/90 pr-8"
-                  style={{
-                    fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif',
-                  }}
+                  className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/85 pr-8"
+                  style={{ fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif' }}
                 >
                   {topMarqueeText.repeat(4)}
                 </span>
               </div>
               <div className="flex shrink-0 items-center marquee-track-reverse" aria-hidden="true">
                 <span
-                  className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/90 pr-8"
-                  style={{
-                    fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif',
-                  }}
+                  className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/85 pr-8"
+                  style={{ fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif' }}
                 >
                   {topMarqueeText.repeat(4)}
                 </span>
@@ -264,14 +254,14 @@ export default function EditorialBanner() {
           </div>
 
           {/* Card Shimmer Sheen Beam */}
-          <div className="card-shine" />
+          <div className="card-shine rounded-[32px] sm:rounded-[36px]" />
 
           {/* Ambient Inner Lighting Glow */}
           <div className="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-white/10 blur-[80px]" />
 
-          {/* ── Auto-Switching Model Image in FRONT of top text (z-10) ── */}
-          <div className="absolute inset-0 flex items-center justify-center pt-8 pb-4 pointer-events-none overflow-hidden z-10">
-            <AnimatePresence mode="wait">
+          {/* ── Auto-Switching Model Image in FRONT of top text with Vertical Reveal (z-10) ── */}
+          <div className="absolute inset-0 flex items-center justify-center pt-8 pb-4 pointer-events-none overflow-hidden z-10 rounded-[32px] sm:rounded-[36px]">
+            <AnimatePresence>
               <motion.img
                 key={activeLook.id}
                 src={activeLook.image}
@@ -280,14 +270,32 @@ export default function EditorialBanner() {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src = activeLook.fallback;
                 }}
-                initial={{ opacity: 0, scale: 0.92, y: 15 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 1.04, y: -10 }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                initial={{
+                  opacity: 0,
+                  y: currentIndex % 2 === 0 ? 40 : -40,
+                  clipPath: currentIndex % 2 === 0 ? 'inset(100% 0% 0% 0%)' : 'inset(0% 0% 100% 0%)',
+                  scale: 0.96,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  clipPath: 'inset(0% 0% 0% 0%)',
+                  scale: 1,
+                }}
+                exit={{
+                  opacity: 0,
+                  y: currentIndex % 2 === 0 ? -30 : 30,
+                  clipPath: currentIndex % 2 === 0 ? 'inset(0% 0% 100% 0%)' : 'inset(100% 0% 0% 0%)',
+                  scale: 0.97,
+                }}
+                transition={{
+                  duration: 2,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 className={
                   activeLook.isCutout
-                    ? "h-[88%] sm:h-[92%] w-auto object-contain object-bottom filter drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] transition-transform duration-700 ease-out group-hover:scale-105"
-                    : "h-full w-full object-cover object-center filter brightness-95 transition-transform duration-700 ease-out group-hover:scale-105"
+                    ? "absolute h-[88%] sm:h-[92%] w-auto object-contain object-bottom filter drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] transition-transform duration-700 ease-out group-hover:scale-105"
+                    : "absolute h-full w-full object-cover object-center filter brightness-95 transition-transform duration-700 ease-out group-hover:scale-105"
                 }
               />
             </AnimatePresence>
@@ -325,7 +333,7 @@ export default function EditorialBanner() {
 
             {/* Slide Indicator Dots */}
             <div className="flex items-center gap-1.5 pt-1">
-              {LOOKS.map((look, i) => (
+              {displayLooks.map((look, i) => (
                 <button
                   key={look.id}
                   onClick={(e) => {
