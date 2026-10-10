@@ -23,6 +23,8 @@ const editorialLookRoutes = require('../modules/editorialLook');
 const blogRoutes = require('../modules/blog');
 const { contactRoutes } = require('../modules/contact');
 
+const cardSliderRoutes = require('../modules/cardSlider');
+
 const router = express.Router();
 
 router.use('/auth', authRoutes);
@@ -36,6 +38,7 @@ router.use('/payments', paymentRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/coupons', couponRoutes);
 router.use('/banners', bannerRoutes);
+router.use('/card-sliders', cardSliderRoutes);
 router.use('/reels', reelRoutes);
 router.use('/editorial-looks', editorialLookRoutes);
 router.use('/blogs', blogRoutes);

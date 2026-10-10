@@ -5,6 +5,7 @@ const User = require('./modules/user/user.model');
 const Category = require('./modules/category/category.model');
 const Product = require('./modules/product/product.model');
 const Banner = require('./modules/banner/banner.model');
+const CardSlider = require('./modules/cardSlider/cardSlider.model');
 const Coupon = require('./modules/coupon/coupon.model');
 const Address = require('./modules/address/address.model');
 const Order = require('./modules/order/order.model');
@@ -20,6 +21,7 @@ async function seedData() {
     Category.deleteMany({}),
     Product.deleteMany({}),
     Banner.deleteMany({}),
+    CardSlider.deleteMany({}),
     Coupon.deleteMany({}),
     Address.deleteMany({}),
     Order.deleteMany({}),
@@ -1767,6 +1769,481 @@ async function seedData() {
       ],
       highlights: ['SkinGlide Protective Coating', '360-D Flexible Shaving Heads', 'Wet & Dry Operation'],
     },
+
+    // =====================================
+    // NEW MEN'S FASHION SEED PRODUCTS
+    // =====================================
+    // 1. SHIRTS
+    {
+      name: "Men's Classic Textured Linen Resort Casual Shirt",
+      slug: "mens-classic-textured-linen-resort-casual-shirt",
+      description: "Breathable 100% natural linen-cotton blend shirt crafted for summer comfort and relaxed urban aesthetics. Features a spread collar and mother-of-pearl buttons.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&q=80",
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&q=80"
+      ],
+      price: 1499,
+      mrp: 2799,
+      discount: 46,
+      stock: 50,
+      rating: 4.7,
+      numReviews: 45,
+      isNewArrival: true,
+      isTrending: true,
+      variants: [
+        { size: 'M', color: 'Sand Beige', stock: 15, sku: 'SHIRT-BEG-M' },
+        { size: 'L', color: 'Sand Beige', stock: 20, sku: 'SHIRT-BEG-L' },
+        { size: 'XL', color: 'Olive Green', stock: 15, sku: 'SHIRT-OLV-XL' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '70% Linen, 30% Combed Cotton' },
+        { name: 'Fit', value: 'Relaxed Fit' },
+        { name: 'Sleeve', value: 'Full Sleeves with Roll-up Button' }
+      ],
+      highlights: ['Pre-washed Ultra Soft Linen', 'Breathable & Sweat-Absorbing', 'Reinforced Double Stitching'],
+      tags: ['men', 'shirt', 'linen', 'casual', 'fashion']
+    },
+    {
+      name: "Men's Luxury Satin Printed Cuban Partywear Shirt",
+      slug: "mens-luxury-satin-printed-cuban-partywear-shirt",
+      description: "Silky-smooth Cuban collar shirt with vibrant micro-abstract digital prints. Perfect for evening outings, beach vacations, and streetwear styling.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&q=80",
+        "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&q=80"
+      ],
+      price: 1299,
+      mrp: 2499,
+      discount: 48,
+      stock: 40,
+      rating: 4.8,
+      numReviews: 38,
+      isFeatured: true,
+      variants: [
+        { size: 'M', color: 'Abstract Midnight Black', stock: 15, sku: 'SHIRT-SAT-M' },
+        { size: 'L', color: 'Abstract Midnight Black', stock: 15, sku: 'SHIRT-SAT-L' },
+        { size: 'XL', color: 'Abstract Midnight Black', stock: 10, sku: 'SHIRT-SAT-XL' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: 'High-Density Premium Micro Satin' },
+        { name: 'Collar', value: 'Cuban / Camp Collar' },
+        { name: 'Care', value: 'Machine Wash Cold' }
+      ],
+      highlights: ['Silky Smooth Handfeel', 'Fade-Resistant Digital Print', 'Wrinkle-Free Fabric'],
+      tags: ['men', 'shirt', 'satin', 'partywear', 'cuban']
+    },
+
+    // 2. GANJI / TANK TOPS
+    {
+      name: "Men's Heavyweight Ribbed Cotton Gym Athletic Ganji (Tank Top)",
+      slug: "mens-heavyweight-ribbed-cotton-gym-athletic-ganji",
+      description: "Structured 220 GSM 100% ribbed cotton undershirt & gym vest. Cut with deep armholes for maximum breathability during workouts or layering.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=800&q=80",
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80"
+      ],
+      price: 499,
+      mrp: 999,
+      discount: 50,
+      stock: 80,
+      rating: 4.6,
+      numReviews: 92,
+      isBestSeller: true,
+      variants: [
+        { size: 'M', color: 'Pure White', stock: 30, sku: 'GANJI-WHT-M' },
+        { size: 'L', color: 'Stealth Black', stock: 30, sku: 'GANJI-BLK-L' },
+        { size: 'XL', color: 'Charcoal Grey', stock: 20, sku: 'GANJI-GRY-XL' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '100% Combed Ribbed Cotton (220 GSM)' },
+        { name: 'Fit', value: 'Athletic Slim Fit' },
+        { name: 'Type', value: 'Sleeveless Gym Ganji / Tank Top' }
+      ],
+      highlights: ['High Stretch Rib Fabric', 'Moisture-Wicking & Breathable', 'Reinforced Shoulder Hem'],
+      tags: ['men', 'ganji', 'tank top', 'undershirt', 'gym']
+    },
+    {
+      name: "Men's Streetwear Raw-Edge Oversized Sleeveless Ganji Tee",
+      slug: "mens-streetwear-raw-edge-oversized-sleeveless-ganji-tee",
+      description: "Drop-shoulder relaxed fit streetwear ganji tee with raw distressed hemlines. Built from heavyweight bio-washed cotton for urban layering.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&q=80",
+        "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=800&q=80"
+      ],
+      price: 699,
+      mrp: 1499,
+      discount: 53,
+      stock: 45,
+      rating: 4.9,
+      numReviews: 29,
+      isTrending: true,
+      variants: [
+        { size: 'M', color: 'Acid Vintage Black', stock: 20, sku: 'GANJI-ACD-M' },
+        { size: 'L', color: 'Acid Vintage Black', stock: 15, sku: 'GANJI-ACD-L' },
+        { size: 'XL', color: 'Raw Sand', stock: 10, sku: 'GANJI-SND-XL' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '240 GSM Bio-Washed Heavy Cotton' },
+        { name: 'Cut', value: 'Boxy Oversized Cutout' }
+      ],
+      highlights: ['Boxy Streetwear Drape', 'Zero Crack Acid Print Details', 'Durable Neck Rib'],
+      tags: ['men', 'ganji', 'streetwear', 'oversized', 'sleeveless']
+    },
+
+    // 3. JEANS
+    {
+      name: "Men's Distressed Acid Wash Straight Fit Denim Jeans",
+      slug: "mens-distressed-acid-wash-straight-fit-denim-jeans",
+      description: "Heavyweight 14oz pure denim jeans featuring artisanal acid wash highlights and subtle knee distressing. Engineered for timeless rugged street style.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1542272604-780c36856d66?w=800&q=80",
+        "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80"
+      ],
+      price: 2199,
+      mrp: 3999,
+      discount: 45,
+      stock: 40,
+      rating: 4.8,
+      numReviews: 64,
+      isBestSeller: true,
+      variants: [
+        { size: '30', color: 'Acid Vintage Blue', stock: 10, sku: 'JEANS-ACD-30' },
+        { size: '32', color: 'Acid Vintage Blue', stock: 15, sku: 'JEANS-ACD-32' },
+        { size: '34', color: 'Acid Vintage Blue', stock: 15, sku: 'JEANS-ACD-34' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '99% Cotton, 1% Elastane (14 oz Denim)' },
+        { name: 'Fit', value: 'Straight Relaxed Fit' },
+        { name: 'Fly', value: 'Heavy Duty Metal Zip Fly' }
+      ],
+      highlights: ['1-of-1 Handcrafted Acid Wash', 'Heavy-Duty Brass Rivets', 'Comfort Stretch Fabric'],
+      tags: ['men', 'jeans', 'denim', 'acid wash', 'pants']
+    },
+    {
+      name: "Men's Vintage Indigo Loose Baggy Skater Denim Jeans",
+      slug: "mens-vintage-indigo-loose-baggy-skater-denim-jeans",
+      description: "90s inspired ultra-wide leg baggy jeans with authentic stone wash treatment and 5 classic deep utility pockets.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1604176354204-9268737828e4?w=800&q=80",
+        "https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=800&q=80"
+      ],
+      price: 2499,
+      mrp: 4499,
+      discount: 44,
+      stock: 35,
+      rating: 4.9,
+      numReviews: 53,
+      isTrending: true,
+      variants: [
+        { size: '30', color: 'Raw Deep Indigo', stock: 10, sku: 'JEANS-BAG-30' },
+        { size: '32', color: 'Raw Deep Indigo', stock: 15, sku: 'JEANS-BAG-32' },
+        { size: '34', color: 'Raw Deep Indigo', stock: 10, sku: 'JEANS-BAG-34' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '100% Rigid Non-Stretch Denim' },
+        { name: 'Fit', value: 'Wide Leg Baggy Skater Fit' }
+      ],
+      highlights: ['90s Vintage Skater Drape', 'Reinforced Pocket Lining', 'Pre-Shrunk Denim'],
+      tags: ['men', 'jeans', 'baggy', 'denim', 'skater']
+    },
+
+    // 4. PANTS / TROUSERS (PAINT)
+    {
+      name: "Men's 6-Pocket Tactical Urban Utility Cargo Pants",
+      slug: "mens-6-pocket-tactical-urban-utility-cargo-pants",
+      description: "Functional streetwear cargos constructed from durable cotton twill fabric with expandable side 3D flap pockets and adjustable drawstring ankles.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&q=80",
+        "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?w=800&q=80"
+      ],
+      price: 1899,
+      mrp: 3499,
+      discount: 45,
+      stock: 45,
+      rating: 4.7,
+      numReviews: 71,
+      isFeatured: true,
+      variants: [
+        { size: '30', color: 'Tactical Olive', stock: 15, sku: 'CARGO-OLV-30' },
+        { size: '32', color: 'Stealth Black', stock: 15, sku: 'CARGO-BLK-32' },
+        { size: '34', color: 'Tactical Olive', stock: 15, sku: 'CARGO-OLV-34' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '100% Heavy Duty Cotton Twill' },
+        { name: 'Pockets', value: '6 Functional Utility Pockets' },
+        { name: 'Closure', value: 'Elasticated Waist with Drawstring' }
+      ],
+      highlights: ['Multi-Pocket Functional Storage', 'Adjustable Ankle Cuffs', 'Ripstop Twill Durability'],
+      tags: ['men', 'pants', 'cargo', 'trousers', 'utility']
+    },
+    {
+      name: "Men's Tailored Stretch Cotton Chino Trousers",
+      slug: "mens-tailored-stretch-cotton-chino-trousers",
+      description: "Sleek formal-to-casual chino trousers featuring 4-way stretch fabric, hidden coin pocket, and a clean flat-front design.",
+      brand: "Raymond",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800&q=80",
+        "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=800&q=80"
+      ],
+      price: 1699,
+      mrp: 2999,
+      discount: 43,
+      stock: 50,
+      rating: 4.6,
+      numReviews: 48,
+      variants: [
+        { size: '30', color: 'Khaki Beige', stock: 15, sku: 'CHINO-KHK-30' },
+        { size: '32', color: 'Navy Blue', stock: 20, sku: 'CHINO-NVY-32' },
+        { size: '34', color: 'Khaki Beige', stock: 15, sku: 'CHINO-KHK-34' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '97% Cotton, 3% Elastane' },
+        { name: 'Fit', value: 'Modern Slim Tapered' }
+      ],
+      highlights: ['Flex-Comfort Waistband', 'Wrinkle-Resistant Cotton', 'Versatile Work-to-Weekend Style'],
+      tags: ['men', 'pants', 'chinos', 'trousers', 'formal']
+    },
+
+    // 5. COAT / BLAZER (COUT)
+    {
+      name: "Men's Italian Tailored Double-Breasted Suit Coat Blazer",
+      slug: "mens-italian-tailored-double-breasted-suit-coat-blazer",
+      description: "Sophisticated Italian-cut formal blazer crafted from fine wool-blend fabric with peak lapels, gold-tone embossed buttons, and soft interior satin lining.",
+      brand: "Raymond",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&q=80",
+        "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&q=80"
+      ],
+      price: 4999,
+      mrp: 8999,
+      discount: 44,
+      stock: 25,
+      rating: 4.9,
+      numReviews: 34,
+      isFeatured: true,
+      variants: [
+        { size: '38 (M)', color: 'Royal Charcoal', stock: 10, sku: 'COAT-CHR-38' },
+        { size: '40 (L)', color: 'Royal Charcoal', stock: 10, sku: 'COAT-CHR-40' },
+        { size: '42 (XL)', color: 'Midnight Navy', stock: 5, sku: 'COAT-NVY-42' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '65% Fine Wool, 35% Viscose' },
+        { name: 'Lining', value: '100% Breathable Silk-Feel Poly-Satin' },
+        { name: 'Fit', value: 'Structured Tailored Fit' }
+      ],
+      highlights: ['Premium Peak Lapel Design', 'Double-Vent Back for Mobility', 'Dual Interior Passport Pockets'],
+      tags: ['men', 'coat', 'blazer', 'suit', 'formal']
+    },
+    {
+      name: "Men's Heavywool Vintage Double-Breasted Winter Overcoat",
+      slug: "mens-heavywool-vintage-double-breasted-winter-overcoat",
+      description: "Longline winter overcoat with broad lapels and deep welt pockets. Designed for supreme cold-weather insulation and timeless street elegance.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&q=80",
+        "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=800&q=80"
+      ],
+      price: 5499,
+      mrp: 9999,
+      discount: 45,
+      stock: 20,
+      rating: 4.8,
+      numReviews: 22,
+      isTrending: true,
+      variants: [
+        { size: 'M', color: 'Camel Tan', stock: 8, sku: 'OVERCOAT-CAM-M' },
+        { size: 'L', color: 'Camel Tan', stock: 8, sku: 'OVERCOAT-CAM-L' },
+        { size: 'XL', color: 'Obsidian Black', stock: 4, sku: 'OVERCOAT-BLK-XL' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '70% Wool Blend (Heavyweight 450 GSM)' },
+        { name: 'Length', value: 'Knee-Length Longline Cut' }
+      ],
+      highlights: ['Thermal Fleece Inner Lining', 'Classic Trench-Inspired Back Vent', 'Heavy Duty Horn Buttons'],
+      tags: ['men', 'coat', 'overcoat', 'winter', 'jacket']
+    },
+
+    // 6. LOWER / JOGGERS (LOYAR)
+    {
+      name: "Men's Heavyweight Fleece Athletic Jogger Lower",
+      slug: "mens-heavyweight-fleece-athletic-jogger-lower",
+      description: "Ultra-comfortable 320 GSM cotton-fleece trackpant lower with deep zippered phone pockets, custom metal tipped drawstrings, and ribbed ankle cuffs.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=800&q=80",
+        "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?w=800&q=80"
+      ],
+      price: 1199,
+      mrp: 2299,
+      discount: 47,
+      stock: 60,
+      rating: 4.7,
+      numReviews: 88,
+      isBestSeller: true,
+      variants: [
+        { size: 'M', color: 'Melange Charcoal', stock: 20, sku: 'LOWER-CHR-M' },
+        { size: 'L', color: 'Jet Black', stock: 25, sku: 'LOWER-BLK-L' },
+        { size: 'XL', color: 'Heather Grey', stock: 15, sku: 'LOWER-GRY-XL' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '80% Combed Cotton, 20% Polyester Fleece (320 GSM)' },
+        { name: 'Fit', value: 'Slim Tapered Athletic Fit' }
+      ],
+      highlights: ['Anti-Pilling Fleece Material', 'Secure Zippered Side Pockets', 'Stretch Elastic Waistband'],
+      tags: ['men', 'lower', 'joggers', 'trackpants', 'sportswear']
+    },
+    {
+      name: "Men's Cyber Streetwear Drop-Crotch Cargo Lower Trackpants",
+      slug: "mens-cyber-streetwear-drop-crotch-cargo-lower-trackpants",
+      description: "Relaxed drop-crotch streetwear lower with multi-zipper cargo pockets and reflective typography accents for night style.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=800&q=80",
+        "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&q=80"
+      ],
+      price: 1399,
+      mrp: 2799,
+      discount: 50,
+      stock: 40,
+      rating: 4.8,
+      numReviews: 36,
+      isNewArrival: true,
+      variants: [
+        { size: 'M', color: 'Matt Black', stock: 15, sku: 'LOWER-CYB-M' },
+        { size: 'L', color: 'Matt Black', stock: 15, sku: 'LOWER-CYB-L' },
+        { size: 'XL', color: 'Matt Black', stock: 10, sku: 'LOWER-CYB-XL' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '100% French Terry Cotton (280 GSM)' },
+        { name: 'Details', value: '3M Reflective Strip Prints' }
+      ],
+      highlights: ['Reflective Nighttime Aesthetics', 'Multiple Cargo Utility Loops', 'Relaxed Streetwear Drape'],
+      tags: ['men', 'lower', 'streetwear', 'cargo', 'joggers']
+    },
+
+    // 7. JACKETS
+    {
+      name: "Men's Premium Faux Leather Moto Biker Jacket",
+      slug: "mens-premium-faux-leather-moto-biker-jacket",
+      description: "Iconic asymmetric zip leather biker jacket featuring quilted shoulder padding, metallic hardware snaps, and dual chest zip pockets.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1520975916090-3105956dac38?w=800&q=80",
+        "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80"
+      ],
+      price: 3499,
+      mrp: 6999,
+      discount: 50,
+      stock: 30,
+      rating: 4.9,
+      numReviews: 57,
+      isFeatured: true,
+      isBestSeller: true,
+      variants: [
+        { size: 'M', color: 'Stealth Matte Black', stock: 10, sku: 'JKT-LTH-M' },
+        { size: 'L', color: 'Stealth Matte Black', stock: 12, sku: 'JKT-LTH-L' },
+        { size: 'XL', color: 'Vintage Chestnut Brown', stock: 8, sku: 'JKT-LTH-BRN' }
+      ],
+      specifications: [
+        { name: 'Material', value: 'High-Grade Water-Resistant PU Leather' },
+        { name: 'Lining', value: 'Quilted Polyester Thermal Mesh' },
+        { name: 'Hardware', value: 'Rust-Proof Heavy Duty YKK Zippers' }
+      ],
+      highlights: ['Windproof & Weather Resistant', 'Quilted Ergonomic Shoulder Panels', 'Inner Wallet Pocket'],
+      tags: ['men', 'jacket', 'leather', 'biker', 'outerwear']
+    },
+    {
+      name: "Men's Vintage Acid Wash Fleece-Lined Denim Trucker Jacket",
+      slug: "mens-vintage-acid-wash-fleece-lined-denim-trucker-jacket",
+      description: "Classic denim trucker jacket featuring authentic distressed acid wash finish, cozy warm sherpa fleece collar, and dual chest button flap pockets.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1543076447-215ad9ba6923?w=800&q=80",
+        "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=800&q=80"
+      ],
+      price: 2999,
+      mrp: 5499,
+      discount: 45,
+      stock: 35,
+      rating: 4.8,
+      numReviews: 41,
+      isTrending: true,
+      variants: [
+        { size: 'M', color: 'Acid Washed Blue', stock: 15, sku: 'JKT-DNM-M' },
+        { size: 'L', color: 'Acid Washed Blue', stock: 12, sku: 'JKT-DNM-L' },
+        { size: 'XL', color: 'Vintage Washed Black', stock: 8, sku: 'JKT-DNM-XL' }
+      ],
+      specifications: [
+        { name: 'Fabric', value: '100% Rigid Heavy Cotton Denim (14 oz)' },
+        { name: 'Collar', value: 'Cozy Sherpa Fleece Lining' }
+      ],
+      highlights: ['Artisanal Handcrafted Acid Wash', 'Warm Winter Sherpa Lining', 'Branded Metal Shank Buttons'],
+      tags: ['men', 'jacket', 'denim', 'trucker', 'winter']
+    },
+    {
+      name: "Men's Oversized Puffer Winter Bubble Jacket",
+      slug: "mens-oversized-puffer-winter-bubble-jacket",
+      description: "Ultra-warm insulated winter puffer jacket with high stand collar, detachable hood, thermal fleece lining, and water-repellent shell.",
+      brand: "AMA YAAR",
+      category: catFashion._id,
+      subCategory: subMen._id,
+      images: [
+        "https://images.unsplash.com/photo-1548883354-7622d03aca27?w=800&q=80",
+        "https://images.unsplash.com/photo-1544441893-675973e31985?w=800&q=80"
+      ],
+      price: 3299,
+      mrp: 5999,
+      discount: 45,
+      stock: 30,
+      rating: 4.9,
+      numReviews: 33,
+      isNewArrival: true,
+      variants: [
+        { size: 'M', color: 'Midnight Black', stock: 10, sku: 'JKT-PUF-M' },
+        { size: 'L', color: 'Olive Green', stock: 12, sku: 'JKT-PUF-L' },
+        { size: 'XL', color: 'Midnight Black', stock: 8, sku: 'JKT-PUF-XL' }
+      ],
+      specifications: [
+        { name: 'Shell', value: '100% Water-Repellent Nylon' },
+        { name: 'Insulation', value: 'High-Loft Synthetic Micro-Down' }
+      ],
+      highlights: ['Lightweight Heavy Thermal Insulation', 'Detachable Zip-off Hood', 'Windproof Elastic Cuffs'],
+      tags: ['men', 'jacket', 'puffer', 'winter', 'outerwear']
+    },
   ];
 
   const formattedProductsData = productsData.map((prod) => {
@@ -1829,6 +2306,57 @@ async function seedData() {
   ]);
 
   console.log('[seed] Created promotional banners...');
+
+  // 5b. Create Card Sliders
+  await CardSlider.insertMany([
+    {
+      title: 'Men Collection',
+      subtitle: 'Streetwear & Essentials',
+      image: '/model01.png',
+      link: '/products?category=men',
+      badge: 'Popular',
+      displayOrder: 1,
+      isActive: true,
+    },
+    {
+      title: 'Rain Jackets',
+      subtitle: 'Weatherproof Essentials',
+      image: '/model04.png',
+      link: '/products?category=rain-jackets',
+      badge: 'New Drop',
+      displayOrder: 2,
+      isActive: true,
+    },
+    {
+      title: 'Formal Trousers',
+      subtitle: 'Classic Tailored Fits',
+      image: '/model03.png',
+      link: '/products?category=formal-trousers',
+      badge: 'Trending',
+      displayOrder: 3,
+      isActive: true,
+    },
+    {
+      title: 'Graphic Tees',
+      subtitle: 'Oversized Premium Cotton',
+      image: '/model07.jpg',
+      link: '/products?category=graphic-tees',
+      badge: 'Hot Drop',
+      displayOrder: 4,
+      isActive: true,
+    },
+    {
+      title: 'Outerwear',
+      subtitle: 'Jackets & Hoodies',
+      image: '/model05.jpg',
+      link: '/products?category=outerwear',
+      badge: 'Best Seller',
+      displayOrder: 5,
+      isActive: true,
+    },
+  ]);
+
+  console.log('[seed] Created Card Slider items...');
 
   // 6. Create Coupons
   const nextMonth = new Date();

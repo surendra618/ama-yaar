@@ -13,12 +13,15 @@ async function connectDB() {
   mongoose.set('bufferCommands', false);
 
   try {
-    // Attempt connecting to the configured MongoDB URI with a short timeout
-    await mongoose.connect(env.mongoUri, { serverSelectionTimeoutMS: 2500 });
+    // Attempt connecting to the configured MongoDB URI
+    await mongoose.connect(env.mongoUri, { serverSelectionTimeoutMS: 10000 });
     console.log('[db] MongoDB connected to:', redactUri(env.mongoUri));
   } catch (err) {
     console.log('[db] Local MongoDB not reachable (' + err.message + '). Starting in-memory MongoDB server...');
     try {
+      if (!process.env.MONGOMS_STARTUP_TIMEOUT_MS) {
+        process.env.MONGOMS_STARTUP_TIMEOUT_MS = '60000';
+      }
       const { MongoMemoryServer } = require('mongodb-memory-server');
       mongod = await MongoMemoryServer.create();
       const uri = mongod.getUri();
