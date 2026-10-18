@@ -4,6 +4,7 @@ import Footer from '../components/Footer';
 import ScrollToTop from '../components/ScrollToTop';
 import ZeptoCartDrawer from '../features/cart/components/ZeptoCartDrawer';
 import ZeptoFloatingCartBar from '../features/cart/components/ZeptoFloatingCartBar';
+import FittingRoomModal from '../features/fittingRoom/components/FittingRoomModal';
 
 export default function MainLayout() {
   return (
@@ -16,6 +17,7 @@ export default function MainLayout() {
       <Footer />
       <ZeptoCartDrawer />
       <ZeptoFloatingCartBar />
+      <FittingRoomModal />
     </div>
   );
 }

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Heart, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { addToCart, openDrawer } from '../features/cart/cartSlice';
+import { toggleWearItem } from '../features/fittingRoom/fittingRoomSlice';
+import { HangerIcon } from '../features/fittingRoom/components/FittingRoomModal';
 
 export default function ProductCard({ product }) {
   if (!product) return null;
@@ -11,6 +13,11 @@ export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeImgIndex, setActiveImgIndex] = useState(0);
+
+  // Check if this item is currently in the AI Virtual Fitting Room
+  const wornItems = useSelector((state) => state.fittingRoom?.wornItems || []);
+  const pid = product._id || product.id || product.slug;
+  const isWorn = wornItems.some((it) => (it._id || it.id || it.slug) === pid);
 
   // Normalize images array
   const rawImages = (product.images && product.images.length > 0)
@@ -31,7 +38,7 @@ export default function ProductCard({ product }) {
     ? product.discount
     : (product.mrp && product.mrp > product.price)
     ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
-    : 15; // default subtle discount if not specified
+    : 15;
 
   const isBestseller = product.isFeatured || product.isTrending || (product.rating && product.rating >= 4.5);
 
@@ -39,7 +46,6 @@ export default function ProductCard({ product }) {
     e.preventDefault();
     e.stopPropagation();
 
-    // Check if product has sizes/variants
     if (product.sizes?.length > 1 || product.variants?.length > 1) {
       navigate(`/products/${product.slug || product._id}`);
       return;
@@ -68,9 +74,15 @@ export default function ProductCard({ product }) {
     setActiveImgIndex((prev) => (prev + 1) % images.length);
   };
 
+  const handleToggleFittingRoom = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatch(toggleWearItem(product));
+  };
+
   return (
     <div className="group relative flex flex-col bg-transparent select-none">
-      {/* Product Image Container (3:4 portrait, tall streetwear framing matching Image 1) */}
+      {/* Product Image Container (3:4 portrait, tall streetwear framing) */}
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-900/10">
         <Link to={`/products/${product.slug || product._id}`} className="block h-full w-full">
           <img
@@ -85,7 +97,7 @@ export default function ProductCard({ product }) {
           />
         </Link>
 
-        {/* Top-Left Badges (Brand Tag + Red SAVE % Tag matching Image 1) */}
+        {/* Top-Left Badges (Brand Tag + Red SAVE % Tag) */}
         <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start pointer-events-none">
           <div className="flex items-center gap-1">
             <span className="bg-black/80 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded-xs tracking-wider uppercase">
@@ -104,11 +116,14 @@ export default function ProductCard({ product }) {
           )}
         </div>
 
-        {/* Top-Right: Brand Logo Monogram & Wishlist Heart */}
+        {/* Top-Right Actions: Rating Pill + Wishlist Heart + Hanger Button (Fitting Room Reference) */}
         <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-center gap-1.5">
-          {/* Brand Monogram Icon */}
-          <div className="h-6 w-6 rounded-full bg-black/60 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white text-[9px] font-black">
-            AY
+          {/* Star Rating Badge matching reference */}
+          <div className="flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-white/10 shadow-xs mb-0.5">
+            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+            <span className="text-white text-[9.5px]">
+              {product.rating ? Number(product.rating).toFixed(1) : '4.4'}
+            </span>
           </div>
 
           {/* Heart Wishlist Button */}
@@ -128,9 +143,24 @@ export default function ProductCard({ product }) {
               }`}
             />
           </button>
+
+          {/* Hanger Virtual Try-On Button (exact matching reference screenshot) */}
+          <button
+            type="button"
+            onClick={handleToggleFittingRoom}
+            className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 cursor-pointer ${
+              isWorn
+                ? 'bg-[#f97316] text-white scale-110 shadow-orange-500/50 ring-2 ring-white'
+                : 'bg-white/90 hover:bg-[#f97316] text-neutral-800 hover:text-white'
+            }`}
+            title={isWorn ? 'Currently in Fitting Room (Tap to take off)' : 'Tap hanger to wear in Fitting Room'}
+            aria-label="Wear in Fitting Room"
+          >
+            <HangerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
         </div>
 
-        {/* Image Carousel Arrows (shown when multiple images exist or on hover) */}
+        {/* Image Carousel Arrows (shown on hover) */}
         {images.length > 1 && (
           <>
             <button
@@ -152,7 +182,7 @@ export default function ProductCard({ product }) {
           </>
         )}
 
-        {/* ADD TO CART Bar at bottom of image (matching Image 1) */}
+        {/* ADD TO CART Bar at bottom of image */}
         <button
           type="button"
           onClick={handleAddToCart}
@@ -172,7 +202,7 @@ export default function ProductCard({ product }) {
           {product.name}
         </Link>
 
-        {/* Price Row: Rs. 1,999.00  Rs. 1,799.00 (Red discounted price matching Image 1) */}
+        {/* Price Row: Rs. 1,999.00  Rs. 1,799.00 (Red discounted price) */}
         <div className="mt-1 flex items-baseline gap-2 flex-wrap">
           {product.mrp && product.mrp > product.price && (
             <span className="text-[11px] sm:text-xs text-neutral-400 line-through font-normal">

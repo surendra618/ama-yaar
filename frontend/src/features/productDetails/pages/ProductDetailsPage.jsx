@@ -29,6 +29,8 @@ import {
 } from "../productDetailsSlice";
 import { addToCart, openDrawer } from "../../cart/cartSlice";
 import { toggleWishlist } from "../../wishlist/wishlistSlice";
+import { toggleWearItem } from "../../fittingRoom/fittingRoomSlice";
+import { HangerIcon } from "../../fittingRoom/components/FittingRoomModal";
 import ProductCard from "../../../components/ProductCard";
 
 export default function ProductDetailsPage() {
@@ -43,6 +45,9 @@ export default function ProductDetailsPage() {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
   const { itemCount } = useSelector((state) => state.cart);
+  const wornItems = useSelector((state) => state.fittingRoom?.wornItems || []);
+  const pid = product?._id || product?.id || product?.slug;
+  const isWorn = wornItems.some((it) => (it._id || it.id || it.slug) === pid);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("S");
@@ -379,6 +384,24 @@ export default function ProductDetailsPage() {
                     <ShoppingBag className="h-4 w-4" /> ADD TO CART — ₹{product.price?.toLocaleString("en-IN") || "999"}
                   </>
                 )}
+              </button>
+
+              {/* Try on in AI Virtual Fitting Room (matching reference screenshot) */}
+              <button
+                type="button"
+                onClick={() => dispatch(toggleWearItem(product))}
+                className={`w-full mt-2.5 py-3.5 px-4 rounded-xs text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border transition duration-200 cursor-pointer ${
+                  isWorn
+                    ? "bg-[#f97316] text-white border-[#f97316] shadow-md ring-2 ring-orange-300"
+                    : "bg-neutral-100 hover:bg-[#f97316] hover:text-white text-neutral-900 border-neutral-300"
+                }`}
+              >
+                <HangerIcon className="h-4 w-4" />
+                <span>
+                  {isWorn
+                    ? "Wearing in AI Fitting Room (Tap to remove)"
+                    : "Try on in AI Fitting Room"}
+                </span>
               </button>
 
               {/* View Cart banner when item added */}

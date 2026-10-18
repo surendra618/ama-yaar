@@ -24,6 +24,8 @@ import {
   fetchNotifications,
   markNotificationRead,
 } from "../features/notifications/notificationsSlice";
+import { toggleFittingRoom } from "../features/fittingRoom/fittingRoomSlice";
+import { HangerIcon } from "../features/fittingRoom/components/FittingRoomModal";
 import AuthPopupModal from "./AuthPopupModal";
 
 const MEGA_MENU_DATA = {
@@ -355,6 +357,7 @@ export default function Navbar() {
     (state) => state.notifications,
   );
   const { categories } = useSelector((state) => state.products);
+  const wornCount = useSelector((state) => state.fittingRoom?.wornItems?.length || 0);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -787,6 +790,22 @@ export default function Navbar() {
                   <User className="h-5 w-5 stroke-[2]" />
                 </button>
               )}
+
+              {/* AI Virtual Fitting Room Button */}
+              <button
+                type="button"
+                onClick={() => dispatch(toggleFittingRoom())}
+                className="relative p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                title="AI Virtual Fitting Room (Try on clothes)"
+                aria-label="AI Fitting Room"
+              >
+                <HangerIcon className="h-5 w-5 stroke-[1.8]" />
+                {wornCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black bg-[#f97316] text-white shadow-xs">
+                    {wornCount}
+                  </span>
+                )}
+              </button>
 
               {/* Shopping Bag / Cart */}
               <button
