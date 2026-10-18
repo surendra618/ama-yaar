@@ -27,7 +27,7 @@ import {
   submitProductReview,
   clearProductDetails,
 } from "../productDetailsSlice";
-import { addToCart } from "../../cart/cartSlice";
+import { addToCart, openDrawer } from "../../cart/cartSlice";
 import { toggleWishlist } from "../../wishlist/wishlistSlice";
 import ProductCard from "../../../components/ProductCard";
 
@@ -387,12 +387,13 @@ export default function ProductDetailsPage() {
                   <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
                     <Check className="h-3.5 w-3.5 text-emerald-600" /> Item added to your bag!
                   </span>
-                  <Link
-                    to="/cart"
-                    className="text-xs font-black uppercase tracking-wider text-black underline hover:text-neutral-700"
+                  <button
+                    type="button"
+                    onClick={() => dispatch(openDrawer())}
+                    className="text-xs font-black uppercase tracking-wider text-black underline hover:text-neutral-700 cursor-pointer"
                   >
                     View Cart &rarr;
-                  </Link>
+                  </button>
                 </div>
               )}
 

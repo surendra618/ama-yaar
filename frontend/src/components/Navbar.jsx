@@ -17,7 +17,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { logout, checkAuth } from "../features/auth/authSlice";
-import { fetchCart } from "../features/cart/cartSlice";
+import { fetchCart, openDrawer } from "../features/cart/cartSlice";
 import { fetchWishlist } from "../features/wishlist/wishlistSlice";
 import { fetchCategories } from "../features/products/productsSlice";
 import {
@@ -789,8 +789,9 @@ export default function Navbar() {
               )}
 
               {/* Shopping Bag / Cart */}
-              <Link
-                to="/cart"
+              <button
+                type="button"
+                onClick={() => dispatch(openDrawer())}
                 className="relative p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 title="Cart"
               >
@@ -800,7 +801,7 @@ export default function Navbar() {
                     {itemCount}
                   </span>
                 )}
-              </Link>
+              </button>
             </div>
           </div>
 
