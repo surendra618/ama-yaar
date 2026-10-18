@@ -20,6 +20,7 @@ import {
   Search,
   User,
   ShoppingBag,
+  X,
 } from "lucide-react";
 import {
   fetchProductDetails,
@@ -79,8 +80,9 @@ export default function ProductDetailsPage() {
     setZoomPos({ x, y });
   };
 
-  // Review form modal
+  // Review & Size Guide form modals
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -129,7 +131,7 @@ export default function ProductDetailsPage() {
       img.startsWith("http") || img.startsWith("data:")
         ? img
         : img.startsWith("/uploads")
-          ? `http://localhost:5000${img}`
+          ? `http://localhost:5005${img}`
           : img,
     );
   const displayImages =
@@ -192,10 +194,10 @@ export default function ProductDetailsPage() {
       : ["S", "M", "L", "XL"];
 
   return (
-    <div className="min-h-screen bg-white py-6 sm:py-8 text-neutral-900 font-sans">
-      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
+    <div className="min-h-screen bg-white py-1 sm:py-2 text-neutral-900 font-sans">
+      <div className="mx-auto w-full max-w-[1720px] px-2 sm:px-4 lg:px-6">
         {/* Breadcrumb Navigation */}
-        <nav className="mb-6 flex items-center gap-2 text-[11px] font-medium text-neutral-400">
+        <nav className="mb-3 flex items-center gap-2 text-[11px] font-medium text-neutral-400">
           <Link to="/" className="hover:text-black transition">
             Home
           </Link>
@@ -209,21 +211,21 @@ export default function ProductDetailsPage() {
           </span>
         </nav>
 
-        {/* Product Overview 3-Column Grid (Centered & cohesive without excessive gaps) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-4 lg:py-6 max-w-[1240px] mx-auto">
+        {/* Product Overview 3-Column Grid (Image Centered & Large, Minimal Padding) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center py-1">
           {/* LEFT COLUMN: Title, Description, Bullet Features, Model Info */}
-          <div className="lg:col-span-4 flex flex-col justify-center order-2 lg:order-1 pr-0 lg:pr-2">
-            <h1 className="text-xl sm:text-2xl lg:text-[26px] font-bold tracking-tight text-neutral-900 leading-[1.18]">
-              {product.name || "Washed Tee Black"}
+          <div className="lg:col-span-3 flex flex-col justify-center order-2 lg:order-1 pr-0 lg:pr-2">
+            <h1 className="text-xl sm:text-2xl lg:text-[27px] font-bold tracking-tight text-neutral-900 leading-[1.2]">
+              {product.name || "Men's Oversized Puffer Winter Bubble Jacket"}
             </h1>
 
-            <p className="mt-2.5 text-xs sm:text-[13px] text-neutral-600 leading-[1.4] font-normal">
+            <p className="mt-3 text-xs sm:text-[13px] text-neutral-600 leading-[1.45] font-normal">
               {product.description ||
-                "Black oversized tee in heavyweight cotton, washed for a faded tone that makes each piece unique. High-impact front graphic, DROPSTDS branding on the back and a leather-and-metal hem detail."}
+                "Ultra-warm insulated winter puffer jacket with high stand collar, detachable hood, thermal fleece lining, and water-repellent shell."}
             </p>
 
-            {/* Bullet points with small clean dots & compact line gap */}
-            <ul className="mt-3.5 space-y-1 text-xs sm:text-[12px] text-neutral-700 font-normal leading-normal">
+            {/* Bullet points with small clean dots */}
+            <ul className="mt-4 space-y-1.5 text-xs sm:text-[12px] text-neutral-700 font-normal leading-normal">
               <li className="flex items-center gap-2">
                 <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
                 <span>Fit: oversized, dropped shoulder</span>
@@ -243,67 +245,94 @@ export default function ProductDetailsPage() {
             </ul>
 
             {/* Model wear info */}
-            <p className="mt-3 text-[11.5px] text-neutral-400 font-normal">
-              Model is 1.90 m and wears size M
+            <p className="mt-3.5 text-[11.5px] text-neutral-400 font-normal">
+              {product.modelInfo || "Model is 1.90 m and wears size M"}
             </p>
           </div>
 
-          {/* CENTER COLUMN: Large Focused Product Image with Subtle Arrow Controls */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center order-1 lg:order-2">
-            <div className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[440px] overflow-hidden rounded-xs bg-neutral-100 flex items-center justify-center shadow-xs group">
+          {/* CENTER COLUMN: Large Focused Product Image (Centered, High Visibility, No Padding Restriction) */}
+          <div className="lg:col-span-6 flex flex-col items-center justify-center order-1 lg:order-2">
+            <div
+              className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group cursor-crosshair"
+              onMouseEnter={() => setIsHoveringZoom(true)}
+              onMouseLeave={() => setIsHoveringZoom(false)}
+              onMouseMove={handleMouseMove}
+            >
               <img
                 src={displayImages[selectedImage] || displayImages[0]}
-                alt={product.name || "Washed Tee Black"}
-                className="h-full w-full object-cover object-center transition-all duration-300 select-none"
+                alt={product.name || "Product Showcase"}
+                style={{
+                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                  transform: isHoveringZoom ? "scale(2.5)" : "scale(1)",
+                }}
+                className={`h-full w-full object-cover object-top select-none pointer-events-none will-change-transform ${
+                  isHoveringZoom
+                    ? "transition-[transform-origin] duration-75 ease-out"
+                    : "transition-transform duration-200 ease-out"
+                }`}
               />
 
-              {/* Left Arrow Button */}
-              {displayImages.length > 1 && (
+              {/* Left Arrow Button (hidden while zooming for unobstructed view) */}
+              {!isHoveringZoom && displayImages.length > 1 && (
                 <button
+                  type="button"
                   onClick={handlePrevImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white/90 hover:bg-black/60 hover:text-white transition cursor-pointer backdrop-blur-xs"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white/95 hover:bg-black/70 transition cursor-pointer backdrop-blur-xs shadow-sm"
                   aria-label="Previous image"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
               )}
 
-              {/* Right Arrow Button */}
-              {displayImages.length > 1 && (
+              {/* Right Arrow Button (hidden while zooming for unobstructed view) */}
+              {!isHoveringZoom && displayImages.length > 1 && (
                 <button
+                  type="button"
                   onClick={handleNextImage}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white/90 hover:bg-black/60 hover:text-white transition cursor-pointer backdrop-blur-xs"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white/95 hover:bg-black/70 transition cursor-pointer backdrop-blur-xs shadow-sm"
                   aria-label="Next image"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-5 w-5" />
                 </button>
               )}
 
-              {/* Discount pill if applicable */}
-              {product.discount > 0 && (
-                <span className="absolute top-3 left-3 rounded-xs bg-black px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+              {/* Discount pill matching user screenshot */}
+              {!isHoveringZoom && product.discount > 0 && (
+                <span className="absolute top-3 left-3 rounded-xs bg-black px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
                   {product.discount}% OFF
+                </span>
+              )}
+
+              {/* Zoom pill indicator */}
+              {isHoveringZoom ? (
+                <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
+                  2.5x Zoom
+                </span>
+              ) : (
+                <span className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-xs text-white/90 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                  <Search className="h-2.5 w-2.5" /> Hover to zoom
                 </span>
               )}
             </div>
 
             {/* Small Subtle Thumbnail Preview Row */}
             {displayImages.length > 1 && (
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-3 flex items-center justify-center gap-2 overflow-x-auto max-w-full pb-1">
                 {displayImages.map((img, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setSelectedImage(idx)}
-                    className={`h-11 w-9 overflow-hidden rounded-xs border transition ${
+                    className={`h-14 w-11 sm:h-16 sm:w-13 overflow-hidden rounded-xs border transition cursor-pointer ${
                       selectedImage === idx
-                        ? "border-neutral-900 opacity-100 shadow-2xs"
-                        : "border-neutral-200 opacity-50 hover:opacity-100"
+                        ? "border-neutral-900 opacity-100 shadow-2xs ring-1 ring-neutral-900"
+                        : "border-neutral-200 opacity-60 hover:opacity-100"
                     }`}
                   >
                     <img
                       src={img}
                       alt=""
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover object-top"
                     />
                   </button>
                 ))}
@@ -312,19 +341,17 @@ export default function ProductDetailsPage() {
           </div>
 
           {/* RIGHT COLUMN: Size Selectors, ADD TO CART Button, Details Tabs */}
-          <div className="lg:col-span-3 flex flex-col justify-center order-3 pl-0 lg:pl-2 space-y-5">
+          <div className="lg:col-span-3 flex flex-col justify-center order-3 pl-0 lg:pl-2 space-y-4">
             {/* Size Selector */}
             <div>
-              <span className="block text-xs font-medium text-neutral-500 mb-2.5">
+              <span className="block text-xs font-medium text-neutral-500 mb-2">
                 Size
               </span>
-              <div className="flex items-center gap-2">
-                {(availableSizes.length > 0
-                  ? availableSizes
-                  : ["S", "M", "L", "XL"]
-                ).map((sz) => (
+              <div className="flex items-center gap-2 flex-wrap">
+                {(availableSizes.length > 0 ? availableSizes : ["M", "L", "XL"]).map((sz) => (
                   <button
                     key={sz}
+                    type="button"
                     onClick={() => setSelectedSize(sz)}
                     className={`h-9 w-10 sm:h-10 sm:w-11 text-xs font-semibold flex items-center justify-center border transition-all cursor-pointer ${
                       selectedSize === sz
@@ -339,12 +366,12 @@ export default function ProductDetailsPage() {
             </div>
 
             {/* ADD TO CART Button */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={handleAddToCart}
                 disabled={product.stock <= 0}
-                className="w-full bg-[#1c1c1c] hover:bg-black text-white text-xs font-black uppercase tracking-wider py-4 px-4 rounded-xs transition duration-200 cursor-pointer shadow-sm text-center flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-[#1c1c1c] hover:bg-black text-white text-xs font-black uppercase tracking-wider py-3.5 px-4 rounded-xs transition duration-200 cursor-pointer shadow-sm text-center flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {added ? (
                   <>
@@ -352,14 +379,14 @@ export default function ProductDetailsPage() {
                   </>
                 ) : (
                   <>
-                    <ShoppingBag className="h-4 w-4" /> ADD TO CART — ₹{product.price?.toLocaleString("en-IN") || "999"}
+                    <ShoppingBag className="h-4 w-4" /> ADD TO CART — ₹{product.price?.toLocaleString("en-IN") || "3,299"}
                   </>
                 )}
               </button>
 
               {/* View Cart banner when item added */}
               {added && (
-                <div className="mt-2.5 p-3 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-between animate-in fade-in duration-200">
+                <div className="mt-2 p-2.5 rounded-md bg-emerald-50 border border-emerald-200 flex items-center justify-between animate-in fade-in duration-200">
                   <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
                     <Check className="h-3.5 w-3.5 text-emerald-600" /> Item added to your bag!
                   </span>
@@ -374,223 +401,226 @@ export default function ProductDetailsPage() {
               )}
 
               {/* Wishlist toggle & extra details */}
-              <div className="mt-3.5 flex items-center justify-between text-xs text-neutral-500">
+              <div className="mt-3 flex items-center justify-between text-xs text-neutral-500">
                 <button
+                  type="button"
                   onClick={() => {
                     if (!isAuthenticated) return navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
                     dispatch(toggleWishlist(product._id));
                   }}
-                  className={`flex items-center gap-1.5 transition ${
-                    isWishlisted
-                      ? "text-rose-600 font-bold"
-                      : "hover:text-black"
+                  className={`flex items-center gap-1.5 transition cursor-pointer ${
+                    isWishlisted ? "text-rose-600 font-bold" : "hover:text-black"
                   }`}
                 >
                   <Heart
-                    className={`h-3.5 w-3.5 ${isWishlisted ? "fill-rose-600" : ""}`}
+                    className={`h-3.5 w-3.5 ${isWishlisted ? "fill-rose-600 text-rose-600" : ""}`}
                   />
-                  {isWishlisted ? "Saved in Wishlist" : "Add to Wishlist"}
+                  <span>{isWishlisted ? "Saved in Wishlist" : "Add to Wishlist"}</span>
                 </button>
                 <span className="text-[11px] text-neutral-400">
                   Free shipping & returns
                 </span>
               </div>
+            </div>
 
-              {/* AVAILABLE OFFERS Strip matching user screenshot */}
-              <div className="pt-4 border-t border-neutral-200 space-y-2">
-                <span className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                  Available Offers
-                </span>
-                <div className="flex gap-2.5 overflow-x-auto pb-1.5 scrollbar-hide text-xs">
-                  {[
-                    { discount: "₹150 OFF", condition: "Prepaid above ₹1849", code: "LEVEL1FLEX" },
-                    { discount: "₹300 OFF", condition: "Prepaid above ₹2699", code: "LEVEL2FLEX" },
-                    { discount: "₹550 OFF", condition: "Prepaid above ₹3599", code: "LEVEL3FLEX" },
-                    { discount: "₹850 OFF", condition: "Prepaid above ₹4999", code: "LEVEL4FLEX" },
-                  ].map((offer, idx) => (
-                    <div
-                      key={idx}
-                      className="flex-shrink-0 min-w-[155px] p-2.5 rounded-lg border border-neutral-200 bg-white shadow-2xs text-left"
-                    >
-                      <p className="font-extrabold text-neutral-900 text-xs">{offer.discount}</p>
-                      <p className="text-[10px] text-neutral-500 mt-0.5">{offer.condition}</p>
-                      <div className="mt-2 flex items-center justify-between text-[9px]">
-                        <span className="font-mono font-bold bg-neutral-100 text-neutral-800 px-1.5 py-0.5 rounded-xs">
-                          {offer.code}
-                        </span>
-                        <span className="text-emerald-600 font-bold flex items-center gap-0.5">
-                          <Zap className="h-2.5 w-2.5 fill-emerald-600" /> Auto Applied
-                        </span>
-                      </div>
+            {/* AVAILABLE OFFERS Strip matching user screenshot */}
+            <div className="pt-3.5 border-t border-neutral-200 space-y-2">
+              <span className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                Available Offers
+              </span>
+              <div className="flex gap-2.5 overflow-x-auto pb-1.5 scrollbar-hide text-xs">
+                {[
+                  { discount: "₹150 OFF", condition: "Prepaid above ₹1849", code: "LEVEL1FLEX" },
+                  { discount: "₹300 OFF", condition: "Prepaid above ₹2699", code: "LEVEL2FLEX" },
+                  { discount: "₹550 OFF", condition: "Prepaid above ₹3599", code: "LEVEL3FLEX" },
+                  { discount: "₹850 OFF", condition: "Prepaid above ₹4999", code: "LEVEL4FLEX" },
+                ].map((offer, idx) => (
+                  <div
+                    key={idx}
+                    className="shrink-0 min-w-[155px] p-2.5 rounded-lg border border-neutral-200 bg-white shadow-2xs text-left"
+                  >
+                    <p className="font-extrabold text-neutral-900 text-xs">{offer.discount}</p>
+                    <p className="text-[10px] text-neutral-500 mt-0.5">{offer.condition}</p>
+                    <div className="mt-2 flex items-center justify-between text-[9px]">
+                      <span className="font-mono font-bold bg-neutral-100 text-neutral-800 px-1.5 py-0.5 rounded-xs">
+                        {offer.code}
+                      </span>
+                      <span className="text-emerald-600 font-bold flex items-center gap-0.5">
+                        <Zap className="h-2.5 w-2.5 fill-emerald-600" /> Auto Applied
+                      </span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Sizing Chart Bar matching user screenshot */}
-              <div className="flex items-center justify-between text-xs text-neutral-600 pt-1">
-                <span className="text-[11px] font-medium text-neutral-600">
-                  Model is 5'8" (172 cm), 70 kg, Wearing M Size
-                </span>
-                <span className="text-neutral-800 font-semibold text-xs flex items-center gap-1">
-                  <span>目 Sizing chart</span>
-                </span>
-              </div>
+            {/* Sizing Chart Bar matching user screenshot */}
+            <div className="flex items-center justify-between text-xs text-neutral-600 pt-1">
+              <span className="text-[11px] font-medium text-neutral-600">
+                Model is 5'8" (172 cm), 70 kg, Wearing M Size
+              </span>
+              <button
+                type="button"
+                onClick={() => setSizeModalOpen(true)}
+                className="text-neutral-800 font-semibold text-xs flex items-center gap-1 hover:underline cursor-pointer"
+              >
+                <span>目 Sizing chart</span>
+              </button>
+            </div>
 
-              {/* 3 TABS: Description | Details | Exchange Policy (Exact match to User Screenshot) */}
-              <div className="pt-5 border-t border-neutral-200">
-                <div className="flex border-b border-neutral-200 justify-between text-xs font-medium text-neutral-500">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("description")}
-                    className={`pb-2.5 px-3 transition cursor-pointer relative ${
-                      activeTab === "description" ? "text-black font-bold" : "hover:text-black"
-                    }`}
-                  >
-                    Description
-                    {activeTab === "description" && (
-                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("details")}
-                    className={`pb-2.5 px-3 transition cursor-pointer relative ${
-                      activeTab === "details" ? "text-black font-bold" : "hover:text-black"
-                    }`}
-                  >
-                    Details
-                    {activeTab === "details" && (
-                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("exchange")}
-                    className={`pb-2.5 px-3 transition cursor-pointer relative ${
-                      activeTab === "exchange" ? "text-black font-bold" : "hover:text-black"
-                    }`}
-                  >
-                    Exchange Policy
-                    {activeTab === "exchange" && (
-                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
-                    )}
-                  </button>
-                </div>
-
-                {/* Tab Content Display */}
-                <div className="pt-4 text-xs text-neutral-700 leading-relaxed">
+            {/* 3 TABS: Description | Details | Exchange Policy (Exact match to User Screenshot) */}
+            <div className="pt-4 border-t border-neutral-200">
+              <div className="flex border-b border-neutral-200 justify-between text-xs font-medium text-neutral-500">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("description")}
+                  className={`pb-2 px-2.5 transition cursor-pointer relative ${
+                    activeTab === "description" ? "text-black font-bold" : "hover:text-black"
+                  }`}
+                >
+                  Description
                   {activeTab === "description" && (
-                    <div className="space-y-3.5 animate-in fade-in duration-200">
-                      <p className="leading-relaxed text-neutral-600">
-                        {product.description ||
-                          "The Concrete Dreams Zip Hoodie is a statement piece rooted in street culture and ambition. Crafted in deep black with bold hot-pink sleeve graphics, this hoodie represents resilience, grind, and the dreams that rise from the concrete."}
-                      </p>
-
-                      <div>
-                        <p className="font-bold text-neutral-900 mb-0.5">Whats on Print:</p>
-                        <p className="text-neutral-600 whitespace-pre-line">
-                          {product.whatsOnPrint ||
-                            policySettings?.defaultWhatsOnPrint ||
-                            "Back: Concrete Dreams\nFront: What The Flex"}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="font-bold text-neutral-900 mb-0.5">Styling Tip:</p>
-                        <p className="text-neutral-600">
-                          {product.stylingTip ||
-                            policySettings?.defaultStylingTip ||
-                            "Complete the look with our Black Rugged Jeans and Deadlines white Oversized T-shirt for a warm, comfy fit that keeps the winter vibe easy and stylish."}
-                        </p>
-                      </div>
-                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
                   )}
+                </button>
 
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("details")}
+                  className={`pb-2 px-2.5 transition cursor-pointer relative ${
+                    activeTab === "details" ? "text-black font-bold" : "hover:text-black"
+                  }`}
+                >
+                  Details
                   {activeTab === "details" && (
-                    <div className="space-y-2 animate-in fade-in duration-200">
-                      <div className="flex justify-between py-1.5 border-b border-neutral-100">
-                        <span className="font-semibold text-neutral-500">Fabric</span>
-                        <span className="font-medium text-neutral-900">
-                          {product.fabric || policySettings?.defaultFabric || "100% Super Combed Terry Cotton"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-neutral-100">
-                        <span className="font-semibold text-neutral-500">Fabric Weight</span>
-                        <span className="font-medium text-neutral-900">
-                          {product.gsm || policySettings?.defaultGsm || "380 GSM Heavyweight Fabric"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-neutral-100">
-                        <span className="font-semibold text-neutral-500">Fit</span>
-                        <span className="font-medium text-neutral-900">
-                          {product.fit || policySettings?.defaultFit || "Oversized Streetwear Fit, Dropped Shoulder"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-neutral-100">
-                        <span className="font-semibold text-neutral-500">Country of Origin</span>
-                        <span className="font-medium text-neutral-900">
-                          {product.countryOfOrigin || policySettings?.defaultCountryOfOrigin || "India"}
-                        </span>
-                      </div>
-                      <div className="py-1.5">
-                        <span className="font-semibold text-neutral-500 block mb-0.5">Care Instructions</span>
-                        <p className="text-neutral-600 text-[11px] leading-normal">
-                          {product.washCare ||
-                            policySettings?.defaultCare ||
-                            "Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low."}
-                        </p>
-                      </div>
-                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
                   )}
+                </button>
 
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("exchange")}
+                  className={`pb-2 px-2.5 transition cursor-pointer relative ${
+                    activeTab === "exchange" ? "text-black font-bold" : "hover:text-black"
+                  }`}
+                >
+                  Exchange Policy
                   {activeTab === "exchange" && (
-                    <div className="space-y-3 animate-in fade-in duration-200">
-                      <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-between">
-                        <span className="font-bold text-neutral-900 flex items-center gap-1.5">
-                          <RotateCcw className="h-4 w-4 text-neutral-800" />
-                          <span>{policySettings?.exchangeDays || 7} Days Doorstep Exchange & Return</span>
-                        </span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                          {policySettings?.exchangeCharge > 0
-                            ? `₹${policySettings.exchangeCharge} Pickup Fee`
-                            : "FREE EXCHANGE"}
-                        </span>
-                      </div>
-
-                      <div>
-                        <p className="font-bold text-neutral-900 mb-0.5">Delivery & Shipping Charges:</p>
-                        <p className="text-[11px] text-neutral-600">
-                          Standard delivery fee is ₹{policySettings?.deliveryCharge ?? 49}.00{" "}
-                          {policySettings?.isFreeDeliveryEnabled && (
-                            <span className="font-semibold text-emerald-600">
-                              (FREE on orders above ₹{policySettings?.freeDeliveryThreshold ?? 500}.00)
-                            </span>
-                          )}
-                          . Estimated arrival in {policySettings?.estimatedDeliveryDays || "2-4 business days"}.
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="font-bold text-neutral-900 mb-0.5">Exchange Policy:</p>
-                        <p className="text-[11px] text-neutral-600">
-                          {policySettings?.exchangePolicyText ||
-                            "Hassle-free 7-day doorstep exchange & return. Items must be in original condition, unworn, unwashed with original brand tags attached."}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="font-bold text-neutral-900 mb-0.5">Refunds:</p>
-                        <p className="text-[11px] text-neutral-600">
-                          {policySettings?.returnPolicyText ||
-                            "Easy returns within 7 days of delivery. Refunds are credited to original payment mode or store credit within 24-48 hours after quality check."}
-                        </p>
-                      </div>
-                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
                   )}
-                </div>
+                </button>
+              </div>
+
+              {/* Tab Content Display */}
+              <div className="pt-3 text-xs text-neutral-700 leading-relaxed">
+                {activeTab === "description" && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    <p className="leading-relaxed text-neutral-600">
+                      {product.description ||
+                        "Ultra-warm insulated winter puffer jacket with high stand collar, detachable hood, thermal fleece lining, and water-repellent shell."}
+                    </p>
+
+                    <div>
+                      <p className="font-bold text-neutral-900 mb-0.5">Whats on Print:</p>
+                      <p className="text-neutral-600 whitespace-pre-line">
+                        {product.whatsOnPrint ||
+                          policySettings?.defaultWhatsOnPrint ||
+                          "High-density puff and screen print with reinforced stitching."}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="font-bold text-neutral-900 mb-0.5">Styling Tip:</p>
+                      <p className="text-neutral-600">
+                        {product.stylingTip ||
+                          policySettings?.defaultStylingTip ||
+                          "Pair with heavy knit beanie and raw black relaxed denim for peak streetwear silhouette."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "details" && (
+                  <div className="space-y-2 animate-in fade-in duration-200">
+                    <div className="flex justify-between py-1 border-b border-neutral-100">
+                      <span className="font-semibold text-neutral-500">Fabric</span>
+                      <span className="font-medium text-neutral-900">
+                        {product.fabric || policySettings?.defaultFabric || "100% Super Combed Terry Cotton"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-neutral-100">
+                      <span className="font-semibold text-neutral-500">Fabric Weight</span>
+                      <span className="font-medium text-neutral-900">
+                        {product.gsm || policySettings?.defaultGsm || "380 GSM Heavyweight Fabric"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-neutral-100">
+                      <span className="font-semibold text-neutral-500">Fit</span>
+                      <span className="font-medium text-neutral-900">
+                        {product.fit || policySettings?.defaultFit || "Oversized Streetwear Fit, Dropped Shoulder"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-neutral-100">
+                      <span className="font-semibold text-neutral-500">Country of Origin</span>
+                      <span className="font-medium text-neutral-900">
+                        {product.countryOfOrigin || policySettings?.defaultCountryOfOrigin || "India"}
+                      </span>
+                    </div>
+                    <div className="py-1">
+                      <span className="font-semibold text-neutral-500 block mb-0.5">Care Instructions</span>
+                      <p className="text-neutral-600 text-[11px] leading-normal">
+                        {product.washCare ||
+                          policySettings?.defaultCare ||
+                          "Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "exchange" && (
+                  <div className="space-y-2.5 animate-in fade-in duration-200">
+                    <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                      <span className="font-bold text-neutral-900 flex items-center gap-1 text-[11px]">
+                        <RotateCcw className="h-3.5 w-3.5 text-neutral-800" />
+                        <span>{policySettings?.exchangeDays || 7} Days Doorstep Exchange & Return</span>
+                      </span>
+                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        {policySettings?.exchangeCharge > 0
+                          ? `₹${policySettings.exchangeCharge} Pickup Fee`
+                          : "FREE EXCHANGE"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="font-bold text-neutral-900 mb-0.5">Delivery & Shipping Charges:</p>
+                      <p className="text-[11px] text-neutral-600">
+                        Standard delivery fee is ₹{policySettings?.deliveryCharge ?? 49}.00{" "}
+                        {policySettings?.isFreeDeliveryEnabled && (
+                          <span className="font-semibold text-emerald-600">
+                            (FREE on orders above ₹{policySettings?.freeDeliveryThreshold ?? 500}.00)
+                          </span>
+                        )}
+                        . Estimated arrival in {policySettings?.estimatedDeliveryDays || "2-4 business days"}.
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="font-bold text-neutral-900 mb-0.5">Exchange Policy:</p>
+                      <p className="text-[11px] text-neutral-600">
+                        {policySettings?.exchangePolicyText ||
+                          "Hassle-free 7-day doorstep exchange & return. Items must be in original condition, unworn, unwashed with original brand tags attached."}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="font-bold text-neutral-900 mb-0.5">Refunds:</p>
+                      <p className="text-[11px] text-neutral-600">
+                        {policySettings?.returnPolicyText ||
+                          "Easy returns within 7 days of delivery. Refunds are credited to original payment mode or store credit within 24-48 hours after quality check."}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
