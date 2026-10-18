@@ -1,61 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { X, CheckCircle, Sparkles, ShieldCheck } from 'lucide-react';
+import { X, ArrowUpRight, CheckCircle2, Phone, Mail, Edit2 } from 'lucide-react';
 import { setCredentials } from '../features/auth/authSlice';
 
 export default function AuthPopupModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
 
-  const [step, setStep] = useState(1); // 1 = Details, 2 = OTP
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['1', '2', '3', '4']);
+  const [step, setStep] = useState('email'); // 'phone' or 'email' or 'otp'
+  const [phone, setPhone] = useState('7809730968');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setStep(1);
       setError('');
       setSuccess(false);
-      setOtp(['1', '2', '3', '4']);
+      setIsSubmitting(false);
+      // If user hasn't set phone, start with email or phone
+      if (!phone) {
+        setPhone('7809730968');
+      }
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSendOtp = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!phone || phone.trim().length < 10) {
-      setError('Please enter a valid 10-digit mobile number');
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setError('Please enter a valid email address');
       return;
     }
-    setError('');
-    setStep(2);
-    // Dummy OTP auto-filled automatically
-    setOtp(['1', '2', '3', '4']);
-  };
 
-  const handleVerifyOtp = (e) => {
-    if (e) e.preventDefault();
-    setIsVerifying(true);
+    setIsSubmitting(true);
     setError('');
 
     setTimeout(() => {
-      const enteredOtp = otp.join('');
-      if (enteredOtp.length < 4) {
-        setError('Please enter a valid 4-digit OTP');
-        setIsVerifying(false);
-        return;
-      }
-
-      // Successful dummy authentication
       const userObj = {
         _id: 'user_' + Date.now(),
-        name: name.trim() || 'Yaar ' + phone.slice(-4),
-        phone: phone.trim(),
-        email: `${phone.trim()}@amayaar.in`,
+        name: email.split('@')[0],
+        phone: phone ? `+91${phone.replace(/\D/g, '')}` : '+917809730968',
+        email: email.trim(),
         role: 'user',
       };
 
@@ -66,209 +53,186 @@ export default function AuthPopupModal({ isOpen, onClose }) {
         })
       );
 
+      sessionStorage.setItem('auth_popup_shown', 'true');
       setSuccess(true);
-      setIsVerifying(false);
+      setIsSubmitting(false);
 
       setTimeout(() => {
         onClose();
-      }, 1000);
+      }, 900);
     }, 400);
   };
 
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
-
-    // Auto-focus next input
-    if (value && index < 3) {
-      const nextInput = document.getElementById(`auth-otp-${index + 1}`);
-      if (nextInput) nextInput.focus();
+  const handlePhoneSubmit = (e) => {
+    e.preventDefault();
+    if (!phone || phone.replace(/\D/g, '').length < 10) {
+      setError('Please enter a valid 10-digit mobile number');
+      return;
     }
+    setError('');
+    setStep('email');
   };
 
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200"
     >
-      {/* Modal Card */}
+      {/* Modal Container matching Image 2 Reference */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[420px] overflow-hidden bg-white shadow-2xl rounded-none border border-neutral-300"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at 10% 20%, rgba(0,0,0,0.03) 0%, transparent 40%),
-            radial-gradient(circle at 90% 80%, rgba(0,0,0,0.03) 0%, transparent 40%),
-            linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%)
-          `,
-        }}
+        className="relative w-full max-w-[820px] overflow-hidden rounded-[26px] bg-black text-white p-6 sm:p-10 border border-neutral-800 shadow-2xl"
       >
-        {/* Subtle streetwear graffiti texture watermark */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.06] select-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='60' font-family='sans-serif' font-weight='900' font-size='22' fill='%23000' transform='rotate(-25 60 60)'%3EAMA YAAR%3C/text%3E%3C/svg%3E")`,
-            backgroundRepeat: 'repeat',
-          }}
-        />
-
         {/* Close Button on Top Right */}
         <button
           onClick={onClose}
-          className="absolute right-3.5 top-3.5 z-20 flex h-7 w-7 items-center justify-center text-neutral-800 hover:text-black hover:bg-black/5 transition cursor-pointer"
+          className="absolute right-4 top-4 sm:right-6 sm:top-6 z-20 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition cursor-pointer"
           aria-label="Close"
         >
-          <X className="h-5 w-5 stroke-[2.5]" />
+          <X className="h-5 w-5" />
         </button>
 
-        <div className="relative z-10 px-6 sm:px-8 pt-7 pb-6">
-          {/* Top Brand Logo */}
-          <div className="flex flex-col items-center justify-center">
-            <img
-              src="/logo.png"
-              alt="AMA YAAR"
-              className="h-10 sm:h-12 w-auto object-contain drop-shadow-xs"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          {/* LEFT COLUMN: AMAYAAR + KwikPass branding & Welcome message */}
+          <div className="flex flex-col justify-between py-2 sm:py-4">
+            {/* Brand Header with Divider & KwikPass */}
+            <div className="flex items-center gap-3">
+              <div>
+                <span className="font-sans text-2xl sm:text-3xl font-black uppercase tracking-tight text-white block leading-none">
+                  AMAYAAR
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-black tracking-[0.25em] uppercase text-neutral-400 block mt-1">
+                  STYLE KA LAFDA
+                </span>
+              </div>
+              <div className="h-8 w-[1.5px] bg-neutral-700 mx-1.5" />
+              <div className="flex items-center gap-1.5 text-white font-bold text-sm tracking-wide">
+                <span className="text-white font-black text-sm sm:text-base">Kwik</span>
+                <span className="text-[#facc15] text-base leading-none font-black">⚡</span>
+                <span className="text-white font-black text-sm sm:text-base">Pass</span>
+              </div>
+            </div>
+
+            {/* Welcome Tagline */}
+            <div className="mt-8 sm:mt-14">
+              <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.28em] text-neutral-400 block mb-2">
+                WELCOME,
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-[32px] font-black tracking-tight text-white leading-[1.18]">
+                Register to avail the best deals!
+              </h2>
+              <p className="mt-3 text-xs text-neutral-400 leading-relaxed font-normal hidden sm:block">
+                Get instant access to limited edition drops, exclusive VIP deals, and speedy 1-click checkout.
+              </p>
+            </div>
           </div>
 
-          {step === 1 ? (
-            /* STEP 1: Details Entry */
-            <div className="mt-4">
-              <h3 className="text-center text-xs sm:text-[13px] font-black uppercase tracking-[0.18em] text-neutral-900 mb-5">
-                ENTER YOUR DETAILS
-              </h3>
-
-              {error && (
-                <div className="mb-3.5 rounded-none bg-rose-50 border border-rose-200 px-3 py-2 text-[11px] font-bold text-rose-700 text-center">
-                  {error}
+          {/* RIGHT COLUMN: White Card Container (Exact Image 2 Reference) */}
+          <div className="rounded-[22px] bg-white p-6 sm:p-8 text-neutral-900 shadow-xl flex flex-col justify-center min-h-[310px]">
+            {success ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <div className="h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-3 animate-bounce">
+                  <CheckCircle2 className="h-8 w-8 stroke-[2.5]" />
                 </div>
-              )}
-
-              <form onSubmit={handleSendOtp} className="space-y-3.5">
-                {/* Name Input */}
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Enter Your Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full border border-neutral-300 bg-white px-4 py-3 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-hidden transition"
-                  />
-                </div>
-
-                {/* Mobile Number Input with Country Code */}
-                <div className="flex">
-                  <div className="flex items-center gap-1.5 border border-r-0 border-neutral-300 bg-neutral-100 px-3 py-3 text-xs sm:text-[13px] font-bold text-neutral-800 shrink-0 select-none">
-                    <span className="text-sm">🇮🇳</span>
-                    <span>+91</span>
-                  </div>
-                  <input
-                    type="tel"
-                    maxLength={10}
-                    placeholder="Enter Your Number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    className="w-full border border-neutral-300 bg-white px-4 py-3 text-xs sm:text-[13px] font-medium text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-hidden transition"
-                  />
-                </div>
-
-                {/* SIGN UP Button */}
-                <button
-                  type="submit"
-                  className="w-full mt-2 bg-black hover:bg-neutral-900 text-white py-3.5 text-xs sm:text-sm font-black uppercase tracking-[0.2em] transition duration-200 cursor-pointer shadow-md active:scale-[0.99] flex items-center justify-center gap-2"
-                >
-                  SIGN UP
-                </button>
-              </form>
-
-              {/* Tagline & Slogan */}
-              <p className="mt-5 text-center text-[10.5px] sm:text-[11px] font-black uppercase tracking-wider text-neutral-800 leading-snug px-1">
-                GET EXCLUSIVE ACCESS TO SPECIAL OFFERS, LAUNCHES &amp; MORE.
-              </p>
-
-              {/* Legal Disclaimer */}
-              <p className="mt-3.5 text-center text-[9px] uppercase tracking-widest text-neutral-400 font-semibold">
-                OFFER VALID FOR A LIMITED TIME, T&amp;C APPLIED*
-              </p>
-            </div>
-          ) : (
-            /* STEP 2: Dummy OTP Verification */
-            <div className="mt-4">
-              <h3 className="text-center text-xs sm:text-[13px] font-black uppercase tracking-[0.18em] text-neutral-900 mb-1">
-                VERIFY PHONE NUMBER
-              </h3>
-              <p className="text-center text-[11px] text-neutral-500 font-medium mb-4">
-                OTP sent to <span className="font-bold text-neutral-800">+91 {phone}</span>
-              </p>
-
-              {/* Auto-filled Dummy OTP Banner */}
-              <div className="mb-4 flex items-center justify-center gap-1.5 rounded-none bg-emerald-50 border border-emerald-200 py-1.5 px-3 text-[11px] font-bold text-emerald-800 text-center animate-pulse">
-                <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Dummy OTP Auto-filled: 1234</span>
+                <h3 className="text-lg font-black text-neutral-900">
+                  Welcome to AMA YAAR!
+                </h3>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Your account is linked &amp; deals are unlocked.
+                </p>
               </div>
+            ) : step === 'phone' ? (
+              /* Step to edit/enter mobile number */
+              <div>
+                <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
+                  Enter your mobile number
+                </h3>
+                <p className="text-xs text-neutral-500 mt-1 font-medium">
+                  We will link your exclusive VIP deals to this number.
+                </p>
 
-              {error && (
-                <div className="mb-3.5 rounded-none bg-rose-50 border border-rose-200 px-3 py-2 text-[11px] font-bold text-rose-700 text-center">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
+                    {error}
+                  </div>
+                )}
 
-              {success ? (
-                <div className="py-6 flex flex-col items-center justify-center text-emerald-600 animate-in zoom-in-95">
-                  <CheckCircle className="h-10 w-10 mb-2 stroke-[2.2]" />
-                  <p className="text-sm font-black uppercase tracking-wider">Login Successful!</p>
-                  <p className="text-xs text-neutral-500 mt-1">Welcome to AMA YAAR</p>
-                </div>
-              ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-4">
-                  {/* 4-Digit OTP Boxes */}
-                  <div className="flex justify-center items-center gap-3 py-2">
-                    {otp.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        id={`auth-otp-${idx}`}
-                        type="text"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(idx, e.target.value)}
-                        className="h-12 w-12 text-center text-lg font-black border-2 border-neutral-900 bg-white text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-black transition shadow-xs"
-                      />
-                    ))}
+                <form onSubmit={handlePhoneSubmit} className="mt-4 space-y-4">
+                  <div className="flex rounded-xl border border-neutral-300 overflow-hidden focus-within:border-black transition">
+                    <span className="bg-neutral-100 px-3.5 py-3 text-xs font-bold text-neutral-700 flex items-center border-r border-neutral-300">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      placeholder="Enter mobile number"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-3.5 py-3 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
+                      autoFocus
+                    />
                   </div>
 
-                  {/* Verify & Proceed Button */}
                   <button
                     type="submit"
-                    disabled={isVerifying}
-                    className="w-full bg-black hover:bg-neutral-900 text-white py-3.5 text-xs sm:text-sm font-black uppercase tracking-[0.2em] transition duration-200 cursor-pointer shadow-md active:scale-[0.99] flex items-center justify-center gap-2"
+                    className="w-full rounded-xl bg-black py-3.5 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer"
                   >
-                    {isVerifying ? 'VERIFYING...' : 'VERIFY & CONTINUE'}
+                    Continue
                   </button>
-
-                  <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="font-semibold text-neutral-600 hover:text-black underline cursor-pointer"
-                    >
-                      Change Number
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOtp(['1', '2', '3', '4']);
-                      }}
-                      className="font-bold text-neutral-800 hover:text-black underline cursor-pointer"
-                    >
-                      Resend OTP
-                    </button>
-                  </div>
                 </form>
-              )}
-            </div>
-          )}
+              </div>
+            ) : (
+              /* Exact Screen as Image 2 Reference: Enter email linked to phone */
+              <div>
+                <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
+                  Enter your email address
+                </h3>
+
+                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-500 font-medium">
+                  <span>This email will be linked to</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError('');
+                      setStep('phone');
+                    }}
+                    className="inline-flex items-center gap-0.5 font-bold text-neutral-800 hover:text-black hover:underline cursor-pointer"
+                    title="Change number"
+                  >
+                    <span>+91{phone}</span>
+                    <ArrowUpRight className="h-3 w-3 stroke-[2.5]" />
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+                  <div>
+                    <input
+                      type="email"
+                      placeholder="Enter email address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-xs sm:text-sm font-medium text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-hidden transition"
+                      autoFocus
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full rounded-xl bg-black py-3.5 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Linking...' : 'Submit'}
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Volume2,
   VolumeX,
   Pause,
@@ -109,11 +111,13 @@ const PLACEHOLDER_IMAGES = [
 const REEL_ITEMS = [
   {
     id: 1,
-    title: "Oversized Stylish Men T-shirt",
+    title: "Oversized Stylish Graphic T-Shirt",
+    productName: "Oversized Graphic Tee",
+    productId: "oversized-stylish-graphic-t-shirt",
     price: 450,
     mrp: 899,
     discount: "50% OFF",
-    views: "18.4K views",
+    views: "18.4K",
     badge: "Top Selling",
     poster: "/model01.png",
     altPoster: "/model04.png",
@@ -122,24 +126,29 @@ const REEL_ITEMS = [
   },
   {
     id: 2,
-    title: "Vintage Acid Wash Graphic Tee",
-    price: 599,
-    mrp: 1199,
-    discount: "50% OFF",
-    views: "24.1K views",
+    title: "Founder's Vintage Acid Wash Jacket",
+    productName: "Founder's Jacket",
+    productId: "mens-vintage-acid-wash-fleece-lined-denim-trucker-jacket",
+    price: 2999,
+    mrp: 3999,
+    discount: "25% OFF",
+    views: "24.1K",
     badge: "Trending Drop",
-    poster: "/model04.png",
+    poster: "/boyse.png",
     altPoster: "/model03.png",
     video: "/video/video1.mp4",
     altVideo: "/video/video1.mp4",
+    initialExpanded: true,
   },
   {
     id: 3,
-    title: "Urban Streetwear Heavyweight Tee",
+    title: "Urban Streetwear Heavyweight Polo",
+    productName: "Heavyweight Polo",
+    productId: "mens-classic-polo-t-shirt",
     price: 499,
     mrp: 999,
     discount: "50% OFF",
-    views: "31.8K views",
+    views: "31.8K",
     badge: "Best Value",
     poster: "/model03.png",
     altPoster: "/model01.png",
@@ -148,26 +157,30 @@ const REEL_ITEMS = [
   },
   {
     id: 4,
-    title: "Original Artwork Oversized Fit",
-    price: 550,
-    mrp: 1099,
+    title: "Original Sleeveless Acid Wash Vest",
+    productName: "Acid Wash Vest",
+    productId: "sleeveless-acid-wash-gym-vest",
+    price: 349,
+    mrp: 699,
     discount: "50% OFF",
-    views: "12.9K views",
+    views: "12.9K",
     badge: "Limited Drop",
-    poster: "/model07.jpg",
+    poster: "/model04.png",
     altPoster: "/model08.jpg",
     video: "/video/video3.mp4",
     altVideo: "/video/video3.mp4",
   },
   {
     id: 5,
-    title: "Street Culture Denim Jacket Outfit",
-    price: 899,
-    mrp: 1799,
+    title: "Relaxed Henley Streetwear Tee",
+    productName: "Henley Street Tee",
+    productId: "relaxed-henley-neck-streetwear-tee",
+    price: 420,
+    mrp: 840,
     discount: "50% OFF",
-    views: "45.3K views",
+    views: "45.3K",
     badge: "Hot Right Now",
-    poster: "/model05.jpg",
+    poster: "/model07.jpg",
     altPoster: "/model01.png",
     video: "/video/video3%20(2).mp4",
     altVideo: "/video/video3 (2).mp4",
@@ -192,11 +205,12 @@ function AnimatedReelMotion({ title }) {
   );
 }
 
-function ReelCard({ item, onOpenModal, reelsCount }) {
+function ReelCard({ item, onOpenModal }) {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const [isMuted, setIsMuted] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(Boolean(item.initialExpanded));
 
   useEffect(() => {
     if (videoRef.current) {
@@ -214,7 +228,7 @@ function ReelCard({ item, onOpenModal, reelsCount }) {
     }
   }, [isMuted]);
 
-  const handleProductClick = (e) => {
+  const handleProductNavigate = (e) => {
     e.stopPropagation();
     if (item.productId) {
       navigate(`/products/${item.productId}`);
@@ -223,198 +237,141 @@ function ReelCard({ item, onOpenModal, reelsCount }) {
     }
   };
 
-  const aspectClass = reelsCount === 4 ? "aspect-[9/11.2]" : "aspect-[9/14]";
-
   return (
-    <div className="group flex flex-col cursor-pointer select-none overflow-hidden rounded-none border-[0.2px] border-white/15 shadow-md">
-      {/* Card video container */}
-      <div
-        onClick={handleProductClick}
-        className={`relative ${aspectClass} w-full overflow-hidden bg-neutral-950`}
-      >
-        {hasError ? (
-          <AnimatedReelMotion title={item.title} />
-        ) : (
-          /* Live video plays continuously by default */
-          <video
-            ref={videoRef}
-            autoPlay
-            loop
-            muted={isMuted}
-            playsInline
-            onError={() => setHasError(true)}
-            className="h-full w-full object-cover"
-          >
-            <source src={item.video} type="video/mp4" />
-            <source src={item.altVideo} type="video/mp4" />
-            <source src="/Recording 2026-09-30 160246.mp4" type="video/mp4" />
-          </video>
-        )}
-
-        {/* Top Left Red Ribbon Badge — Anchored to left edge slightly lower down */}
-        <span className="absolute left-0 top-2.5 z-20 rounded-r-full bg-[#b80000] px-3 py-1 text-[11px] font-normal text-white shadow-xs pointer-events-none leading-none">
-          {item.badge || "Top selling"}
-        </span>
-
-        {/* Top Right Heart Wishlist Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            alert("Added to Wishlist!");
-          }}
-          className="absolute right-2 top-2 z-30 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-xs hover:bg-white transition"
-          title="Add to Wishlist"
+    <div
+      onClick={() => onOpenModal && onOpenModal(item)}
+      className="group relative flex flex-col cursor-pointer select-none overflow-hidden rounded-2xl bg-neutral-950 shadow-md aspect-[9/15.5] border border-white/10 transition-all duration-300 hover:shadow-2xl hover:scale-[1.01]"
+    >
+      {/* Live Video / Poster */}
+      {hasError ? (
+        <img
+          src={item.poster || "/model01.png"}
+          alt={item.title}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted={isMuted}
+          playsInline
+          onError={() => setHasError(true)}
+          className="h-full w-full object-cover"
         >
-          <Heart className="h-3.5 w-3.5 text-slate-700" />
-        </button>
+          <source src={item.video} type="video/mp4" />
+          <source src={item.altVideo} type="video/mp4" />
+        </video>
+      )}
 
-        {/* Solid White Center Play Icon */}
-        <span className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <span className="flex h-12 w-12 items-center justify-center transition-transform duration-300 group-hover:scale-115">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-10 w-10 fill-white text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]"
-            >
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-          </span>
+      {/* Subtle Gradient for contrast */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+
+      {/* Top Left Badge */}
+      {item.badge && (
+        <span className="absolute left-3 top-3 z-20 rounded-md bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white shadow-xs pointer-events-none">
+          {item.badge}
         </span>
+      )}
 
-        {/* Smooth Gradient Overlay for text readability */}
-        <div className="absolute inset-x-0 bottom-0 z-10 h-2/5 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
-
-        {/* Top Overlay Row inside video: Views count on Left + 2 Thumbnails on Right */}
-        <div className="absolute bottom-16 left-2.5 right-2.5 z-20 flex items-end justify-between gap-1.5 pointer-events-none">
-          {/* Eye Icon & View Count on Left */}
-          <div className="flex items-center gap-1 text-white/90 font-bold whitespace-nowrap shrink-0 mb-0.5">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.2]"
+      {/* Floating Bottom Product Drawer / Pill matching Image 3 */}
+      <div className="absolute inset-x-0 bottom-3.5 z-30 flex justify-center px-3 pointer-events-auto">
+        {isExpanded ? (
+          /* Expanded Card matching Image 3 Card 2: [thumbnail] Founder's Jacket ₹2,999 [v] */
+          <div
+            onClick={handleProductNavigate}
+            className="w-full max-w-[250px] rounded-2xl bg-white/90 backdrop-blur-md p-2.5 shadow-2xl border border-white/40 flex items-center justify-between gap-2.5 text-neutral-900 transition-all duration-300 hover:bg-white"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <img
+                src={item.poster || "/model01.png"}
+                alt={item.productName || item.title}
+                className="h-10 w-10 rounded-lg object-cover bg-neutral-100 border border-neutral-200 shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-black text-neutral-900 truncate">
+                  {item.productName || item.title}
+                </p>
+                <p className="text-xs font-bold text-neutral-800">
+                  ₹{Number(item.price || 450).toLocaleString("en-IN")}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(false);
+              }}
+              className="h-7 w-7 rounded-full bg-neutral-200/80 hover:bg-neutral-300 flex items-center justify-center shrink-0 text-neutral-700 transition"
+              title="Collapse"
             >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            <span className="text-[10.5px] sm:text-[11.5px] tracking-wide font-extrabold">
-              {item.views || "13.6K views"}
-            </span>
+              <ChevronDown className="h-4 w-4" />
+            </button>
           </div>
-
-          {/* 2 Separate Model Thumbnails on Right — Identical Size & Border */}
-          <div className="flex items-center gap-2 pointer-events-auto">
+        ) : (
+          /* Collapsed Pill matching Image 3 Cards 1, 3, 4, 5: [img1] [img2] [^] */
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(true);
+            }}
+            className="rounded-full bg-white/85 hover:bg-white backdrop-blur-md px-2.5 py-1.5 flex items-center gap-1.5 shadow-xl border border-white/40 transition-all duration-200 group/pill cursor-pointer"
+          >
             <img
               src={item.poster || "/model01.png"}
-              alt="Product 1 Thumbnail"
-              title={item.title}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (item.productId) {
-                  navigate(`/products/${item.productId}`);
-                } else {
-                  onOpenModal(item);
-                }
-              }}
-              className="h-11 w-10 sm:h-12 sm:w-10.5 rounded-none border-2 border-white object-cover object-center shadow-md bg-neutral-900 shrink-0 cursor-pointer hover:scale-105 transition"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src =
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80";
-              }}
+              alt="Item 1"
+              className="h-6 w-6 rounded-full object-cover border border-white shrink-0 shadow-xs"
             />
-            <img
-              src={item.altPoster || "/model04.png"}
-              alt="Product 2 Thumbnail"
-              title={item.product2Title || item.title}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (item.product2Id) {
-                  navigate(`/products/${item.product2Id}`);
-                } else if (item.productId) {
-                  navigate(`/products/${item.productId}`);
-                } else {
-                  onOpenModal(item);
-                }
-              }}
-              className="h-11 w-10 sm:h-12 sm:w-10.5 rounded-none border-2 border-white object-cover object-center shadow-md bg-neutral-900 shrink-0 cursor-pointer hover:scale-105 transition"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src =
-                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80";
-              }}
-            />
+            {item.altPoster && (
+              <img
+                src={item.altPoster}
+                alt="Item 2"
+                className="h-6 w-6 rounded-full object-cover border border-white shrink-0 shadow-xs -ml-2"
+              />
+            )}
+            <ChevronUp className="h-3.5 w-3.5 text-neutral-800 shrink-0 stroke-[2.5] ml-0.5" />
           </div>
-        </div>
-
-        {/* 100% Full-width Edge-to-Edge Translucent Title & Price Box — Reel video visible underneath */}
-        <div
-          onClick={handleProductClick}
-          className="absolute inset-x-0 bottom-0 z-20 bg-black/40 backdrop-blur-xs px-3 py-2 border-t border-white/10 flex flex-col gap-0.5 cursor-pointer hover:bg-black/65 transition"
-        >
-          <p className="truncate text-[12px] sm:text-[12.5px] font-bold text-white leading-tight drop-shadow-md">
-            {item.title}
-          </p>
-          <div className="flex items-center gap-1.5">
-            <span className="font-extrabold text-white text-[13.5px] sm:text-[14.5px] drop-shadow-md">
-              Rs. {Number(item.price || 450).toFixed(2)}
-            </span>
-            <span className="text-[10px] sm:text-[11px] text-white/70 line-through font-normal drop-shadow-sm">
-              Rs. {Number(item.mrp || 899).toFixed(2)}
-            </span>
-          </div>
-        </div>
+        )}
       </div>
-
-      {/* Clean Full-width Centered Dark Button Bar */}
-      <button
-        onClick={handleProductClick}
-        className="w-full py-2.5 text-center text-[12px] font-bold uppercase tracking-wider text-white bg-[#222222] hover:bg-black transition cursor-pointer border-t border-neutral-800 flex items-center justify-center gap-1.5"
-      >
-        <span>{item.productId ? "View Product" : "Add to cart"}</span>
-      </button>
     </div>
   );
 }
 
 function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
-  const navigate = useNavigate();
   const modalVideoRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     if (modalVideoRef.current) {
       modalVideoRef.current.muted = isMuted;
-      const promise = modalVideoRef.current.play();
-      if (promise !== undefined) {
-        promise.catch(() => {
-          if (modalVideoRef.current) {
-            modalVideoRef.current.muted = true;
-            setIsMuted(true);
-            modalVideoRef.current.play().catch(() => setHasError(true));
-          }
-        });
-      }
+      modalVideoRef.current.play().catch(() => {});
     }
   }, [reel, isMuted]);
 
   if (!reel) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 backdrop-blur-xl p-2 sm:p-4 animate-in fade-in duration-200">
-      {/* Modal Wrapper */}
-      <div className="relative flex h-full max-h-[85vh] w-full max-w-[420px] flex-col overflow-hidden bg-neutral-950 shadow-2xl border border-white/20">
-        {/* Top Header */}
-        <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between p-4 bg-gradient-to-b from-black/90 to-transparent">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative flex h-[82vh] max-h-[720px] w-full max-w-[380px] flex-col overflow-hidden rounded-2xl bg-black shadow-2xl border border-neutral-800 text-white"
+      >
+        {/* Top Header matching Image 4 */}
+        <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#facc15] font-black text-black text-xs shadow-md">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black font-black text-xs shadow-md">
               AY
-            </span>
+            </div>
             <div>
               <p className="text-xs font-black text-white tracking-wide">
-                amayaan.in
+                amayaar.in
               </p>
-              <p className="text-[10px] text-white/60 font-semibold">
-                {reel.views}
+              <p className="text-[10px] text-white/70 font-medium">
+                {reel.views ? `${reel.views} views` : "24.5K views"}
               </p>
             </div>
           </div>
@@ -422,114 +379,71 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsMuted(!isMuted)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black transition border border-white/20"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition"
+              aria-label="Toggle mute"
             >
               {isMuted ? (
-                <VolumeX className="h-4 w-4 text-white/80" />
+                <VolumeX className="h-4 w-4" />
               ) : (
-                <Volume2 className="h-4 w-4 text-[#facc15]" />
+                <Volume2 className="h-4 w-4 text-white" />
               )}
             </button>
             <button
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black transition border border-white/20 text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition"
+              aria-label="Close"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        {/* Center Video Player */}
-        <div
-          className="relative flex-1 bg-black overflow-hidden cursor-pointer"
-          onClick={() => {
-            if (modalVideoRef.current) {
-              if (isPlaying) {
-                modalVideoRef.current.pause();
-                setIsPlaying(false);
-              } else {
-                modalVideoRef.current.play().catch(() => setHasError(true));
-                setIsPlaying(true);
-              }
-            }
-          }}
-        >
-          {hasError ? (
-            <AnimatedReelMotion title={reel.title} />
-          ) : (
-            <video
-              ref={modalVideoRef}
-              autoPlay
-              loop
-              muted={isMuted}
-              playsInline
-              onError={() => setHasError(true)}
-              className="h-full w-full object-cover"
-            >
-              <source src={reel.video} type="video/mp4" />
-              <source src={reel.altVideo} type="video/mp4" />
-              <source src="/Recording 2026-09-30 160246.mp4" type="video/mp4" />
-            </video>
-          )}
-
-          {!isPlaying && !hasError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#facc15]/90 text-black shadow-2xl">
-                <Play className="h-8 w-8 fill-black ml-1" />
-              </span>
-            </div>
-          )}
+        {/* Video Player */}
+        <div className="relative flex-1 bg-black overflow-hidden">
+          <video
+            ref={modalVideoRef}
+            autoPlay
+            loop
+            muted={isMuted}
+            playsInline
+            className="h-full w-full object-cover"
+          >
+            <source src={reel.video} type="video/mp4" />
+            <source src={reel.altVideo} type="video/mp4" />
+          </video>
         </div>
 
         {/* Navigation Side Controls */}
-        <button
-          onClick={onPrev}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black transition border border-white/20"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <button
-          onClick={onNext}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black transition border border-white/20"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-
-        {/* Bottom Product Reel Shopping Drawer */}
-        <div className="relative z-30 bg-neutral-900/95 border-t border-white/10 p-4 backdrop-blur-md space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black bg-[#facc15]">
-              {reel.badge}
-            </span>
-            <span className="text-xs font-bold text-emerald-400">
-              {reel.discount}
-            </span>
-          </div>
-
-          <div
-            className={reel.productId ? "cursor-pointer hover:opacity-90" : ""}
-            onClick={() => {
-              if (reel.productId) {
-                onClose();
-                navigate(`/products/${reel.productId}`);
-              }
-            }}
+        {onPrev && (
+          <button
+            onClick={onPrev}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/40 transition"
+            aria-label="Previous reel"
           >
-            <h4 className="text-sm font-black text-white tracking-wide truncate flex items-center gap-1.5">
-              <span>{reel.title}</span>
-              {reel.productId && (
-                <ArrowUpRight className="h-4 w-4 text-[#facc15] shrink-0" />
-              )}
-            </h4>
-            <div className="mt-1 flex items-center gap-2">
-              <span className="text-base font-black text-white">
-                Rs. {reel.price}
-              </span>
-              <span className="text-xs text-white/40 line-through font-medium">
-                Rs. {reel.mrp}
-              </span>
-            </div>
-          </div>
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
+        {onNext && (
+          <button
+            onClick={onNext}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/40 transition"
+            aria-label="Next reel"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Bottom Button matching Image 4: [Instagram Icon] Open in Instagram */}
+        <div className="absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
+          <a
+            href="https://www.instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-full bg-white/90 hover:bg-white px-5 py-2.5 text-xs font-bold text-neutral-900 shadow-xl backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+          >
+            <InstagramIcon className="h-4 w-4 text-black" />
+            <span>Open in Instagram</span>
+          </a>
         </div>
       </div>
     </div>
@@ -1460,22 +1374,61 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Dynamic 4 or 5 Card Grid Container */}
-        <div
-          className={`relative mx-auto w-full px-2 sm:px-4 lg:px-6 ${reelsDisplayCount === 5 ? "max-w-[1980px]" : "max-w-[1600px]"}`}
-        >
-          <div
-            className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-1.5 lg:gap-1.5 ${reelsDisplayCount === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}
+        {/* 5-Card Carousel Container matching Image 3 */}
+        <div className="relative mx-auto w-full px-4 sm:px-8 lg:px-12 max-w-[1880px]">
+          {/* Side Nav Button Left matching Image 3 */}
+          <button
+            onClick={() => {
+              const rail = document.getElementById("reels-cards-rail");
+              if (rail) rail.scrollBy({ left: -340, behavior: "smooth" });
+            }}
+            className="absolute left-1 sm:left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-900 shadow-2xl border border-neutral-200 hover:bg-black hover:text-white transition-all cursor-pointer"
+            aria-label="Previous reels"
           >
-            {displayReels.slice(0, reelsDisplayCount).map((item) => (
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          {/* Side Nav Button Right matching Image 3 */}
+          <button
+            onClick={() => {
+              const rail = document.getElementById("reels-cards-rail");
+              if (rail) rail.scrollBy({ left: 340, behavior: "smooth" });
+            }}
+            className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-900 shadow-2xl border border-neutral-200 hover:bg-black hover:text-white transition-all cursor-pointer"
+            aria-label="Next reels"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          <div
+            id="reels-cards-rail"
+            className="grid grid-flow-col auto-cols-[minmax(250px,1fr)] sm:auto-cols-auto sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible pb-4 pt-1 px-1 scrollbar-hide snap-x snap-mandatory"
+          >
+            {displayReels.slice(0, 5).map((item, idx) => (
               <ReelCard
                 key={item.id}
                 item={item}
-                reelsCount={reelsDisplayCount}
+                onOpenModal={() => setSelectedReelIndex(idx)}
               />
             ))}
           </div>
         </div>
+
+        {/* Modal matching Image 4 */}
+        {selectedReelIndex !== null && displayReels[selectedReelIndex] && (
+          <ReelShoppingModal
+            reel={displayReels[selectedReelIndex]}
+            onClose={() => setSelectedReelIndex(null)}
+            onNext={() =>
+              setSelectedReelIndex((prev) => (prev + 1) % Math.min(5, displayReels.length))
+            }
+            onPrev={() =>
+              setSelectedReelIndex(
+                (prev) => (prev - 1 + Math.min(5, displayReels.length)) % Math.min(5, displayReels.length)
+              )
+            }
+          />
+        )}
       </section>
 
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
