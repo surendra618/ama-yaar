@@ -6,6 +6,7 @@ const initialState = {
   isDressing: false,
   selectedModel: 'male-1',
   userUploadedPhoto: null,
+  flyingGarment: null, // { image, startRect: { top, left, width, height }, key }
 };
 
 const fittingRoomSlice = createSlice({
@@ -73,6 +74,12 @@ const fittingRoomSlice = createSlice({
       state.selectedModel = 'user';
       state.isDressing = true;
     },
+    setFlyingGarment: (state, action) => {
+      state.flyingGarment = action.payload;
+    },
+    clearFlyingGarment: (state) => {
+      state.flyingGarment = null;
+    },
   },
 });
 
@@ -87,6 +94,8 @@ export const {
   setDressing,
   setSelectedModel,
   setUserUploadedPhoto,
+  setFlyingGarment,
+  clearFlyingGarment,
 } = fittingRoomSlice.actions;
 
 export default fittingRoomSlice.reducer;

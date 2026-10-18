@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   RotateCcw,
@@ -8,15 +9,14 @@ import {
   Key,
   Check,
   ChevronDown,
-  Info,
 } from 'lucide-react';
 import {
   closeFittingRoom,
   openFittingRoom,
   removeWornItem,
   clearFittingRoom,
-  setSelectedModel,
   setDressing,
+  clearFlyingGarment,
 } from '../fittingRoomSlice';
 import { addToCart, openDrawer } from '../../cart/cartSlice';
 
@@ -36,7 +36,7 @@ export const HangerIcon = (props) => (
   </svg>
 );
 
-// Standard base wardrobe pieces (Pants, Shoes, Hat, Innerwear) matching the video
+// Base wardrobe items (pants, shoes, inner tee, beanie) matching the video
 const BASE_WARDROBE = [
   {
     id: 'base-pants',
@@ -70,20 +70,21 @@ const BASE_WARDROBE = [
 
 export default function FittingRoomModal() {
   const dispatch = useDispatch();
-  const { wornItems, isOpen, isDressing } = useSelector(
+  const { wornItems, isOpen, isDressing, flyingGarment } = useSelector(
     (state) => state.fittingRoom
   );
 
+  const modelViewportRef = useRef(null);
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('ay_tryon_api_key') || '');
   const [customKeySaved, setCustomKeySaved] = useState(false);
 
-  // Auto-finish dressing simulation after 800ms
+  // Auto-finish dressing simulation after 900ms
   useEffect(() => {
     if (isDressing) {
       const timer = setTimeout(() => {
         dispatch(setDressing(false));
-      }, 850);
+      }, 900);
       return () => clearTimeout(timer);
     }
   }, [isDressing, dispatch]);
@@ -116,15 +117,73 @@ export default function FittingRoomModal() {
   // The active outerwear item on the model
   const activeOuterwear = wornItems.length > 0 ? wornItems[wornItems.length - 1] : null;
 
-  // Total pieces = worn user items + base pieces (matching the "5 pieces" in the video!)
+  // Total pieces = worn user items + base pieces (matching the "5 pieces" in the video)
   const totalPiecesCount = BASE_WARDROBE.length + wornItems.length;
 
   const totalLookPrice =
     wornItems.reduce((acc, it) => acc + Number(it.price || 0), 0) +
     BASE_WARDROBE.reduce((acc, it) => acc + Number(it.price || 0), 0);
 
+  // Target position for the flying garment animation (bottom left Fitting Room viewport)
+  const getTargetPosition = () => {
+    if (modelViewportRef.current) {
+      const rect = modelViewportRef.current.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width / 2 - 40,
+        y: rect.top + rect.height / 2 - 50,
+      };
+    }
+    // Fallback: bottom-left
+    return { x: 70, y: window.innerHeight - 340 };
+  };
+
   return (
     <>
+      {/* 0. FLYING GARMENT ANIMATION (Matches Video 00:06) */}
+      <AnimatePresence>
+        {flyingGarment && (
+          <motion.div
+            key={flyingGarment.key || 'flying-garment'}
+            initial={{
+              position: 'fixed',
+              top: flyingGarment.startRect.top,
+              left: flyingGarment.startRect.left,
+              width: flyingGarment.startRect.width,
+              height: flyingGarment.startRect.height,
+              opacity: 0.95,
+              scale: 1,
+              rotate: 0,
+              zIndex: 9999,
+              pointerEvents: 'none',
+            }}
+            animate={{
+              top: getTargetPosition().y,
+              left: getTargetPosition().x,
+              width: 80,
+              height: 100,
+              scale: 0.6,
+              opacity: 0.3,
+              rotate: -12,
+            }}
+            exit={{ opacity: 0, scale: 0.2 }}
+            transition={{
+              duration: 0.65,
+              ease: [0.16, 1, 0.3, 1], // Natural bezier arc curve
+            }}
+            onAnimationComplete={() => {
+              dispatch(clearFlyingGarment());
+            }}
+            className="rounded-xl overflow-hidden shadow-2xl drop-shadow-[0_15px_30px_rgba(224,122,95,0.4)]"
+          >
+            <img
+              src={flyingGarment.image}
+              alt="Flying Garment"
+              className="h-full w-full object-contain filter drop-shadow-md"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 1. COLLAPSED FLOATING PILL TRIGGER (when closed) */}
       {!isOpen && (
         <button
@@ -157,9 +216,9 @@ export default function FittingRoomModal() {
         </button>
       )}
 
-      {/* 2. EXPANDED FITTING ROOM WIDGET (Exact match to LinkedIn Video) */}
+      {/* 2. EXPANDED FITTING ROOM WIDGET (Exact match to User Screenshot & Video) */}
       {isOpen && (
-        <div className="fixed bottom-6 left-6 z-[95] w-[310px] sm:w-[335px] max-w-[calc(100vw-32px)] rounded-2xl bg-[#16161c] text-white p-3.5 shadow-2xl border border-neutral-700/80 flex flex-col font-sans animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed bottom-6 left-6 z-[95] w-[310px] sm:w-[335px] max-w-[calc(100vw-32px)] rounded-2xl bg-[#16161c] text-white p-3.5 shadow-2xl border border-neutral-700/80 flex flex-col font-sans animate-in fade-in slide-in-from-bottom-5 duration-200 select-none">
           {/* Header row */}
           <div className="flex items-start justify-between">
             <div>
@@ -173,54 +232,67 @@ export default function FittingRoomModal() {
             <button
               type="button"
               onClick={() => dispatch(closeFittingRoom())}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800 transition cursor-pointer"
               aria-label="Close fitting room"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Central Mannequin / Standing Model Viewport matching Video */}
-          <div className="relative mt-3 aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#0c0c0e] border border-neutral-800 flex items-center justify-center">
-            {/* Base Standing Mannequin / Streetwear Model (Pants, Boots, Beanie) */}
-            <div className="relative h-full w-full flex flex-col items-center justify-between p-2">
+          {/* Central Mannequin / Model Viewport with exact Screenshot Animation */}
+          <div
+            ref={modelViewportRef}
+            className="relative mt-3 aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#0c0c0e] border border-neutral-800 flex items-center justify-center"
+          >
+            {/* Base Standing Model / Mannequin Layer */}
+            <div
+              className={`relative h-full w-full flex flex-col items-center justify-between p-2 transition-all duration-500 ${
+                isDressing ? 'filter blur-[1.5px] opacity-40 scale-[0.98]' : 'filter blur-0 opacity-100 scale-100'
+              }`}
+            >
               {/* Head / Beanie / Sunglasses layer */}
               <div className="relative z-10 flex flex-col items-center mt-1">
-                {/* Vintage Beanie */}
+                {/* Docker Beanie */}
                 <div className="h-7 w-12 rounded-t-full bg-[#b8860b]/90 border border-neutral-700 shadow-xs flex items-center justify-center">
                   <span className="text-[7px] font-black text-black/60 uppercase tracking-widest">AY</span>
                 </div>
-                {/* Head / Face Silhouette */}
+                {/* Silhouette Face */}
                 <div className="h-8 w-8 rounded-full bg-[#3a3530] border border-neutral-700 -mt-1.5 flex items-center justify-center shadow-inner">
-                  {/* Streetwear Sunglasses */}
+                  {/* Streetwear Shades */}
                   <div className="h-2 w-6 bg-black rounded-xs -mt-1 shadow-xs" />
                 </div>
               </div>
 
-              {/* Torso / Worn Garment layer */}
+              {/* Torso / Worn Garment layer with crossfade */}
               <div className="relative z-20 flex-1 w-full max-w-[210px] my-1 flex items-center justify-center">
-                {activeOuterwear ? (
-                  /* Outerwear worn on model */
-                  <div className="relative h-full w-full flex items-center justify-center animate-in zoom-in-95 duration-300">
-                    <img
-                      src={activeOuterwear.images?.[0] || activeOuterwear.image || '/boyse.png'}
-                      alt={activeOuterwear.name}
-                      className={`max-h-[175px] w-auto max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] transition-all duration-300 ${
-                        isDressing ? 'scale-95 opacity-50 blur-xs' : 'scale-100 opacity-100'
-                      }`}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = '/boyse.png';
-                      }}
-                    />
-                  </div>
-                ) : (
-                  /* Default Raw Streetwear Crewneck */
-                  <div className="relative h-24 w-32 rounded-lg bg-[#24242a] border border-neutral-700 flex flex-col items-center justify-center shadow-md">
-                    <span className="text-[9px] font-extrabold text-neutral-400 tracking-wider">AMA YAAR</span>
-                    <span className="text-[8px] text-neutral-500 mt-0.5">INNER LAYER</span>
-                  </div>
-                )}
+                <AnimatePresence mode="wait">
+                  {activeOuterwear ? (
+                    <motion.div
+                      key={activeOuterwear._id || activeOuterwear.id || activeOuterwear.slug}
+                      initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.35, ease: 'easeOut' }}
+                      className="relative h-full w-full flex items-center justify-center"
+                    >
+                      <img
+                        src={activeOuterwear.images?.[0] || activeOuterwear.image || '/boyse.png'}
+                        alt={activeOuterwear.name}
+                        className="max-h-[175px] w-auto max-w-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.85)]"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/boyse.png';
+                        }}
+                      />
+                    </motion.div>
+                  ) : (
+                    /* Default Raw Streetwear Crewneck */
+                    <div className="relative h-24 w-32 rounded-lg bg-[#24242a] border border-neutral-700 flex flex-col items-center justify-center shadow-md">
+                      <span className="text-[9px] font-extrabold text-neutral-400 tracking-wider">AMA YAAR</span>
+                      <span className="text-[8px] text-neutral-500 mt-0.5">INNER LAYER</span>
+                    </div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Legs / Dark Relaxed Cargo Pants layer */}
@@ -238,21 +310,57 @@ export default function FittingRoomModal() {
               </div>
             </div>
 
-            {/* "Dressing your model" Loading State matching screenshot / video */}
-            {isDressing && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 bg-black/75 backdrop-blur-xs text-center animate-in fade-in duration-150">
-                <div className="h-9 w-9 rounded-full border-2 border-neutral-700 border-t-[#e07a5f] animate-spin mb-2 shadow-lg" />
-                <p className="text-xs font-bold text-white tracking-tight">
-                  Dressing your model
-                </p>
-                <p className="mt-0.5 text-[10px] text-neutral-400 leading-tight max-w-[200px]">
-                  The photo is being made for you. It takes a moment.
-                </p>
-              </div>
-            )}
+            {/* "Dressing your model" EXACT SCREENSHOT LOADING ANIMATION */}
+            <AnimatePresence>
+              {isDressing && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 bg-black/70 backdrop-blur-xs text-center"
+                >
+                  {/* Glowing Amber Gradient Rotating Ring (Exact match to screenshot) */}
+                  <div className="relative h-12 w-12 flex items-center justify-center mb-3">
+                    <svg className="animate-spin h-10 w-10" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="#4b5563"
+                        strokeWidth="2.5"
+                        fill="none"
+                      />
+                      <path
+                        fill="none"
+                        stroke="url(#dressing-gradient)"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        d="M12 2a10 10 0 0 1 10 10"
+                      />
+                      <defs>
+                        <linearGradient id="dressing-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#f97316" />
+                          <stop offset="100%" stopColor="#e07a5f" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+
+                  {/* Exact Text from Screenshot */}
+                  <p className="text-xs font-bold text-white tracking-tight">
+                    Dressing your model
+                  </p>
+                  <p className="mt-1 text-[10.5px] text-neutral-400 leading-snug max-w-[210px]">
+                    The photo is being made for you. It takes a moment.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* "Your picks" Section matching video */}
+          {/* "Your picks" Section matching screenshot */}
           <div className="mt-3">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-white">Your picks</span>
@@ -268,8 +376,11 @@ export default function FittingRoomModal() {
                 const pid = item._id || item.id || item.slug;
                 const thumb = item.images?.[0] || item.image || '/model01.png';
                 return (
-                  <div
+                  <motion.div
                     key={pid}
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 350, damping: 25 }}
                     className="group/pick relative flex-shrink-0 h-10 w-10 rounded-lg bg-[#22222a] border border-[#e07a5f]/60 overflow-hidden shadow-xs ring-1 ring-[#e07a5f]"
                     title={item.name}
                   >
@@ -285,12 +396,12 @@ export default function FittingRoomModal() {
                     <button
                       type="button"
                       onClick={() => dispatch(removeWornItem(pid))}
-                      className="absolute top-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-bl-sm bg-black/80 text-white hover:bg-rose-600 transition"
+                      className="absolute top-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-bl-sm bg-black/80 text-white hover:bg-rose-600 transition cursor-pointer"
                       title="Take off"
                     >
                       <X className="h-2 w-2 stroke-[3]" />
                     </button>
-                  </div>
+                  </motion.div>
                 );
               })}
 
@@ -376,7 +487,7 @@ export default function FittingRoomModal() {
               </button>
             </div>
             <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
-              Connect your Gemini, Fal.ai, or Replicate API key for real-time AI generative dressing, or use the built-in instant streetwear mannequin engine.
+              Connect your Gemini, Fal.ai, or Replicate API key for real-time generative AI try-on, or continue with the instant built-in model engine.
             </p>
             <form onSubmit={handleSaveApiKey} className="space-y-3">
               <input

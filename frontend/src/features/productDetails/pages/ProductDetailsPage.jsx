@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -29,7 +29,7 @@ import {
 } from "../productDetailsSlice";
 import { addToCart, openDrawer } from "../../cart/cartSlice";
 import { toggleWishlist } from "../../wishlist/wishlistSlice";
-import { toggleWearItem } from "../../fittingRoom/fittingRoomSlice";
+import { toggleWearItem, setFlyingGarment } from "../../fittingRoom/fittingRoomSlice";
 import { HangerIcon } from "../../fittingRoom/components/FittingRoomModal";
 import ProductCard from "../../../components/ProductCard";
 
@@ -38,6 +38,7 @@ export default function ProductDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const imageContainerRef = useRef(null);
 
   const { product, related, reviews, reviewStats, loading } = useSelector(
     (state) => state.productDetails,
@@ -242,7 +243,7 @@ export default function ProductDetailsPage() {
 
           {/* CENTER COLUMN: Large Focused Product Image with Subtle Arrow Controls */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center order-1 lg:order-2">
-            <div className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[440px] overflow-hidden rounded-xs bg-neutral-100 flex items-center justify-center shadow-xs group">
+            <div ref={imageContainerRef} className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[440px] overflow-hidden rounded-xs bg-neutral-100 flex items-center justify-center shadow-xs group">
               <img
                 src={displayImages[selectedImage] || displayImages[0]}
                 alt={product.name || "Washed Tee Black"}
@@ -386,14 +387,31 @@ export default function ProductDetailsPage() {
                 )}
               </button>
 
-              {/* Try on in AI Virtual Fitting Room (matching reference screenshot) */}
+              {/* Try on in AI Virtual Fitting Room (matching reference screenshot & video) */}
               <button
                 type="button"
-                onClick={() => dispatch(toggleWearItem(product))}
+                onClick={() => {
+                  if (!isWorn && imageContainerRef.current) {
+                    const rect = imageContainerRef.current.getBoundingClientRect();
+                    dispatch(
+                      setFlyingGarment({
+                        image: displayImages[selectedImage] || displayImages[0],
+                        startRect: {
+                          top: rect.top,
+                          left: rect.left,
+                          width: rect.width,
+                          height: rect.height,
+                        },
+                        key: Date.now(),
+                      })
+                    );
+                  }
+                  dispatch(toggleWearItem(product));
+                }}
                 className={`w-full mt-2.5 py-3.5 px-4 rounded-xs text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border transition duration-200 cursor-pointer ${
                   isWorn
-                    ? "bg-[#f97316] text-white border-[#f97316] shadow-md ring-2 ring-orange-300"
-                    : "bg-neutral-100 hover:bg-[#f97316] hover:text-white text-neutral-900 border-neutral-300"
+                    ? "bg-[#e07a5f] text-white border-[#e07a5f] shadow-md ring-2 ring-[#e07a5f]/40"
+                    : "bg-neutral-100 hover:bg-[#e07a5f] hover:text-white text-neutral-900 border-neutral-300"
                 }`}
               >
                 <HangerIcon className="h-4 w-4" />

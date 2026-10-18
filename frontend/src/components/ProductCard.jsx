@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Heart, ChevronLeft, ChevronRight, Star, ShoppingBag } from 'lucide-react';
 import { addToCart, openDrawer } from '../features/cart/cartSlice';
-import { toggleWearItem } from '../features/fittingRoom/fittingRoomSlice';
+import { toggleWearItem, setFlyingGarment } from '../features/fittingRoom/fittingRoomSlice';
 import { HangerIcon } from '../features/fittingRoom/components/FittingRoomModal';
 
 export default function ProductCard({ product }) {
@@ -11,6 +11,7 @@ export default function ProductCard({ product }) {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const cardRef = useRef(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeImgIndex, setActiveImgIndex] = useState(0);
 
@@ -75,11 +76,27 @@ export default function ProductCard({ product }) {
   const handleToggleFittingRoom = (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!isWorn && cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      dispatch(
+        setFlyingGarment({
+          image: currentImage,
+          startRect: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          },
+          key: Date.now(),
+        })
+      );
+    }
     dispatch(toggleWearItem(product));
   };
 
   return (
-    <div className="group relative flex flex-col bg-transparent select-none">
+    <div ref={cardRef} className="group relative flex flex-col bg-transparent select-none">
       {/* Product Image Container (3:4 portrait, tall streetwear framing matching Video) */}
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-neutral-900/10">
         <Link to={`/products/${product.slug || product._id}`} className="block h-full w-full">
