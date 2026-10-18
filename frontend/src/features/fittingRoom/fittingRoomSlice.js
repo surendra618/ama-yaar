@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   wornItems: [],
+  basePieces: ['hat', 'inner', 'pants', 'shoes'],
   isOpen: false,
   isDressing: false,
   selectedModel: 'male-1',
@@ -50,8 +51,18 @@ const fittingRoomSlice = createSlice({
         (it) => (it._id || it.id || it.slug) !== pid
       );
     },
+    removeBasePiece: (state, action) => {
+      const pieceId = action.payload;
+      state.basePieces = state.basePieces.filter((p) => p !== pieceId);
+    },
     clearFittingRoom: (state) => {
       state.wornItems = [];
+      state.basePieces = ['hat', 'inner', 'pants', 'shoes'];
+    },
+    resetFittingRoom: (state) => {
+      state.wornItems = [];
+      state.basePieces = ['hat', 'inner', 'pants', 'shoes'];
+      state.isDressing = false;
     },
     openFittingRoom: (state) => {
       state.isOpen = true;
@@ -87,7 +98,9 @@ export const {
   toggleWearItem,
   wearItem,
   removeWornItem,
+  removeBasePiece,
   clearFittingRoom,
+  resetFittingRoom,
   openFittingRoom,
   closeFittingRoom,
   toggleFittingRoom,

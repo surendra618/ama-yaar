@@ -9,12 +9,15 @@ import {
   Key,
   Check,
   ChevronDown,
+  ZoomIn,
 } from 'lucide-react';
 import {
   closeFittingRoom,
   openFittingRoom,
   removeWornItem,
+  removeBasePiece,
   clearFittingRoom,
+  resetFittingRoom,
   setDressing,
   clearFlyingGarment,
 } from '../fittingRoomSlice';
@@ -36,45 +39,58 @@ export const HangerIcon = (props) => (
   </svg>
 );
 
-// Base wardrobe items (pants, shoes, inner tee, beanie) matching the video
-const BASE_WARDROBE = [
-  {
-    id: 'base-pants',
-    name: 'Relaxed Street Cargo Trousers',
+// Base wardrobe items configuration matching video & user screenshot
+const BASE_ITEMS_CONFIG = {
+  pants: {
+    id: 'pants',
+    name: 'Charcoal Tailored Pants',
     type: 'pants',
-    image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=200&q=80',
-    price: 999,
-  },
-  {
-    id: 'base-shoes',
-    name: 'Chunky Sole Streetwear Boots',
-    type: 'shoes',
-    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=200&q=80',
+    image: '/pick-pants.png',
     price: 1499,
   },
-  {
-    id: 'base-inner',
-    name: 'Heavyweight Ribbed Crewneck Tee',
+  shoes: {
+    id: 'shoes',
+    name: 'Classic Canvas High-Tops',
+    type: 'shoes',
+    image: '/pick-shoes.png',
+    price: 1999,
+  },
+  inner: {
+    id: 'inner',
+    name: 'Ribbed Navy Henley',
     type: 'inner',
     image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200&q=80',
+    price: 799,
+  },
+  hat: {
+    id: 'hat',
+    name: 'Tan Newsboy Cap',
+    type: 'hat',
+    image: '/pick-cap.png',
     price: 499,
   },
-  {
-    id: 'base-hat',
-    name: 'Vintage Knit Docker Beanie',
-    type: 'hat',
-    image: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=200&q=80',
-    price: 299,
-  },
-];
+};
+
+const DEFAULT_OUTERWEAR = {
+  id: 'default-puffer',
+  name: 'Army Green Puffer Jacket',
+  type: 'jacket',
+  image: '/pick-jacket.png',
+  price: 2499,
+};
 
 export default function FittingRoomModal() {
   const dispatch = useDispatch();
-  const { wornItems, isOpen, isDressing, flyingGarment } = useSelector(
-    (state) => state.fittingRoom
-  );
+  const {
+    wornItems = [],
+    basePieces = ['pants', 'shoes', 'inner', 'hat'],
+    isOpen,
+    isDressing,
+    flyingGarment,
+  } = useSelector((state) => state.fittingRoom);
 
   const modelViewportRef = useRef(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('ay_tryon_api_key') || '');
   const [customKeySaved, setCustomKeySaved] = useState(false);
@@ -84,7 +100,7 @@ export default function FittingRoomModal() {
     if (isDressing) {
       const timer = setTimeout(() => {
         dispatch(setDressing(false));
-      }, 900);
+      }, 950);
       return () => clearTimeout(timer);
     }
   }, [isDressing, dispatch]);
@@ -99,30 +115,34 @@ export default function FittingRoomModal() {
     }, 700);
   };
 
-  const handleAddAllToCart = () => {
-    if (wornItems.length === 0) return;
-    wornItems.forEach((product) => {
-      const defaultVariant = product.sizes?.[0] || 'Free Size';
-      dispatch(
-        addToCart({
-          productId: product._id || product.id,
-          quantity: 1,
-          variant: defaultVariant,
-        })
-      );
-    });
-    dispatch(openDrawer());
-  };
+  const isCustomWorn = wornItems.length > 0;
+  const activeOuterwear = isCustomWorn ? wornItems[wornItems.length - 1] : DEFAULT_OUTERWEAR;
+  const activeBaseList = (basePieces || []).map((id) => BASE_ITEMS_CONFIG[id]).filter(Boolean);
 
-  // The active outerwear item on the model
-  const activeOuterwear = wornItems.length > 0 ? wornItems[wornItems.length - 1] : null;
-
-  // Total pieces = worn user items + base pieces (matching the "5 pieces" in the video)
-  const totalPiecesCount = BASE_WARDROBE.length + wornItems.length;
+  // Total pieces = worn outerwear + active base pieces (matching "5 pieces" in the video)
+  const totalPiecesCount = activeBaseList.length + (isCustomWorn ? wornItems.length : 1);
 
   const totalLookPrice =
-    wornItems.reduce((acc, it) => acc + Number(it.price || 0), 0) +
-    BASE_WARDROBE.reduce((acc, it) => acc + Number(it.price || 0), 0);
+    (isCustomWorn
+      ? wornItems.reduce((acc, it) => acc + Number(it.price || 0), 0)
+      : DEFAULT_OUTERWEAR.price) +
+    activeBaseList.reduce((acc, it) => acc + Number(it.price || 0), 0);
+
+  const handleAddAllToCart = () => {
+    if (isCustomWorn) {
+      wornItems.forEach((product) => {
+        const defaultVariant = product.sizes?.[0] || 'Free Size';
+        dispatch(
+          addToCart({
+            productId: product._id || product.id,
+            quantity: 1,
+            variant: defaultVariant,
+          })
+        );
+      });
+    }
+    dispatch(openDrawer());
+  };
 
   // Target position for the flying garment animation (bottom left Fitting Room viewport)
   const getTargetPosition = () => {
@@ -133,7 +153,6 @@ export default function FittingRoomModal() {
         y: rect.top + rect.height / 2 - 50,
       };
     }
-    // Fallback: bottom-left
     return { x: 70, y: window.innerHeight - 340 };
   };
 
@@ -194,23 +213,17 @@ export default function FittingRoomModal() {
         >
           <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-[#e07a5f] text-white">
             <HangerIcon className="h-4 w-4" />
-            {wornItems.length > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black text-[9px] font-black shadow-xs">
-                {wornItems.length}
-              </span>
-            )}
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black text-[9px] font-black shadow-xs">
+              {totalPiecesCount}
+            </span>
           </div>
           <div className="text-left">
             <p className="text-xs font-bold leading-tight flex items-center gap-1.5">
               <span>Fitting room</span>
-              {wornItems.length > 0 && (
-                <span className="h-1.5 w-1.5 rounded-full bg-[#e07a5f] animate-pulse" />
-              )}
+              <span className="h-1.5 w-1.5 rounded-full bg-[#e07a5f] animate-pulse" />
             </p>
             <p className="text-[10px] text-neutral-400 font-medium">
-              {wornItems.length > 0
-                ? `${totalPiecesCount} pieces look ready`
-                : 'Tap hanger on products to wear'}
+              {totalPiecesCount} pieces look ready
             </p>
           </div>
         </button>
@@ -239,76 +252,59 @@ export default function FittingRoomModal() {
             </button>
           </div>
 
-          {/* Central Mannequin / Model Viewport with exact Screenshot Animation */}
+          {/* Central Mannequin / Model Viewport with exact Screenshot Studio Look */}
           <div
             ref={modelViewportRef}
-            className="relative mt-3 aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#0c0c0e] border border-neutral-800 flex items-center justify-center"
+            className="relative mt-3 aspect-[3/4] w-full overflow-hidden rounded-xl bg-gradient-to-b from-[#e8e7e4] via-[#dfdeda] to-[#d6d5d0] border border-neutral-700/60 flex items-center justify-center shadow-inner group"
           >
-            {/* Base Standing Model / Mannequin Layer */}
+            {/* Real Studio Mannequin Photo (Exact match to user screenshot) */}
             <div
-              className={`relative h-full w-full flex flex-col items-center justify-between p-2 transition-all duration-500 ${
-                isDressing ? 'filter blur-[1.5px] opacity-40 scale-[0.98]' : 'filter blur-0 opacity-100 scale-100'
+              className={`relative h-full w-full flex items-center justify-center transition-all duration-500 ${
+                isDressing ? 'filter blur-[2px] opacity-35 scale-[0.98]' : 'filter blur-0 opacity-100 scale-100'
               }`}
             >
-              {/* Head / Beanie / Sunglasses layer */}
-              <div className="relative z-10 flex flex-col items-center mt-1">
-                {/* Docker Beanie */}
-                <div className="h-7 w-12 rounded-t-full bg-[#b8860b]/90 border border-neutral-700 shadow-xs flex items-center justify-center">
-                  <span className="text-[7px] font-black text-black/60 uppercase tracking-widest">AY</span>
-                </div>
-                {/* Silhouette Face */}
-                <div className="h-8 w-8 rounded-full bg-[#3a3530] border border-neutral-700 -mt-1.5 flex items-center justify-center shadow-inner">
-                  {/* Streetwear Shades */}
-                  <div className="h-2 w-6 bg-black rounded-xs -mt-1 shadow-xs" />
-                </div>
-              </div>
+              <img
+                src="/fitting-room-model.png"
+                alt="AMA YAAR Mannequin Model"
+                className="h-full w-full object-cover object-center drop-shadow-md select-none"
+              />
 
-              {/* Torso / Worn Garment layer with crossfade */}
-              <div className="relative z-20 flex-1 w-full max-w-[210px] my-1 flex items-center justify-center">
-                <AnimatePresence mode="wait">
-                  {activeOuterwear ? (
-                    <motion.div
-                      key={activeOuterwear._id || activeOuterwear.id || activeOuterwear.slug}
-                      initial={{ opacity: 0, scale: 0.9, y: 8 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.35, ease: 'easeOut' }}
-                      className="relative h-full w-full flex items-center justify-center"
-                    >
+              {/* Seamless overlay when user picks a different jacket/coat from the catalog */}
+              <AnimatePresence mode="wait">
+                {isCustomWorn && activeOuterwear && (
+                  <motion.div
+                    key={activeOuterwear._id || activeOuterwear.id || activeOuterwear.slug}
+                    initial={{ opacity: 0, scale: 0.88, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  >
+                    <div className="relative w-[65%] -mt-6">
                       <img
-                        src={activeOuterwear.images?.[0] || activeOuterwear.image || '/boyse.png'}
+                        src={activeOuterwear.images?.[0] || activeOuterwear.image}
                         alt={activeOuterwear.name}
-                        className="max-h-[175px] w-auto max-w-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.85)]"
+                        className="w-full h-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.7)]"
                         onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = '/boyse.png';
+                          e.currentTarget.style.display = 'none';
                         }}
                       />
-                    </motion.div>
-                  ) : (
-                    /* Default Raw Streetwear Crewneck */
-                    <div className="relative h-24 w-32 rounded-lg bg-[#24242a] border border-neutral-700 flex flex-col items-center justify-center shadow-md">
-                      <span className="text-[9px] font-extrabold text-neutral-400 tracking-wider">AMA YAAR</span>
-                      <span className="text-[8px] text-neutral-500 mt-0.5">INNER LAYER</span>
                     </div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Legs / Dark Relaxed Cargo Pants layer */}
-              <div className="relative z-10 flex flex-col items-center">
-                {/* Trousers */}
-                <div className="flex gap-2">
-                  <div className="h-14 w-6 rounded-xs bg-[#1f2127] border-t border-neutral-700 shadow-sm" />
-                  <div className="h-14 w-6 rounded-xs bg-[#1f2127] border-t border-neutral-700 shadow-sm" />
-                </div>
-                {/* Chunky Boots */}
-                <div className="flex gap-3 -mt-0.5 mb-1">
-                  <div className="h-3.5 w-7 rounded-sm bg-[#0e0e10] border border-neutral-800 shadow-md" />
-                  <div className="h-3.5 w-7 rounded-sm bg-[#0e0e10] border border-neutral-800 shadow-md" />
-                </div>
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+
+            {/* Bottom-Right Magnifying Glass Zoom Button (Exact match to screenshot media_1792346507094_36124946.png) */}
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(true)}
+              className="absolute bottom-2.5 right-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/65 hover:bg-black text-white/90 hover:text-white backdrop-blur-md border border-white/20 shadow-md transition-all duration-200 cursor-pointer active:scale-95"
+              title="Zoom outfit details"
+              aria-label="Zoom outfit"
+            >
+              <ZoomIn className="h-3.5 w-3.5 stroke-[2.2]" />
+            </button>
 
             {/* "Dressing your model" EXACT SCREENSHOT LOADING ANIMATION */}
             <AnimatePresence>
@@ -371,54 +367,89 @@ export default function FittingRoomModal() {
 
             {/* Horizontal reel of picked garments matching video 00:03 & 00:07 */}
             <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-              {/* User selected outerwear garments */}
-              {wornItems.map((item) => {
-                const pid = item._id || item.id || item.slug;
-                const thumb = item.images?.[0] || item.image || '/model01.png';
-                return (
-                  <motion.div
-                    key={pid}
-                    initial={{ scale: 0.6, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                    className="group/pick relative flex-shrink-0 h-10 w-10 rounded-lg bg-[#22222a] border border-[#e07a5f]/60 overflow-hidden shadow-xs ring-1 ring-[#e07a5f]"
-                    title={item.name}
-                  >
-                    <img
-                      src={thumb}
-                      alt={item.name}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = '/model01.png';
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => dispatch(removeWornItem(pid))}
-                      className="absolute top-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-bl-sm bg-black/80 text-white hover:bg-rose-600 transition cursor-pointer"
-                      title="Take off"
-                    >
-                      <X className="h-2 w-2 stroke-[3]" />
-                    </button>
-                  </motion.div>
-                );
-              })}
-
-              {/* Base wardrobe pieces (cargo pants, shoes, tee, beanie) */}
-              {BASE_WARDROBE.map((bw) => (
-                <div
-                  key={bw.id}
-                  className="relative flex-shrink-0 h-10 w-10 rounded-lg bg-[#1a1a22] border border-neutral-700/80 overflow-hidden opacity-85 hover:opacity-100 transition"
-                  title={bw.name}
+              {/* Active Base Wardrobe Pieces (Pants, Shoes, Henley, Cap) */}
+              {activeBaseList.map((piece) => (
+                <motion.div
+                  key={piece.id}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="group/pick relative flex-shrink-0 h-10 w-10 rounded-lg bg-[#22222a] border border-neutral-700/80 overflow-hidden shadow-xs hover:border-[#e07a5f] transition"
+                  title={piece.name}
                 >
                   <img
-                    src={bw.image}
-                    alt={bw.name}
+                    src={piece.image}
+                    alt={piece.name}
                     className="h-full w-full object-cover"
                   />
-                </div>
+                  <button
+                    type="button"
+                    onClick={() => dispatch(removeBasePiece(piece.id))}
+                    className="absolute top-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-bl-sm bg-black/80 text-white hover:bg-rose-600 transition cursor-pointer"
+                    title={`Take off ${piece.name}`}
+                  >
+                    <X className="h-2 w-2 stroke-[3]" />
+                  </button>
+                </motion.div>
               ))}
+
+              {/* User selected outerwear garments (or default puffer if none chosen) */}
+              {isCustomWorn ? (
+                wornItems.map((item) => {
+                  const pid = item._id || item.id || item.slug;
+                  const thumb = item.images?.[0] || item.image || '/pick-jacket.png';
+                  return (
+                    <motion.div
+                      key={pid}
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                      className="group/pick relative flex-shrink-0 h-10 w-10 rounded-lg bg-[#22222a] border border-[#e07a5f] overflow-hidden shadow-xs ring-1 ring-[#e07a5f]"
+                      title={item.name}
+                    >
+                      <img
+                        src={thumb}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => dispatch(removeWornItem(pid))}
+                        className="absolute top-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-bl-sm bg-black/80 text-white hover:bg-rose-600 transition cursor-pointer"
+                        title="Take off"
+                      >
+                        <X className="h-2 w-2 stroke-[3]" />
+                      </button>
+                    </motion.div>
+                  );
+                })
+              ) : (
+                <motion.div
+                  key="default-puffer"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="group/pick relative flex-shrink-0 h-10 w-10 rounded-lg bg-[#22222a] border border-[#e07a5f]/80 overflow-hidden shadow-xs ring-1 ring-[#e07a5f]"
+                  title={DEFAULT_OUTERWEAR.name}
+                >
+                  <img
+                    src={DEFAULT_OUTERWEAR.image}
+                    alt={DEFAULT_OUTERWEAR.name}
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => dispatch(clearFittingRoom())}
+                    className="absolute top-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-bl-sm bg-black/80 text-white hover:bg-rose-600 transition cursor-pointer"
+                    title="Take off jacket"
+                  >
+                    <X className="h-2 w-2 stroke-[3]" />
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Orange indicator dot matching screenshot media_1792345195839_00eec46b.png */}
+              <div className="flex-shrink-0 flex items-center justify-center pl-1">
+                <span className="h-2 w-2 rounded-full bg-[#e07a5f] animate-pulse" />
+              </div>
             </div>
 
             {/* Hint text matching video 00:03 */}
@@ -440,9 +471,8 @@ export default function FittingRoomModal() {
 
             <button
               type="button"
-              onClick={() => dispatch(clearFittingRoom())}
-              disabled={wornItems.length === 0}
-              className="flex items-center gap-1 hover:text-rose-400 disabled:opacity-40 transition cursor-pointer font-medium"
+              onClick={() => dispatch(resetFittingRoom())}
+              className="flex items-center gap-1 hover:text-rose-400 transition cursor-pointer font-medium"
             >
               <RotateCcw className="h-3 w-3" />
               <span>Start over</span>
@@ -450,24 +480,119 @@ export default function FittingRoomModal() {
           </div>
 
           {/* Quick Add Look to Bag CTA */}
-          {wornItems.length > 0 && (
-            <button
-              type="button"
-              onClick={handleAddAllToCart}
-              className="mt-2.5 w-full rounded-xl bg-[#e07a5f] hover:bg-[#d0694e] py-2 px-3 text-center text-[11px] font-black uppercase tracking-wider text-white shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <ShoppingBag className="h-3.5 w-3.5 stroke-[2.5]" />
-              <span>Add Look to Cart (₹{totalLookPrice.toLocaleString('en-IN')})</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleAddAllToCart}
+            className="mt-2.5 w-full rounded-xl bg-[#e07a5f] hover:bg-[#d0694e] py-2 px-3 text-center text-[11px] font-black uppercase tracking-wider text-white shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <ShoppingBag className="h-3.5 w-3.5 stroke-[2.5]" />
+            <span>Add Look to Cart (₹{totalLookPrice.toLocaleString('en-IN')})</span>
+          </button>
         </div>
       )}
 
-      {/* API Key Modal matching "Your API key" feature */}
+      {/* 3. LIGHTBOX FULL-SCREEN OUTFIT INSPECTOR (Triggered by Zoom button on model) */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 sm:p-6"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              transition={{ duration: 0.25 }}
+              className="relative max-w-lg w-full rounded-2xl bg-[#16161c] border border-neutral-700/80 p-5 text-white shadow-2xl flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="w-full flex items-center justify-between pb-3 border-b border-neutral-800">
+                <div>
+                  <h4 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+                    <span>Virtual Fitting Room — Full Outfit</span>
+                    <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-[#e07a5f]/20 text-[#e07a5f]">
+                      {totalPiecesCount} pieces
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    High-resolution studio rendering of your styled mannequin look
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLightboxOpen(false)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800 transition cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Large Model View */}
+              <div className="relative mt-4 aspect-[3/4] w-full max-w-[320px] rounded-xl overflow-hidden bg-gradient-to-b from-[#e8e7e4] via-[#dfdeda] to-[#d6d5d0] border border-neutral-700/60 flex items-center justify-center shadow-lg">
+                <img
+                  src="/fitting-room-model.png"
+                  alt="High Resolution Mannequin Look"
+                  className="h-full w-full object-cover object-center"
+                />
+              </div>
+
+              {/* Pieces Summary Grid */}
+              <div className="w-full mt-4 grid grid-cols-2 gap-2 text-left text-xs">
+                {activeBaseList.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-2 p-2 rounded-lg bg-[#202028] border border-neutral-800"
+                  >
+                    <img src={p.image} alt={p.name} className="h-8 w-8 rounded-sm object-cover" />
+                    <div className="truncate">
+                      <p className="font-semibold text-white truncate text-[11px]">{p.name}</p>
+                      <p className="text-[10px] text-neutral-400">₹{p.price.toLocaleString('en-IN')}</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-[#202028] border border-[#e07a5f]/60">
+                  <img
+                    src={activeOuterwear.images?.[0] || activeOuterwear.image || '/pick-jacket.png'}
+                    alt={activeOuterwear.name}
+                    className="h-8 w-8 rounded-sm object-cover"
+                  />
+                  <div className="truncate">
+                    <p className="font-semibold text-white truncate text-[11px]">{activeOuterwear.name}</p>
+                    <p className="text-[10px] text-[#e07a5f] font-bold">
+                      ₹{Number(activeOuterwear.price).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Add to cart CTA in Lightbox */}
+              <div className="w-full mt-4 pt-3 border-t border-neutral-800 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddAllToCart();
+                    setLightboxOpen(false);
+                  }}
+                  className="flex-1 rounded-xl bg-[#e07a5f] hover:bg-[#d0694e] py-2.5 px-4 text-center text-xs font-black uppercase tracking-wider text-white shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  <span>Add Entire Look to Bag — ₹{totalLookPrice.toLocaleString('en-IN')}</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 4. API KEY MODAL (Matching "Your API key" feature) */}
       {apiKeyModalOpen && (
         <div
           onClick={() => setApiKeyModalOpen(false)}
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-[125] flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-150"
         >
           <div
             onClick={(e) => e.stopPropagation()}

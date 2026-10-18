@@ -132,13 +132,13 @@ export default function ProductCard({ product }) {
             />
           </button>
 
-          {/* Hanger Virtual Try-On Button (exact match to video, turns terracotta when active) */}
+          {/* Hanger Virtual Try-On Button (exact match to video, turns terracotta with pulse when active) */}
           <button
             type="button"
             onClick={handleToggleFittingRoom}
             className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 cursor-pointer ${
               isWorn
-                ? 'bg-[#e07a5f] text-white scale-110 shadow-orange-500/50 ring-2 ring-white/40'
+                ? 'bg-[#e07a5f] text-white scale-110 shadow-orange-500/50 ring-4 ring-[#e07a5f]/40'
                 : 'bg-[#272732]/90 hover:bg-[#e07a5f] text-neutral-200 hover:text-white backdrop-blur-xs'
             }`}
             title={isWorn ? 'Currently in Fitting Room (Tap to remove)' : 'Tap hanger to wear in Fitting Room'}
@@ -156,16 +156,28 @@ export default function ProductCard({ product }) {
           </span>
         </div>
 
-        {/* Bottom-Right Curved Corner Bag Button (Matching Video 00:01) */}
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          className="absolute -bottom-0.5 -right-0.5 z-20 h-10 w-10 sm:h-11 sm:w-11 rounded-tl-2xl bg-[#e07a5f] hover:bg-[#d0694e] text-white flex items-center justify-center transition-all cursor-pointer shadow-lg active:scale-95 group/bag"
-          title="Add to Cart"
-          aria-label="Add to Cart"
-        >
-          <ShoppingBag className="h-4 w-4 stroke-[2.2] translate-x-0.5 translate-y-0.5" />
-        </button>
+        {/* Bottom-Right Bag Button: Transforms from circular to large corner quarter-circle when worn (Matching Video 00:01 & 00:06) */}
+        {isWorn ? (
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="absolute -bottom-0.5 -right-0.5 z-20 h-12 w-12 sm:h-14 sm:w-14 rounded-tl-[32px] bg-[#e07a5f] hover:bg-[#d0694e] text-white flex items-center justify-center transition-all duration-300 cursor-pointer shadow-lg active:scale-95 group/bag animate-in fade-in zoom-in-95"
+            title="Add to Cart"
+            aria-label="Add to Cart"
+          >
+            <ShoppingBag className="h-4 w-4 stroke-[2.2] translate-x-1 translate-y-1" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="absolute bottom-2.5 right-2.5 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#272732]/90 hover:bg-[#e07a5f] text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-md backdrop-blur-xs group/bag"
+            title="Add to Cart"
+            aria-label="Add to Cart"
+          >
+            <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.2]" />
+          </button>
+        )}
 
         {/* Image Carousel Arrows (shown on hover) */}
         {images.length > 1 && (
