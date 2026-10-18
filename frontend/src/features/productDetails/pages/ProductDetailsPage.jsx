@@ -311,45 +311,8 @@ export default function ProductDetailsPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN: "We dress:", Size Selectors, ADD TO CART Button */}
+          {/* RIGHT COLUMN: Size Selectors, ADD TO CART Button, Details Tabs */}
           <div className="lg:col-span-3 flex flex-col justify-center order-3 pl-0 lg:pl-2 space-y-5">
-            {/* "We dress:" Ambassador / Celebrity Section */}
-            <div>
-              <span className="block text-xs font-medium text-neutral-500 mb-2.5">
-                We dress:
-              </span>
-              <div className="flex items-center gap-4">
-                {[
-                  {
-                    name: "J Baker",
-                    avatar:
-                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces&q=80",
-                  },
-                  {
-                    name: "Jay Z",
-                    avatar:
-                      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces&q=80",
-                  },
-                  {
-                    name: "Ye",
-                    avatar:
-                      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces&q=80",
-                  },
-                ].map((person, idx) => (
-                  <div key={idx} className="flex flex-col items-center">
-                    <img
-                      src={person.avatar}
-                      alt={person.name}
-                      className="h-10 w-10 rounded-full object-cover border border-neutral-200 shadow-xs"
-                    />
-                    <span className="mt-1 text-[10.5px] text-neutral-500 font-medium">
-                      {person.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Size Selector */}
             <div>
               <span className="block text-xs font-medium text-neutral-500 mb-2.5">
