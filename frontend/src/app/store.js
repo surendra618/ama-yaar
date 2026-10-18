@@ -11,7 +11,6 @@ import reviewsReducer from '../features/reviews/reviewsSlice';
 import returnsReducer from '../features/returns/returnsSlice';
 import couponsReducer from '../features/coupons/couponsSlice';
 import notificationsReducer from '../features/notifications/notificationsSlice';
-import fittingRoomReducer from '../features/fittingRoom/fittingRoomSlice';
 
 export const store = configureStore({
   reducer: {
@@ -27,6 +26,5 @@ export const store = configureStore({
     returns: returnsReducer,
     coupons: couponsReducer,
     notifications: notificationsReducer,
-    fittingRoom: fittingRoomReducer,
   },
 });

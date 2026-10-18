@@ -29,8 +29,6 @@ import {
 } from "../productDetailsSlice";
 import { addToCart, openDrawer } from "../../cart/cartSlice";
 import { toggleWishlist } from "../../wishlist/wishlistSlice";
-import { toggleWearItem, setFlyingGarment } from "../../fittingRoom/fittingRoomSlice";
-import { HangerIcon } from "../../fittingRoom/components/FittingRoomModal";
 import ProductCard from "../../../components/ProductCard";
 
 export default function ProductDetailsPage() {
@@ -38,7 +36,6 @@ export default function ProductDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const imageContainerRef = useRef(null);
 
   const { product, related, reviews, reviewStats, loading } = useSelector(
     (state) => state.productDetails,
@@ -46,9 +43,6 @@ export default function ProductDetailsPage() {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
   const { itemCount } = useSelector((state) => state.cart);
-  const wornItems = useSelector((state) => state.fittingRoom?.wornItems || []);
-  const pid = product?._id || product?.id || product?.slug;
-  const isWorn = wornItems.some((it) => (it._id || it.id || it.slug) === pid);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("S");
@@ -243,7 +237,7 @@ export default function ProductDetailsPage() {
 
           {/* CENTER COLUMN: Large Focused Product Image with Subtle Arrow Controls */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center order-1 lg:order-2">
-            <div ref={imageContainerRef} className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[440px] overflow-hidden rounded-xs bg-neutral-100 flex items-center justify-center shadow-xs group">
+            <div className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[440px] overflow-hidden rounded-xs bg-neutral-100 flex items-center justify-center shadow-xs group">
               <img
                 src={displayImages[selectedImage] || displayImages[0]}
                 alt={product.name || "Washed Tee Black"}
@@ -385,41 +379,6 @@ export default function ProductDetailsPage() {
                     <ShoppingBag className="h-4 w-4" /> ADD TO CART — ₹{product.price?.toLocaleString("en-IN") || "999"}
                   </>
                 )}
-              </button>
-
-              {/* Try on in AI Virtual Fitting Room (matching reference screenshot & video) */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isWorn && imageContainerRef.current) {
-                    const rect = imageContainerRef.current.getBoundingClientRect();
-                    dispatch(
-                      setFlyingGarment({
-                        image: displayImages[selectedImage] || displayImages[0],
-                        startRect: {
-                          top: rect.top,
-                          left: rect.left,
-                          width: rect.width,
-                          height: rect.height,
-                        },
-                        key: Date.now(),
-                      })
-                    );
-                  }
-                  dispatch(toggleWearItem(product));
-                }}
-                className={`w-full mt-2.5 py-3.5 px-4 rounded-xs text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border transition duration-200 cursor-pointer ${
-                  isWorn
-                    ? "bg-[#e07a5f] text-white border-[#e07a5f] shadow-md ring-2 ring-[#e07a5f]/40"
-                    : "bg-neutral-100 hover:bg-[#e07a5f] hover:text-white text-neutral-900 border-neutral-300"
-                }`}
-              >
-                <HangerIcon className="h-4 w-4" />
-                <span>
-                  {isWorn
-                    ? "Wearing in AI Fitting Room (Tap to remove)"
-                    : "Try on in AI Fitting Room"}
-                </span>
               </button>
 
               {/* View Cart banner when item added */}

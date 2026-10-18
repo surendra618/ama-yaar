@@ -1,24 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { Heart, ChevronLeft, ChevronRight, Star, ShoppingBag } from 'lucide-react';
 import { addToCart, openDrawer } from '../features/cart/cartSlice';
-import { toggleWearItem, setFlyingGarment } from '../features/fittingRoom/fittingRoomSlice';
-import { HangerIcon } from '../features/fittingRoom/components/FittingRoomModal';
 
 export default function ProductCard({ product }) {
   if (!product) return null;
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const cardRef = useRef(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeImgIndex, setActiveImgIndex] = useState(0);
-
-  // Check if this item is currently in the AI Virtual Fitting Room
-  const wornItems = useSelector((state) => state.fittingRoom?.wornItems || []);
-  const pid = product._id || product.id || product.slug;
-  const isWorn = wornItems.some((it) => (it._id || it.id || it.slug) === pid);
 
   // Normalize images array
   const rawImages = (product.images && product.images.length > 0)
@@ -73,31 +65,9 @@ export default function ProductCard({ product }) {
     setActiveImgIndex((prev) => (prev + 1) % images.length);
   };
 
-  const handleToggleFittingRoom = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!isWorn && cardRef.current) {
-      const rect = cardRef.current.getBoundingClientRect();
-      dispatch(
-        setFlyingGarment({
-          image: currentImage,
-          startRect: {
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-          },
-          key: Date.now(),
-        })
-      );
-    }
-    dispatch(toggleWearItem(product));
-  };
-
   return (
-    <div ref={cardRef} className="group relative flex flex-col bg-transparent select-none">
-      {/* Product Image Container (3:4 portrait, tall streetwear framing matching Video) */}
+    <div className="group relative flex flex-col bg-transparent select-none">
+      {/* Product Image Container (3:4 portrait, tall streetwear framing) */}
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-neutral-900/10">
         <Link to={`/products/${product.slug || product._id}`} className="block h-full w-full">
           <img
@@ -112,9 +82,8 @@ export default function ProductCard({ product }) {
           />
         </Link>
 
-        {/* Top-Left Action Stack: Wishlist Heart + Hanger Button (Matching Video 00:01) */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1.5 items-center">
-          {/* Heart Wishlist Button */}
+        {/* Top-Left Action: Wishlist Heart Button */}
+        <div className="absolute top-2.5 left-2.5 z-10">
           <button
             type="button"
             onClick={(e) => {
@@ -131,24 +100,9 @@ export default function ProductCard({ product }) {
               }`}
             />
           </button>
-
-          {/* Hanger Virtual Try-On Button (exact match to video, turns terracotta with pulse when active) */}
-          <button
-            type="button"
-            onClick={handleToggleFittingRoom}
-            className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 cursor-pointer ${
-              isWorn
-                ? 'bg-[#e07a5f] text-white scale-110 shadow-orange-500/50 ring-4 ring-[#e07a5f]/40'
-                : 'bg-[#272732]/90 hover:bg-[#e07a5f] text-neutral-200 hover:text-white backdrop-blur-xs'
-            }`}
-            title={isWorn ? 'Currently in Fitting Room (Tap to remove)' : 'Tap hanger to wear in Fitting Room'}
-            aria-label="Wear in Fitting Room"
-          >
-            <HangerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </button>
         </div>
 
-        {/* Top-Right: Rating Badge Pill (Matching Video 00:01) */}
+        {/* Top-Right: Rating Badge Pill */}
         <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-[#272732]/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-white/10 shadow-xs">
           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
           <span className="text-white text-[9.5px]">
@@ -156,28 +110,16 @@ export default function ProductCard({ product }) {
           </span>
         </div>
 
-        {/* Bottom-Right Bag Button: Transforms from circular to large corner quarter-circle when worn (Matching Video 00:01 & 00:06) */}
-        {isWorn ? (
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className="absolute -bottom-0.5 -right-0.5 z-20 h-12 w-12 sm:h-14 sm:w-14 rounded-tl-[32px] bg-[#e07a5f] hover:bg-[#d0694e] text-white flex items-center justify-center transition-all duration-300 cursor-pointer shadow-lg active:scale-95 group/bag animate-in fade-in zoom-in-95"
-            title="Add to Cart"
-            aria-label="Add to Cart"
-          >
-            <ShoppingBag className="h-4 w-4 stroke-[2.2] translate-x-1 translate-y-1" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className="absolute bottom-2.5 right-2.5 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#272732]/90 hover:bg-[#e07a5f] text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-md backdrop-blur-xs group/bag"
-            title="Add to Cart"
-            aria-label="Add to Cart"
-          >
-            <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.2]" />
-          </button>
-        )}
+        {/* Bottom-Right Bag Button */}
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="absolute bottom-2.5 right-2.5 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#272732]/90 hover:bg-[#e07a5f] text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-md backdrop-blur-xs group/bag"
+          title="Add to Cart"
+          aria-label="Add to Cart"
+        >
+          <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.2]" />
+        </button>
 
         {/* Image Carousel Arrows (shown on hover) */}
         {images.length > 1 && (
