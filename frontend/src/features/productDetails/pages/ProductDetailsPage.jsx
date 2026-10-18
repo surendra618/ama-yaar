@@ -30,12 +30,25 @@ import {
 import { addToCart, openDrawer } from "../../cart/cartSlice";
 import { toggleWishlist } from "../../wishlist/wishlistSlice";
 import ProductCard from "../../../components/ProductCard";
+import api from "../../../lib/axios";
 
 export default function ProductDetailsPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+
+  const [policySettings, setPolicySettings] = useState(null);
+
+  useEffect(() => {
+    api
+      .get("/settings/delivery")
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        if (data) setPolicySettings(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const { product, related, reviews, reviewStats, loading } = useSelector(
     (state) => state.productDetails,
@@ -418,6 +431,203 @@ export default function ProductDetailsPage() {
                 <span className="text-[11px] text-neutral-400">
                   Free shipping & returns
                 </span>
+              </div>
+
+              {/* AVAILABLE OFFERS Strip matching user screenshot */}
+              <div className="pt-4 border-t border-neutral-200 space-y-2">
+                <span className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                  Available Offers
+                </span>
+                <div className="flex gap-2.5 overflow-x-auto pb-1.5 scrollbar-hide text-xs">
+                  {[
+                    { discount: "₹150 OFF", condition: "Prepaid above ₹1849", code: "LEVEL1FLEX" },
+                    { discount: "₹300 OFF", condition: "Prepaid above ₹2699", code: "LEVEL2FLEX" },
+                    { discount: "₹550 OFF", condition: "Prepaid above ₹3599", code: "LEVEL3FLEX" },
+                    { discount: "₹850 OFF", condition: "Prepaid above ₹4999", code: "LEVEL4FLEX" },
+                  ].map((offer, idx) => (
+                    <div
+                      key={idx}
+                      className="flex-shrink-0 min-w-[155px] p-2.5 rounded-lg border border-neutral-200 bg-white shadow-2xs text-left"
+                    >
+                      <p className="font-extrabold text-neutral-900 text-xs">{offer.discount}</p>
+                      <p className="text-[10px] text-neutral-500 mt-0.5">{offer.condition}</p>
+                      <div className="mt-2 flex items-center justify-between text-[9px]">
+                        <span className="font-mono font-bold bg-neutral-100 text-neutral-800 px-1.5 py-0.5 rounded-xs">
+                          {offer.code}
+                        </span>
+                        <span className="text-emerald-600 font-bold flex items-center gap-0.5">
+                          <Zap className="h-2.5 w-2.5 fill-emerald-600" /> Auto Applied
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sizing Chart Bar matching user screenshot */}
+              <div className="flex items-center justify-between text-xs text-neutral-600 pt-1">
+                <span className="text-[11px] font-medium text-neutral-600">
+                  Model is 5'8" (172 cm), 70 kg, Wearing M Size
+                </span>
+                <span className="text-neutral-800 font-semibold text-xs flex items-center gap-1">
+                  <span>目 Sizing chart</span>
+                </span>
+              </div>
+
+              {/* 3 TABS: Description | Details | Exchange Policy (Exact match to User Screenshot) */}
+              <div className="pt-5 border-t border-neutral-200">
+                <div className="flex border-b border-neutral-200 justify-between text-xs font-medium text-neutral-500">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("description")}
+                    className={`pb-2.5 px-3 transition cursor-pointer relative ${
+                      activeTab === "description" ? "text-black font-bold" : "hover:text-black"
+                    }`}
+                  >
+                    Description
+                    {activeTab === "description" && (
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("details")}
+                    className={`pb-2.5 px-3 transition cursor-pointer relative ${
+                      activeTab === "details" ? "text-black font-bold" : "hover:text-black"
+                    }`}
+                  >
+                    Details
+                    {activeTab === "details" && (
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("exchange")}
+                    className={`pb-2.5 px-3 transition cursor-pointer relative ${
+                      activeTab === "exchange" ? "text-black font-bold" : "hover:text-black"
+                    }`}
+                  >
+                    Exchange Policy
+                    {activeTab === "exchange" && (
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Tab Content Display */}
+                <div className="pt-4 text-xs text-neutral-700 leading-relaxed">
+                  {activeTab === "description" && (
+                    <div className="space-y-3.5 animate-in fade-in duration-200">
+                      <p className="leading-relaxed text-neutral-600">
+                        {product.description ||
+                          "The Concrete Dreams Zip Hoodie is a statement piece rooted in street culture and ambition. Crafted in deep black with bold hot-pink sleeve graphics, this hoodie represents resilience, grind, and the dreams that rise from the concrete."}
+                      </p>
+
+                      <div>
+                        <p className="font-bold text-neutral-900 mb-0.5">Whats on Print:</p>
+                        <p className="text-neutral-600 whitespace-pre-line">
+                          {product.whatsOnPrint ||
+                            policySettings?.defaultWhatsOnPrint ||
+                            "Back: Concrete Dreams\nFront: What The Flex"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="font-bold text-neutral-900 mb-0.5">Styling Tip:</p>
+                        <p className="text-neutral-600">
+                          {product.stylingTip ||
+                            policySettings?.defaultStylingTip ||
+                            "Complete the look with our Black Rugged Jeans and Deadlines white Oversized T-shirt for a warm, comfy fit that keeps the winter vibe easy and stylish."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "details" && (
+                    <div className="space-y-2 animate-in fade-in duration-200">
+                      <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                        <span className="font-semibold text-neutral-500">Fabric</span>
+                        <span className="font-medium text-neutral-900">
+                          {product.fabric || policySettings?.defaultFabric || "100% Super Combed Terry Cotton"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                        <span className="font-semibold text-neutral-500">Fabric Weight</span>
+                        <span className="font-medium text-neutral-900">
+                          {product.gsm || policySettings?.defaultGsm || "380 GSM Heavyweight Fabric"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                        <span className="font-semibold text-neutral-500">Fit</span>
+                        <span className="font-medium text-neutral-900">
+                          {product.fit || policySettings?.defaultFit || "Oversized Streetwear Fit, Dropped Shoulder"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                        <span className="font-semibold text-neutral-500">Country of Origin</span>
+                        <span className="font-medium text-neutral-900">
+                          {product.countryOfOrigin || policySettings?.defaultCountryOfOrigin || "India"}
+                        </span>
+                      </div>
+                      <div className="py-1.5">
+                        <span className="font-semibold text-neutral-500 block mb-0.5">Care Instructions</span>
+                        <p className="text-neutral-600 text-[11px] leading-normal">
+                          {product.washCare ||
+                            policySettings?.defaultCare ||
+                            "Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "exchange" && (
+                    <div className="space-y-3 animate-in fade-in duration-200">
+                      <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                        <span className="font-bold text-neutral-900 flex items-center gap-1.5">
+                          <RotateCcw className="h-4 w-4 text-neutral-800" />
+                          <span>{policySettings?.exchangeDays || 7} Days Doorstep Exchange & Return</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          {policySettings?.exchangeCharge > 0
+                            ? `₹${policySettings.exchangeCharge} Pickup Fee`
+                            : "FREE EXCHANGE"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <p className="font-bold text-neutral-900 mb-0.5">Delivery & Shipping Charges:</p>
+                        <p className="text-[11px] text-neutral-600">
+                          Standard delivery fee is ₹{policySettings?.deliveryCharge ?? 49}.00{" "}
+                          {policySettings?.isFreeDeliveryEnabled && (
+                            <span className="font-semibold text-emerald-600">
+                              (FREE on orders above ₹{policySettings?.freeDeliveryThreshold ?? 500}.00)
+                            </span>
+                          )}
+                          . Estimated arrival in {policySettings?.estimatedDeliveryDays || "2-4 business days"}.
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="font-bold text-neutral-900 mb-0.5">Exchange Policy:</p>
+                        <p className="text-[11px] text-neutral-600">
+                          {policySettings?.exchangePolicyText ||
+                            "Hassle-free 7-day doorstep exchange & return. Items must be in original condition, unworn, unwashed with original brand tags attached."}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="font-bold text-neutral-900 mb-0.5">Refunds:</p>
+                        <p className="text-[11px] text-neutral-600">
+                          {policySettings?.returnPolicyText ||
+                            "Easy returns within 7 days of delivery. Refunds are credited to original payment mode or store credit within 24-48 hours after quality check."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -72,7 +72,7 @@ const NAV_GROUPS = [
   {
     title: 'STORE CONFIGURATION',
     items: [
-      { to: '/settings/delivery', label: 'Delivery Charges', icon: Truck, badge: 'CONFIG', badgeColor: 'bg-indigo-100 text-indigo-700' },
+      { to: '/settings/delivery', label: 'Delivery & Policy Settings', icon: Truck, badge: 'CONFIG', badgeColor: 'bg-indigo-100 text-indigo-700' },
     ],
   },
 ];
