@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Heart, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { Heart, ChevronLeft, ChevronRight, Star, ShoppingBag } from 'lucide-react';
 import { addToCart, openDrawer } from '../features/cart/cartSlice';
 import { toggleWearItem } from '../features/fittingRoom/fittingRoomSlice';
 import { HangerIcon } from '../features/fittingRoom/components/FittingRoomModal';
@@ -39,8 +39,6 @@ export default function ProductCard({ product }) {
     : (product.mrp && product.mrp > product.price)
     ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
     : 15;
-
-  const isBestseller = product.isFeatured || product.isTrending || (product.rating && product.rating >= 4.5);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -82,8 +80,8 @@ export default function ProductCard({ product }) {
 
   return (
     <div className="group relative flex flex-col bg-transparent select-none">
-      {/* Product Image Container (3:4 portrait, tall streetwear framing) */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-900/10">
+      {/* Product Image Container (3:4 portrait, tall streetwear framing matching Video) */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-neutral-900/10">
         <Link to={`/products/${product.slug || product._id}`} className="block h-full w-full">
           <img
             src={currentImage}
@@ -97,35 +95,8 @@ export default function ProductCard({ product }) {
           />
         </Link>
 
-        {/* Top-Left Badges (Brand Tag + Red SAVE % Tag) */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start pointer-events-none">
-          <div className="flex items-center gap-1">
-            <span className="bg-black/80 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded-xs tracking-wider uppercase">
-              AMA YAAR
-            </span>
-          </div>
-          {discountPercent > 0 && (
-            <span className="bg-[#e11d48] text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-xs tracking-wide uppercase shadow-xs">
-              SAVE {discountPercent}%
-            </span>
-          )}
-          {isBestseller && (
-            <span className="bg-black text-white text-[9px] font-bold px-1.5 py-0.5 tracking-wider uppercase rounded-xs">
-              BESTSELLER
-            </span>
-          )}
-        </div>
-
-        {/* Top-Right Actions: Rating Pill + Wishlist Heart + Hanger Button (Fitting Room Reference) */}
-        <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-center gap-1.5">
-          {/* Star Rating Badge matching reference */}
-          <div className="flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-white/10 shadow-xs mb-0.5">
-            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-            <span className="text-white text-[9.5px]">
-              {product.rating ? Number(product.rating).toFixed(1) : '4.4'}
-            </span>
-          </div>
-
+        {/* Top-Left Action Stack: Wishlist Heart + Hanger Button (Matching Video 00:01) */}
+        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1.5 items-center">
           {/* Heart Wishlist Button */}
           <button
             type="button"
@@ -134,31 +105,50 @@ export default function ProductCard({ product }) {
               e.stopPropagation();
               setIsWishlisted((prev) => !prev);
             }}
-            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center text-neutral-800 hover:text-black shadow-xs transition cursor-pointer"
+            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#272732]/90 hover:bg-[#353544] text-white flex items-center justify-center shadow-md transition cursor-pointer backdrop-blur-xs"
             aria-label="Save to wishlist"
           >
             <Heart
               className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
-                isWishlisted ? 'fill-[#e11d48] text-[#e11d48]' : 'text-neutral-700'
+                isWishlisted ? 'fill-[#e11d48] text-[#e11d48]' : 'text-neutral-200'
               }`}
             />
           </button>
 
-          {/* Hanger Virtual Try-On Button (exact matching reference screenshot) */}
+          {/* Hanger Virtual Try-On Button (exact match to video, turns terracotta when active) */}
           <button
             type="button"
             onClick={handleToggleFittingRoom}
             className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 cursor-pointer ${
               isWorn
-                ? 'bg-[#f97316] text-white scale-110 shadow-orange-500/50 ring-2 ring-white'
-                : 'bg-white/90 hover:bg-[#f97316] text-neutral-800 hover:text-white'
+                ? 'bg-[#e07a5f] text-white scale-110 shadow-orange-500/50 ring-2 ring-white/40'
+                : 'bg-[#272732]/90 hover:bg-[#e07a5f] text-neutral-200 hover:text-white backdrop-blur-xs'
             }`}
-            title={isWorn ? 'Currently in Fitting Room (Tap to take off)' : 'Tap hanger to wear in Fitting Room'}
+            title={isWorn ? 'Currently in Fitting Room (Tap to remove)' : 'Tap hanger to wear in Fitting Room'}
             aria-label="Wear in Fitting Room"
           >
             <HangerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
+
+        {/* Top-Right: Rating Badge Pill (Matching Video 00:01) */}
+        <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-[#272732]/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-white/10 shadow-xs">
+          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+          <span className="text-white text-[9.5px]">
+            {product.rating ? Number(product.rating).toFixed(1) : '4.3'}
+          </span>
+        </div>
+
+        {/* Bottom-Right Curved Corner Bag Button (Matching Video 00:01) */}
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="absolute -bottom-0.5 -right-0.5 z-20 h-10 w-10 sm:h-11 sm:w-11 rounded-tl-2xl bg-[#e07a5f] hover:bg-[#d0694e] text-white flex items-center justify-center transition-all cursor-pointer shadow-lg active:scale-95 group/bag"
+          title="Add to Cart"
+          aria-label="Add to Cart"
+        >
+          <ShoppingBag className="h-4 w-4 stroke-[2.2] translate-x-0.5 translate-y-0.5" />
+        </button>
 
         {/* Image Carousel Arrows (shown on hover) */}
         {images.length > 1 && (
@@ -181,37 +171,33 @@ export default function ProductCard({ product }) {
             </button>
           </>
         )}
-
-        {/* ADD TO CART Bar at bottom of image */}
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          className="absolute inset-x-0 bottom-0 z-10 w-full bg-black/85 backdrop-blur-xs py-2 sm:py-2.5 text-center text-[10.5px] sm:text-[11.5px] font-black uppercase tracking-widest text-white hover:bg-black transition-all cursor-pointer opacity-95 sm:opacity-0 group-hover:opacity-100 duration-200"
-        >
-          ADD TO CART
-        </button>
       </div>
 
       {/* Details Below Image */}
       <div className="pt-2 px-0.5">
-        {/* Product Title: Bold, uppercase streetwear typography */}
+        {/* Product Title: Clean sans-serif title case */}
         <Link
           to={`/products/${product.slug || product._id}`}
-          className="block text-xs sm:text-[13px] font-bold uppercase text-neutral-900 hover:underline leading-snug line-clamp-1 tracking-tight"
+          className="block text-xs sm:text-[13px] font-semibold text-neutral-900 hover:underline leading-snug line-clamp-1 tracking-tight"
         >
           {product.name}
         </Link>
 
-        {/* Price Row: Rs. 1,999.00  Rs. 1,799.00 (Red discounted price) */}
-        <div className="mt-1 flex items-baseline gap-2 flex-wrap">
-          {product.mrp && product.mrp > product.price && (
-            <span className="text-[11px] sm:text-xs text-neutral-400 line-through font-normal">
-              Rs.{product.mrp?.toLocaleString('en-IN')}.00
-            </span>
-          )}
-          <span className="text-xs sm:text-[13.5px] font-bold text-[#e11d48]">
-            Rs.{product.price?.toLocaleString('en-IN')}.00
+        {/* Price Row matching Video 00:01: $189 $229 Sale */}
+        <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+          <span className="text-xs sm:text-[13.5px] font-bold text-neutral-900">
+            ₹{product.price?.toLocaleString('en-IN')}.00
           </span>
+          {product.mrp && product.mrp > product.price && (
+            <>
+              <span className="text-[11px] sm:text-xs text-neutral-400 line-through font-normal">
+                ₹{product.mrp?.toLocaleString('en-IN')}.00
+              </span>
+              <span className="text-[9px] font-bold text-[#e07a5f] bg-[#e07a5f]/10 px-1.5 py-0.2 rounded-xs uppercase tracking-wider">
+                Sale
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>

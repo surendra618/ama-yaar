@@ -5,10 +5,10 @@ import {
   RotateCcw,
   ShoppingBag,
   Sparkles,
-  Camera,
-  ChevronDown,
+  Key,
   Check,
-  Plus,
+  ChevronDown,
+  Info,
 } from 'lucide-react';
 import {
   closeFittingRoom,
@@ -16,12 +16,11 @@ import {
   removeWornItem,
   clearFittingRoom,
   setSelectedModel,
-  setUserUploadedPhoto,
   setDressing,
 } from '../fittingRoomSlice';
 import { addToCart, openDrawer } from '../../cart/cartSlice';
 
-// Custom Coat Hanger Icon matching reference screenshot exactly
+// Custom Coat Hanger Icon matching video exactly
 export const HangerIcon = (props) => (
   <svg
     viewBox="0 0 24 24"
@@ -37,57 +36,66 @@ export const HangerIcon = (props) => (
   </svg>
 );
 
-const PRESET_MODELS = [
+// Standard base wardrobe pieces (Pants, Shoes, Hat, Innerwear) matching the video
+const BASE_WARDROBE = [
   {
-    id: 'male-1',
-    name: 'Kabir (Street)',
-    gender: 'Male',
-    baseImage: '/Curly-Haired Model in Beige Polo.png',
-    fallback: '/model01.png',
+    id: 'base-pants',
+    name: 'Relaxed Street Cargo Trousers',
+    type: 'pants',
+    image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=200&q=80',
+    price: 999,
   },
   {
-    id: 'male-2',
-    name: 'Arjun (Casual)',
-    gender: 'Male',
-    baseImage: '/Stylish Streetwear Man with Backpack.png',
-    fallback: '/boyse.png',
+    id: 'base-shoes',
+    name: 'Chunky Sole Streetwear Boots',
+    type: 'shoes',
+    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=200&q=80',
+    price: 1499,
   },
   {
-    id: 'female-1',
-    name: 'Riya (Editorial)',
-    gender: 'Female',
-    baseImage: '/fashion-model.jpg',
-    fallback: '/model-nirvana.jpg',
+    id: 'base-inner',
+    name: 'Heavyweight Ribbed Crewneck Tee',
+    type: 'inner',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200&q=80',
+    price: 499,
+  },
+  {
+    id: 'base-hat',
+    name: 'Vintage Knit Docker Beanie',
+    type: 'hat',
+    image: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=200&q=80',
+    price: 299,
   },
 ];
 
 export default function FittingRoomModal() {
   const dispatch = useDispatch();
-  const { wornItems, isOpen, isDressing, selectedModel, userUploadedPhoto } =
-    useSelector((state) => state.fittingRoom);
+  const { wornItems, isOpen, isDressing } = useSelector(
+    (state) => state.fittingRoom
+  );
 
-  const [activeTab, setActiveTab] = useState('model'); // 'model' or 'models-picker'
-  const fileInputRef = useRef(null);
+  const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('ay_tryon_api_key') || '');
+  const [customKeySaved, setCustomKeySaved] = useState(false);
 
-  // Auto-finish dressing simulation after 1.2s
+  // Auto-finish dressing simulation after 800ms
   useEffect(() => {
     if (isDressing) {
       const timer = setTimeout(() => {
         dispatch(setDressing(false));
-      }, 1200);
+      }, 850);
       return () => clearTimeout(timer);
     }
   }, [isDressing, dispatch]);
 
-  const handlePhotoUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        dispatch(setUserUploadedPhoto(event.target.result));
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleSaveApiKey = (e) => {
+    e.preventDefault();
+    localStorage.setItem('ay_tryon_api_key', apiKey.trim());
+    setCustomKeySaved(true);
+    setTimeout(() => {
+      setCustomKeySaved(false);
+      setApiKeyModalOpen(false);
+    }, 700);
   };
 
   const handleAddAllToCart = () => {
@@ -105,23 +113,15 @@ export default function FittingRoomModal() {
     dispatch(openDrawer());
   };
 
-  // Determine which model image to render
-  const currentPreset =
-    PRESET_MODELS.find((m) => m.id === selectedModel) || PRESET_MODELS[0];
+  // The active outerwear item on the model
+  const activeOuterwear = wornItems.length > 0 ? wornItems[wornItems.length - 1] : null;
 
-  // If user has worn items, select the most featured garment's photo or the styled model composite
-  const lastWorn = wornItems[wornItems.length - 1];
-  const renderedModelImage =
-    userUploadedPhoto && selectedModel === 'user'
-      ? userUploadedPhoto
-      : lastWorn
-      ? lastWorn.images?.[0] || lastWorn.image || currentPreset.baseImage
-      : currentPreset.baseImage;
+  // Total pieces = worn user items + base pieces (matching the "5 pieces" in the video!)
+  const totalPiecesCount = BASE_WARDROBE.length + wornItems.length;
 
-  const totalLookPrice = wornItems.reduce(
-    (sum, item) => sum + Number(item.price || 0),
-    0
-  );
+  const totalLookPrice =
+    wornItems.reduce((acc, it) => acc + Number(it.price || 0), 0) +
+    BASE_WARDROBE.reduce((acc, it) => acc + Number(it.price || 0), 0);
 
   return (
     <>
@@ -130,10 +130,10 @@ export default function FittingRoomModal() {
         <button
           type="button"
           onClick={() => dispatch(openFittingRoom())}
-          className="fixed bottom-5 left-5 z-[90] flex items-center gap-2.5 rounded-full bg-[#18181b]/95 hover:bg-black text-white px-4 py-2.5 shadow-2xl border border-neutral-700/80 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 group cursor-pointer"
+          className="fixed bottom-6 left-6 z-[90] flex items-center gap-2.5 rounded-full bg-[#181820]/95 hover:bg-black text-white px-4 py-2.5 shadow-2xl border border-neutral-700/80 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 group cursor-pointer"
           aria-label="Open Fitting Room"
         >
-          <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-[#f97316] text-white">
+          <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-[#e07a5f] text-white">
             <HangerIcon className="h-4 w-4" />
             {wornItems.length > 0 && (
               <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black text-[9px] font-black shadow-xs">
@@ -145,30 +145,27 @@ export default function FittingRoomModal() {
             <p className="text-xs font-bold leading-tight flex items-center gap-1.5">
               <span>Fitting room</span>
               {wornItems.length > 0 && (
-                <span className="h-1.5 w-1.5 rounded-full bg-[#f97316] animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#e07a5f] animate-pulse" />
               )}
             </p>
             <p className="text-[10px] text-neutral-400 font-medium">
               {wornItems.length > 0
-                ? `${wornItems.length} piece${wornItems.length > 1 ? 's' : ''} worn`
-                : 'Tap hanger on clothes to try'}
+                ? `${totalPiecesCount} pieces look ready`
+                : 'Tap hanger on products to wear'}
             </p>
           </div>
         </button>
       )}
 
-      {/* 2. EXPANDED FITTING ROOM WIDGET (Exact Reference: Image uploaded by user) */}
+      {/* 2. EXPANDED FITTING ROOM WIDGET (Exact match to LinkedIn Video) */}
       {isOpen && (
-        <div className="fixed bottom-5 left-5 z-[95] w-[320px] sm:w-[350px] max-w-[calc(100vw-40px)] rounded-2xl bg-[#18181b] text-white p-4 shadow-2xl border border-neutral-800 flex flex-col font-sans animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed bottom-6 left-6 z-[95] w-[310px] sm:w-[335px] max-w-[calc(100vw-32px)] rounded-2xl bg-[#16161c] text-white p-3.5 shadow-2xl border border-neutral-700/80 flex flex-col font-sans animate-in fade-in slide-in-from-bottom-5 duration-200">
           {/* Header row */}
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-1.5">
-                <HangerIcon className="h-4 w-4 text-[#f97316]" />
-                <h3 className="text-sm font-bold text-white tracking-tight">
-                  Fitting room
-                </h3>
-              </div>
+              <h3 className="text-sm font-bold text-white tracking-tight">
+                Fitting room
+              </h3>
               <p className="mt-0.5 text-[11px] text-neutral-400 font-normal">
                 Tap the hanger on any product to wear it.
               </p>
@@ -183,191 +180,233 @@ export default function FittingRoomModal() {
             </button>
           </div>
 
-          {/* Model Display Viewport matching screenshot */}
-          <div className="relative mt-3 aspect-[3/3.8] w-full overflow-hidden rounded-xl bg-[#0e0e10] border border-neutral-800/80 flex items-center justify-center">
-            {/* Model Image */}
-            <img
-              src={renderedModelImage}
-              alt="Model Virtual Try-On"
-              className={`h-full w-full object-cover object-center transition-all duration-500 ${
-                isDressing ? 'blur-xs scale-98 opacity-40' : 'blur-0 scale-100 opacity-100'
-              }`}
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = '/boyse.png';
-              }}
-            />
+          {/* Central Mannequin / Standing Model Viewport matching Video */}
+          <div className="relative mt-3 aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#0c0c0e] border border-neutral-800 flex items-center justify-center">
+            {/* Base Standing Mannequin / Streetwear Model (Pants, Boots, Beanie) */}
+            <div className="relative h-full w-full flex flex-col items-center justify-between p-2">
+              {/* Head / Beanie / Sunglasses layer */}
+              <div className="relative z-10 flex flex-col items-center mt-1">
+                {/* Vintage Beanie */}
+                <div className="h-7 w-12 rounded-t-full bg-[#b8860b]/90 border border-neutral-700 shadow-xs flex items-center justify-center">
+                  <span className="text-[7px] font-black text-black/60 uppercase tracking-widest">AY</span>
+                </div>
+                {/* Head / Face Silhouette */}
+                <div className="h-8 w-8 rounded-full bg-[#3a3530] border border-neutral-700 -mt-1.5 flex items-center justify-center shadow-inner">
+                  {/* Streetwear Sunglasses */}
+                  <div className="h-2 w-6 bg-black rounded-xs -mt-1 shadow-xs" />
+                </div>
+              </div>
 
-            {/* "Dressing your model" Loading State matching screenshot */}
-            {isDressing ? (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-xs text-center animate-in fade-in duration-150">
-                <div className="h-10 w-10 rounded-full border-2 border-neutral-700 border-t-[#f97316] animate-spin mb-3 shadow-lg" />
+              {/* Torso / Worn Garment layer */}
+              <div className="relative z-20 flex-1 w-full max-w-[210px] my-1 flex items-center justify-center">
+                {activeOuterwear ? (
+                  /* Outerwear worn on model */
+                  <div className="relative h-full w-full flex items-center justify-center animate-in zoom-in-95 duration-300">
+                    <img
+                      src={activeOuterwear.images?.[0] || activeOuterwear.image || '/boyse.png'}
+                      alt={activeOuterwear.name}
+                      className={`max-h-[175px] w-auto max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] transition-all duration-300 ${
+                        isDressing ? 'scale-95 opacity-50 blur-xs' : 'scale-100 opacity-100'
+                      }`}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/boyse.png';
+                      }}
+                    />
+                  </div>
+                ) : (
+                  /* Default Raw Streetwear Crewneck */
+                  <div className="relative h-24 w-32 rounded-lg bg-[#24242a] border border-neutral-700 flex flex-col items-center justify-center shadow-md">
+                    <span className="text-[9px] font-extrabold text-neutral-400 tracking-wider">AMA YAAR</span>
+                    <span className="text-[8px] text-neutral-500 mt-0.5">INNER LAYER</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Legs / Dark Relaxed Cargo Pants layer */}
+              <div className="relative z-10 flex flex-col items-center">
+                {/* Trousers */}
+                <div className="flex gap-2">
+                  <div className="h-14 w-6 rounded-xs bg-[#1f2127] border-t border-neutral-700 shadow-sm" />
+                  <div className="h-14 w-6 rounded-xs bg-[#1f2127] border-t border-neutral-700 shadow-sm" />
+                </div>
+                {/* Chunky Boots */}
+                <div className="flex gap-3 -mt-0.5 mb-1">
+                  <div className="h-3.5 w-7 rounded-sm bg-[#0e0e10] border border-neutral-800 shadow-md" />
+                  <div className="h-3.5 w-7 rounded-sm bg-[#0e0e10] border border-neutral-800 shadow-md" />
+                </div>
+              </div>
+            </div>
+
+            {/* "Dressing your model" Loading State matching screenshot / video */}
+            {isDressing && (
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 bg-black/75 backdrop-blur-xs text-center animate-in fade-in duration-150">
+                <div className="h-9 w-9 rounded-full border-2 border-neutral-700 border-t-[#e07a5f] animate-spin mb-2 shadow-lg" />
                 <p className="text-xs font-bold text-white tracking-tight">
                   Dressing your model
                 </p>
-                <p className="mt-1 text-[10px] text-neutral-400 leading-tight max-w-[200px]">
+                <p className="mt-0.5 text-[10px] text-neutral-400 leading-tight max-w-[200px]">
                   The photo is being made for you. It takes a moment.
                 </p>
-              </div>
-            ) : wornItems.length === 0 ? (
-              /* Empty hint overlay */
-              <div className="absolute inset-x-3 bottom-3 z-10 rounded-lg bg-black/70 backdrop-blur-md p-2 text-center border border-white/10">
-                <p className="text-[10px] font-semibold text-white/90">
-                  Ready to dress! Tap the 🧥 hanger icon on any product to wear it.
-                </p>
-              </div>
-            ) : (
-              /* Dressed success pill */
-              <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-1 text-[9px] font-bold text-white border border-white/10">
-                <Sparkles className="h-3 w-3 text-[#f97316]" />
-                <span>AI Try-On Ready</span>
-              </div>
-            )}
-
-            {/* Model Switcher Pill on Top-Right */}
-            <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveTab((prev) => (prev === 'models' ? 'model' : 'models'))
-                }
-                className="flex items-center gap-1 rounded-full bg-black/70 hover:bg-black backdrop-blur-md px-2 py-1 text-[10px] font-bold text-white border border-white/10 transition cursor-pointer"
-                title="Change AI Model"
-              >
-                <span>{selectedModel === 'user' ? 'My Photo' : currentPreset.name.split(' ')[0]}</span>
-                <ChevronDown className="h-3 w-3 text-neutral-400" />
-              </button>
-            </div>
-
-            {/* Model Selector Dropdown */}
-            {activeTab === 'models' && (
-              <div className="absolute inset-x-2 top-10 z-30 rounded-xl bg-[#202024] p-2.5 shadow-2xl border border-neutral-700 text-xs text-white space-y-1.5 animate-in fade-in duration-150">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-1 mb-1">
-                  Select Model
-                </p>
-                {PRESET_MODELS.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => {
-                      dispatch(setSelectedModel(m.id));
-                      setActiveTab('model');
-                    }}
-                    className={`flex items-center justify-between w-full p-1.5 rounded-lg text-left transition ${
-                      selectedModel === m.id
-                        ? 'bg-[#f97316] text-white font-bold'
-                        : 'hover:bg-white/10 text-neutral-300'
-                    }`}
-                  >
-                    <span>{m.name}</span>
-                    {selectedModel === m.id && <Check className="h-3.5 w-3.5" />}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 w-full p-1.5 rounded-lg hover:bg-white/10 text-neutral-300 transition text-[11px]"
-                >
-                  <Camera className="h-3.5 w-3.5 text-[#f97316]" />
-                  <span>Upload Your Photo</span>
-                </button>
               </div>
             )}
           </div>
 
-          {/* Hidden File Input for Custom Photo Upload */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handlePhotoUpload}
-            accept="image/*"
-            className="hidden"
-          />
-
-          {/* "Your picks" Section matching screenshot */}
+          {/* "Your picks" Section matching video */}
           <div className="mt-3">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-white">Your picks</span>
               <span className="text-[11px] text-neutral-400 font-medium">
-                {wornItems.length} {wornItems.length === 1 ? 'piece' : 'pieces'}
+                {totalPiecesCount} pieces
               </span>
             </div>
 
-            {/* Horizontal reel of picked garments */}
-            <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-hide min-h-[52px]">
-              {wornItems.length === 0 ? (
-                <p className="text-[11px] text-neutral-500 italic py-2">
-                  No clothes worn yet. Tap the 🧥 icon on any product!
-                </p>
-              ) : (
-                wornItems.map((item) => {
-                  const pid = item._id || item.id || item.slug;
-                  const thumb =
-                    item.images?.[0] || item.image || '/model01.png';
-                  return (
-                    <div
-                      key={pid}
-                      className="group/pick relative flex-shrink-0 h-12 w-12 rounded-lg bg-neutral-900 border border-neutral-700 overflow-hidden shadow-xs"
-                      title={item.name}
+            {/* Horizontal reel of picked garments matching video 00:03 & 00:07 */}
+            <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+              {/* User selected outerwear garments */}
+              {wornItems.map((item) => {
+                const pid = item._id || item.id || item.slug;
+                const thumb = item.images?.[0] || item.image || '/model01.png';
+                return (
+                  <div
+                    key={pid}
+                    className="group/pick relative flex-shrink-0 h-10 w-10 rounded-lg bg-[#22222a] border border-[#e07a5f]/60 overflow-hidden shadow-xs ring-1 ring-[#e07a5f]"
+                    title={item.name}
+                  >
+                    <img
+                      src={thumb}
+                      alt={item.name}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/model01.png';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => dispatch(removeWornItem(pid))}
+                      className="absolute top-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-bl-sm bg-black/80 text-white hover:bg-rose-600 transition"
+                      title="Take off"
                     >
-                      <img
-                        src={thumb}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = '/model01.png';
-                        }}
-                      />
-                      {/* Delete / remove button matching screenshot */}
-                      <button
-                        type="button"
-                        onClick={() => dispatch(removeWornItem(pid))}
-                        className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-black/80 text-white hover:bg-red-600 transition"
-                        title="Take off"
-                      >
-                        <X className="h-2.5 w-2.5 stroke-[3]" />
-                      </button>
-                    </div>
-                  );
-                })
-              )}
+                      <X className="h-2 w-2 stroke-[3]" />
+                    </button>
+                  </div>
+                );
+              })}
+
+              {/* Base wardrobe pieces (cargo pants, shoes, tee, beanie) */}
+              {BASE_WARDROBE.map((bw) => (
+                <div
+                  key={bw.id}
+                  className="relative flex-shrink-0 h-10 w-10 rounded-lg bg-[#1a1a22] border border-neutral-700/80 overflow-hidden opacity-85 hover:opacity-100 transition"
+                  title={bw.name}
+                >
+                  <img
+                    src={bw.image}
+                    alt={bw.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
             </div>
+
+            {/* Hint text matching video 00:03 */}
+            <p className="mt-1.5 text-[9.5px] text-neutral-400">
+              Add another piece and it gets overlaid on your model.
+            </p>
           </div>
 
-          {/* Bottom Controls Row matching screenshot */}
-          <div className="mt-3 pt-2.5 border-t border-neutral-800 flex items-center justify-between gap-2">
+          {/* Bottom Bar matching video: [🔑 Your API key]  [↺ Start over] */}
+          <div className="mt-2.5 pt-2 border-t border-neutral-800 flex items-center justify-between text-[11px] text-neutral-400">
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 text-[11px] text-neutral-400 hover:text-white transition cursor-pointer font-medium"
+              onClick={() => setApiKeyModalOpen(true)}
+              className="flex items-center gap-1 hover:text-white transition cursor-pointer font-medium"
             >
-              <Camera className="h-3.5 w-3.5" />
-              <span>{userUploadedPhoto ? 'Change photo' : 'Your photo'}</span>
+              <Key className="h-3 w-3 text-neutral-400" />
+              <span>{apiKey ? 'API key set' : 'Your API key'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => dispatch(clearFittingRoom())}
               disabled={wornItems.length === 0}
-              className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-rose-400 disabled:opacity-40 transition cursor-pointer font-medium"
+              className="flex items-center gap-1 hover:text-rose-400 disabled:opacity-40 transition cursor-pointer font-medium"
             >
               <RotateCcw className="h-3 w-3" />
               <span>Start over</span>
             </button>
           </div>
 
-          {/* Add Look to Bag CTA */}
+          {/* Quick Add Look to Bag CTA */}
           {wornItems.length > 0 && (
             <button
               type="button"
               onClick={handleAddAllToCart}
-              className="mt-3 w-full rounded-xl bg-[#f97316] hover:bg-[#ea580c] py-2.5 px-3 text-center text-xs font-black uppercase tracking-wider text-white shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+              className="mt-2.5 w-full rounded-xl bg-[#e07a5f] hover:bg-[#d0694e] py-2 px-3 text-center text-[11px] font-black uppercase tracking-wider text-white shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <ShoppingBag className="h-3.5 w-3.5 stroke-[2.5]" />
               <span>Add Look to Cart (₹{totalLookPrice.toLocaleString('en-IN')})</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* API Key Modal matching "Your API key" feature */}
+      {apiKeyModalOpen && (
+        <div
+          onClick={() => setApiKeyModalOpen(false)}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl bg-[#1e1e26] p-5 border border-neutral-700 text-white shadow-2xl"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-bold flex items-center gap-1.5">
+                <Key className="h-4 w-4 text-[#e07a5f]" />
+                <span>AI Virtual Try-On API Key</span>
+              </h4>
+              <button
+                type="button"
+                onClick={() => setApiKeyModalOpen(false)}
+                className="text-neutral-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
+              Connect your Gemini, Fal.ai, or Replicate API key for real-time AI generative dressing, or use the built-in instant streetwear mannequin engine.
+            </p>
+            <form onSubmit={handleSaveApiKey} className="space-y-3">
+              <input
+                type="password"
+                placeholder="Enter AI API Key (optional)"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full rounded-xl border border-neutral-700 bg-black/40 px-3 py-2.5 text-xs text-white placeholder:text-neutral-500 focus:border-[#e07a5f] focus:outline-hidden"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 rounded-xl bg-[#e07a5f] hover:bg-[#d0694e] py-2.5 text-xs font-bold text-white transition cursor-pointer"
+                >
+                  {customKeySaved ? 'Saved!' : 'Save Key'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('ay_tryon_api_key');
+                    setApiKey('');
+                    setApiKeyModalOpen(false);
+                  }}
+                  className="rounded-xl border border-neutral-700 px-3 py-2 text-xs text-neutral-400 hover:text-white"
+                >
+                  Reset
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </>
