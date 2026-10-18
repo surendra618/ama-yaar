@@ -5,11 +5,11 @@ import { ArrowRight, Sparkles, Shield, Flame, Zap } from 'lucide-react';
 export default function AboutSection() {
   return (
     <section className="w-full bg-white text-black py-16 lg:py-20 border-t border-b border-neutral-200">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         
         {/* Header Tagline & Title */}
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-14">
-          <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#facc15]">
+          <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#e11d48]">
             <Sparkles className="h-4 w-4" /> ABOUT AMA YAAR
           </span>
           <h2 className="mt-4 font-display text-3xl sm:text-5xl lg:text-6xl font-black italic tracking-tight text-black uppercase leading-tight">

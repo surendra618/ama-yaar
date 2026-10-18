@@ -4,8 +4,9 @@ const env = require('./config/env');
 
 async function start() {
   await connectDB();
-  app.listen(env.port, () => {
-    console.log(`[server] AMA-YAAR API listening on port ${env.port} (${env.nodeEnv})`);
+  const host = '127.0.0.1';
+  app.listen(env.port, host, () => {
+    console.log(`[server] AMA-YAAR API listening on http://${host}:${env.port} (${env.nodeEnv})`);
   });
 }
 

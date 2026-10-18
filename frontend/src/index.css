@@ -1,4 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@1,6..96,600;1,6..96,700;1,800&family=Michroma&family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700;800&family=Syncopate:wght@400;700&family=Syne:wght@400;500;600;700;800&family=Unbounded:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Boldonse&family=Pinyon+Script&family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* Local Red Hat Display @font-face */
+@font-face {
+  font-family: 'Red Hat Display';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('/fonts/red-hat-display/variable/red-hat-display-latin-wght-normal.woff2') format('woff2-variations'),
+       url('/fonts/red-hat-display/variable/red-hat-display-latin-wght-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Red Hat Display';
+  font-style: italic;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('/fonts/red-hat-display/variable/red-hat-display-latin-wght-italic.woff2') format('woff2-variations'),
+       url('/fonts/red-hat-display/variable/red-hat-display-latin-wght-italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Boldonse';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/boldonse/v1/ZgNQjPxGPbbJUZemjC38.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Pinyon Script';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/pinyonscript/v24/6xKpdSJbL9-e9LuoeQiDRQR8aOI.ttf') format('truetype');
+}
 
 @tailwind base;
 @tailwind components;
@@ -6,11 +41,31 @@
 
 @layer base {
     html {
-        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        font-family: 'Red Hat Display', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         scroll-behavior: smooth;
         color: #0f172a;
         background-color: #f8fafc;
     }
+}
+
+.font-display {
+  font-family: 'Boldonse', 'Red Hat Display', sans-serif !important;
+}
+
+.font-boldonse {
+  font-family: 'Boldonse', sans-serif !important;
+}
+
+.font-script {
+  font-family: 'Pinyon Script', cursive !important;
+}
+
+.font-pinyon {
+  font-family: 'Pinyon Script', cursive !important;
+}
+
+.font-redhat {
+  font-family: 'Red Hat Display', sans-serif !important;
 }
 
 /* Marquee ticker scroll animation */

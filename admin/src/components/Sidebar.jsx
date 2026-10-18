@@ -23,6 +23,8 @@ import {
   Sparkles,
   ShieldCheck,
   ChevronRight,
+  Truck,
+  Settings,
 } from 'lucide-react';
 import AdminLogo from './AdminLogo';
 import { logout } from '../features/auth/authSlice';
@@ -65,6 +67,12 @@ const NAV_GROUPS = [
     items: [
       { to: '/payments', label: 'Payments', icon: CreditCard },
       { to: '/reports', label: 'Reports', icon: BarChart3 },
+    ],
+  },
+  {
+    title: 'STORE CONFIGURATION',
+    items: [
+      { to: '/settings/delivery', label: 'Delivery Charges', icon: Truck, badge: 'CONFIG', badgeColor: 'bg-indigo-100 text-indigo-700' },
     ],
   },
 ];

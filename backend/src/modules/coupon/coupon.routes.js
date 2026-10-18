@@ -6,6 +6,7 @@ const role = require('../../middlewares/role.middleware');
 const router = express.Router();
 
 router.get('/', authenticate, role('admin'), controller.list);
+router.get('/active', controller.getActiveCoupons);
 router.post('/validate', authenticate, controller.validateCoupon);
 router.get('/:id', authenticate, role('admin'), controller.getById);
 router.post('/', authenticate, role('admin'), controller.create);

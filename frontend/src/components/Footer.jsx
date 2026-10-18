@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 // lucide-react no longer ships brand/social marks — small inline glyphs instead.
 const FacebookIcon = (props) => (
@@ -7,7 +7,13 @@ const FacebookIcon = (props) => (
   </svg>
 );
 const InstagramIcon = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    {...props}
+  >
     <rect x="3" y="3" width="18" height="18" rx="5" />
     <circle cx="12" cy="12" r="4" />
     <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
@@ -22,7 +28,7 @@ const YoutubeIcon = (props) => (
 export default function Footer() {
   return (
     <footer className="bg-[#f0f0f0] text-black border-t border-black/10 overflow-hidden">
-      <div className="mx-auto max-w-7xl px-6 py-14 lg:px-12">
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 py-14">
         {/* Main Grid */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
           {/* Brand Info Column */}
@@ -40,8 +46,10 @@ export default function Footer() {
             </Link>
 
             <p className="mt-5 max-w-md text-xs sm:text-sm leading-relaxed text-black/60">
-              At AMAYAAR, style is more than just what you wear — it's how you express yourself. Our clothing and
-              footwear are designed to match your individuality and confidence. Style ka lafda? AMAYAAR has you covered.
+              At AMAYAAR, style is more than just what you wear — it's how you
+              express yourself. Our clothing and footwear are designed to match
+              your individuality and confidence. Style ka lafda? AMAYAAR has you
+              covered.
             </p>
 
             <div className="mt-6 flex items-center gap-3">
@@ -72,31 +80,52 @@ export default function Footer() {
           {/* Spacing / Column items */}
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 md:col-span-8 lg:col-span-8 md:pl-4">
             {/* SHOP FITS */}
-            <div data-aos="fade-up" data-aos-delay="100" data-aos-duration="600">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">SHOP FITS</h4>
+            <div
+              data-aos="fade-up"
+              data-aos-delay="100"
+              data-aos-duration="600"
+            >
+              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">
+                SHOP FITS
+              </h4>
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
-                  <Link to="/products?isNewArrival=true" className="hover:text-black transition">
+                  <Link
+                    to="/products?isNewArrival=true"
+                    className="hover:text-black transition"
+                  >
                     New Arrivals
                   </Link>
                 </li>
                 <li>
-                  <Link to="/products?category=oversized-printed" className="hover:text-black transition">
+                  <Link
+                    to="/products?category=oversized-printed"
+                    className="hover:text-black transition"
+                  >
                     Oversized Tees
                   </Link>
                 </li>
                 <li>
-                  <Link to="/products?search=cargo" className="hover:text-black transition">
+                  <Link
+                    to="/products?search=cargo"
+                    className="hover:text-black transition"
+                  >
                     Cargo &amp; Pants
                   </Link>
                 </li>
                 <li>
-                  <Link to="/products?search=acid+wash" className="hover:text-black transition">
+                  <Link
+                    to="/products?search=acid+wash"
+                    className="hover:text-black transition"
+                  >
                     Acid Wash Fits
                   </Link>
                 </li>
                 <li>
-                  <Link to="/products?isBestSeller=true" className="hover:text-black transition">
+                  <Link
+                    to="/products?isBestSeller=true"
+                    className="hover:text-black transition"
+                  >
                     Best Sellers
                   </Link>
                 </li>
@@ -104,16 +133,28 @@ export default function Footer() {
             </div>
 
             {/* HELP */}
-            <div data-aos="fade-up" data-aos-delay="150" data-aos-duration="600">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">HELP</h4>
+            <div
+              data-aos="fade-up"
+              data-aos-delay="150"
+              data-aos-duration="600"
+            >
+              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">
+                HELP
+              </h4>
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
-                  <Link to="/account/orders" className="hover:text-black transition">
+                  <Link
+                    to="/account/orders"
+                    className="hover:text-black transition"
+                  >
                     Track your order
                   </Link>
                 </li>
                 <li>
-                  <Link to="/account/profile" className="hover:text-black transition">
+                  <Link
+                    to="/account/profile"
+                    className="hover:text-black transition"
+                  >
                     Customer support
                   </Link>
                 </li>
@@ -123,7 +164,10 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/privacy-policy" className="hover:text-black transition">
+                  <Link
+                    to="/privacy-policy"
+                    className="hover:text-black transition"
+                  >
                     Privacy Policy
                   </Link>
                 </li>
@@ -136,21 +180,36 @@ export default function Footer() {
             </div>
 
             {/* FAQ & ACCOUNT */}
-            <div data-aos="fade-up" data-aos-delay="200" data-aos-duration="600">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">FAQ &amp; ACCOUNT</h4>
+            <div
+              data-aos="fade-up"
+              data-aos-delay="200"
+              data-aos-duration="600"
+            >
+              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">
+                FAQ &amp; ACCOUNT
+              </h4>
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
-                  <Link to="/account/profile" className="hover:text-black transition">
+                  <Link
+                    to="/account/profile"
+                    className="hover:text-black transition"
+                  >
                     My Account
                   </Link>
                 </li>
                 <li>
-                  <Link to="/account/orders" className="hover:text-black transition">
+                  <Link
+                    to="/account/orders"
+                    className="hover:text-black transition"
+                  >
                     Order History
                   </Link>
                 </li>
                 <li>
-                  <Link to="/account/wishlist" className="hover:text-black transition">
+                  <Link
+                    to="/account/wishlist"
+                    className="hover:text-black transition"
+                  >
                     Wishlist Fits
                   </Link>
                 </li>
@@ -168,8 +227,14 @@ export default function Footer() {
             </div>
 
             {/* COMPANY */}
-            <div data-aos="fade-up" data-aos-delay="250" data-aos-duration="600">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">COMPANY</h4>
+            <div
+              data-aos="fade-up"
+              data-aos-delay="250"
+              data-aos-duration="600"
+            >
+              <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">
+                COMPANY
+              </h4>
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
                   <Link to="/about" className="hover:text-black transition">
@@ -190,16 +255,6 @@ export default function Footer() {
                   <Link to="/blog" className="hover:text-black transition">
                     AMA YAAR Blog
                   </Link>
-                </li>
-                <li>
-                  <a
-                    href="http://localhost:5174"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-black font-bold transition text-purple-700"
-                  >
-                    Admin Portal &rarr;
-                  </a>
                 </li>
               </ul>
             </div>

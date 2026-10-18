@@ -117,7 +117,7 @@ export default function BrandDnaShowcase() {
       {/* Background ambient lighting */}
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-amber-500/10 blur-[140px]" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="relative mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         
         {/* Top Header */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">

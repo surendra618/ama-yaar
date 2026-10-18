@@ -102,7 +102,7 @@ export default function CartPage() {
   /* 3. Cart Content */
   return (
     <div className="min-h-screen bg-neutral-50/50 py-10">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         
         {/* Header */}
         <div className="mb-8">
@@ -204,16 +204,34 @@ export default function CartPage() {
             ))}
 
             {/* Delivery threshold badge */}
-            <div className="rounded-xl border border-neutral-200/80 bg-white p-4 flex items-center gap-3 text-xs text-neutral-800 font-bold shadow-xs">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white shrink-0">
-                <Truck className="h-4 w-4" />
+            {summary.deliveryCharge === 0 ? (
+              <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-4 flex items-center gap-3 text-xs text-emerald-950 font-bold shadow-xs">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white shrink-0">
+                  <Truck className="h-4 w-4" />
+                </div>
+                <div>
+                  <span className="block font-black">Yay! You unlocked FREE Delivery!</span>
+                  <span className="text-[11px] font-medium text-emerald-800">Your order qualifies for complimentary express shipping</span>
+                </div>
               </div>
-              <span>
-                {summary.subtotal >= 500
-                  ? 'Yay! You have unlocked FREE Express Delivery for this order!'
-                  : `Add items worth ₹${500 - summary.subtotal} more to enjoy FREE Delivery!`}
-              </span>
-            </div>
+            ) : (
+              <div className="rounded-xl border border-neutral-200/80 bg-white p-4 space-y-2.5 shadow-xs">
+                <div className="flex items-center gap-3 text-xs text-neutral-800 font-bold">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white shrink-0">
+                    <Truck className="h-4 w-4" />
+                  </div>
+                  <span>
+                    Add items worth <span className="text-black font-black">₹{Math.max(0, (summary.freeDeliveryThreshold || 500) - summary.subtotal)}</span> more to enjoy <strong className="text-emerald-600 uppercase font-black">FREE Delivery!</strong>
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-black rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, Math.round((summary.subtotal / (summary.freeDeliveryThreshold || 500)) * 100))}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Summary Column */}

@@ -32,9 +32,12 @@ export default function LoginPage() {
       setLoggedInUser(user);
       setShowSuccessModal(true);
 
+      const searchParams = new URLSearchParams(location.search);
+      const redirectUrl = searchParams.get('redirect') || location.state?.from || '/';
+
       setTimeout(() => {
-        navigate(location.state?.from || '/', { replace: true });
-      }, 1800);
+        navigate(redirectUrl, { replace: true });
+      }, 1200);
     }
   };
 
