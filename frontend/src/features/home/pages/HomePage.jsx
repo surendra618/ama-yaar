@@ -605,52 +605,124 @@ const CATEGORY_ITEMS = [
 
 const REVIEWS = [
   {
-    name: "Vansh Singh",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80",
-    text: "Polo T-shirt ka fabric premium feel deta hai. Office casual ho ya outing, look kaafi classy aur stylish lagta hai. Definitely buying more!",
-  },
-  {
-    name: "Arjun Yadav",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-    text: "Henley T-shirt meri favourite purchase rahi! Comfortable, stylish aur perfect fitting. Quality dekhkar honestly expectations se better laga.",
-  },
-  {
-    name: "Sunil Kashyap",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
-    text: "Oversized t-shirt ka fabric kaafi soft hai aur fitting bhi achhi hai. Pehli baar order kiya tha, but quality expected se better nikli.",
-  },
-  {
-    name: "Rohan Verma",
-    avatar:
-      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&q=80",
-    text: "Amaze quality! Zipper jacket ki fitting aur stitching bilkul top notch hai. Delivery fast thi aur packaging premium lagti hai.",
-  },
-  {
     name: "Ved Singh",
     avatar:
       "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&q=80",
-    text: "Heavyweight graphic tee ka print aur fabric unmatched hai. Wash ke baad bhi color aur shape fade nahi hota.",
+    rating: 5,
+    date: "2 days ago",
+    text: "Heavyweight graphic tee ka print aur fabric unmatched hai. Wash ke baad bhi color aur shape fade nahi hota. Best streetwear pickup!",
+    product: {
+      name: "Oversized Stylish Graphic T-shirt",
+      image: "/model01.png",
+      price: 450,
+      variant: "Size: L • Black",
+      slug: "oversized-stylish-graphic-t-shirt",
+    },
   },
   {
     name: "Kabir Sharma",
     avatar:
       "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&q=80",
+    rating: 5,
+    date: "4 days ago",
     text: "Minimal streetwear look ke liye ye brand best hai. Comfort level 10/10. Definitely recommendation worthy!",
+    product: {
+      name: "Men's Vintage Acid Wash Denim Trucker Jacket",
+      image: "/boyse.png",
+      price: 799,
+      variant: "Size: M • Acid Wash",
+      slug: "mens-vintage-acid-wash-fleece-lined-denim-trucker-jacket",
+    },
   },
   {
     name: "Aditya Gupta",
     avatar:
       "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&q=80",
+    rating: 5,
+    date: "1 week ago",
     text: "Fabric aur drop shoulder design exact trendy vibe deta hai. Ordering again for my brothers!",
+    product: {
+      name: "Sleeveless Acid Wash Gym Vest",
+      image: "/model04.png",
+      price: 349,
+      variant: "Size: XL • Charcoal",
+      slug: "sleeveless-acid-wash-gym-vest",
+    },
   },
   {
     name: "Aarav Mehta",
     avatar:
       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&q=80",
+    rating: 5,
+    date: "1 week ago",
     text: "Super impressed with the fitting and material softness. Best online shopping experience so far.",
+    product: {
+      name: "Relaxed Henley Neck Streetwear Tee",
+      image: "/model08.jpg",
+      price: 420,
+      variant: "Size: M • Raw White",
+      slug: "relaxed-henley-neck-streetwear-tee",
+    },
+  },
+  {
+    name: "Vansh Singh",
+    avatar:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80",
+    rating: 5,
+    date: "2 weeks ago",
+    text: "Polo T-shirt ka fabric premium feel deta hai. Office casual ho ya outing, look kaafi classy aur stylish lagta hai. Definitely buying more!",
+    product: {
+      name: "Classic Heavyweight Polo T-Shirt",
+      image: "/model03.png",
+      price: 499,
+      variant: "Size: M • Slate Black",
+      slug: "mens-classic-polo-t-shirt",
+    },
+  },
+  {
+    name: "Rohan Verma",
+    avatar:
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&q=80",
+    rating: 5,
+    date: "2 weeks ago",
+    text: "Amaze quality! Zipper polo ki fitting aur stitching bilkul top notch hai. Delivery fast thi aur packaging premium lagti hai.",
+    product: {
+      name: "Urban Zipper Heavyweight Oversized Polo",
+      image: "/side.png",
+      price: 549,
+      variant: "Size: L • Washed Grey",
+      slug: "urban-zipper-heavyweight-oversized-polo",
+    },
+  },
+  {
+    name: "Arjun Yadav",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
+    rating: 5,
+    date: "3 weeks ago",
+    text: "Heavyweight drop tee meri favourite purchase rahi! Comfortable, stylish aur perfect fitting. Quality expectations se better nikli.",
+    product: {
+      name: "Heavyweight Boxy Graphic Streetwear Tee",
+      image: "/model05.jpg",
+      price: 499,
+      variant: "Size: XL • Vintage Black",
+      slug: "oversized-stylish-graphic-t-shirt",
+    },
+  },
+  {
+    name: "Sunil Kashyap",
+    avatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
+    rating: 5,
+    date: "1 month ago",
+    text: "Oversized t-shirt ka fabric kaafi soft hai aur fitting bhi achhi hai. Pehli baar order kiya tha, but quality expected se better nikli.",
+    product: {
+      name: "Streetwear Essential Oversized Drop Tee",
+      image: "/model07.jpg",
+      price: 420,
+      variant: "Size: L • Off-Black",
+      slug: "oversized-stylish-graphic-t-shirt",
+    },
   },
 ];
 
@@ -1412,17 +1484,17 @@ export default function HomePage() {
           <div
             data-aos="fade-up"
             data-aos-duration="600"
-            className="mb-8 flex items-center justify-between"
+            className="mb-8 flex items-end justify-between gap-4"
           >
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-black flex items-center flex-wrap">
-              <span className="font-display uppercase tracking-tight">
+            <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
+              <h2 className="text-xl sm:text-2xl lg:text-[28px] font-black uppercase tracking-tight text-black font-sans leading-none">
                 OUR HAPPY
-              </span>
-              <span className="font-script italic font-normal ml-3 sm:ml-4">
+              </h2>
+              <span className="font-script italic text-2xl sm:text-3xl lg:text-[34px] font-normal text-black leading-none self-baseline">
                 Customers
               </span>
-            </h2>
-            <div className="flex items-center gap-3 text-black">
+            </div>
+            <div className="flex items-center gap-2.5 text-black shrink-0">
               <button
                 onClick={() => {
                   const rail = document.getElementById("customer-reviews-rail");
@@ -1448,51 +1520,96 @@ export default function HomePage() {
 
           <div
             id="customer-reviews-rail"
-            className="flex gap-5 overflow-x-auto pt-3 pb-6 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+            className="flex gap-5 overflow-x-auto pt-3 pb-6 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth items-stretch"
           >
             {REVIEWS.map((r, idx) => (
               <motion.div
                 key={r.name + idx}
                 data-aos="fade-up"
-                data-aos-delay={idx * 120}
-                data-aos-duration="700"
+                data-aos-delay={idx * 100}
+                data-aos-duration="600"
                 whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className="relative min-w-[340px] max-w-[370px] shrink-0 snap-start rounded-md border border-slate-200 bg-white p-6 shadow-xs hover:shadow-md transition-all duration-300"
+                className="relative flex flex-col justify-between min-w-[340px] max-w-[370px] shrink-0 snap-start rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs hover:shadow-xl transition-all duration-300 hover:border-neutral-400 group"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className="h-4 w-4 fill-amber-400 text-amber-400"
-                      />
-                    ))}
+                <div>
+                  {/* Top rating & date */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: r.rating || 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className="h-4 w-4 fill-amber-400 text-amber-400"
+                        />
+                      ))}
+                    </div>
+                    {r.date && (
+                      <span className="text-[11px] font-medium text-neutral-400">
+                        {r.date}
+                      </span>
+                    )}
                   </div>
-                  <Quote className="h-8 w-8 text-slate-200/90 stroke-[1.4] rotate-180 shrink-0" />
+
+                  {/* Customer Info */}
+                  <div className="mt-4 flex items-center gap-3">
+                    {r.avatar ? (
+                      <img
+                        src={r.avatar}
+                        alt={r.name}
+                        className="h-10 w-10 rounded-full object-cover border border-neutral-200 shrink-0 shadow-xs"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white font-bold text-xs">
+                        {r.name.charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-neutral-900">
+                          {r.name}
+                        </span>
+                        <CheckCircle2 className="h-3.5 w-3.5 fill-emerald-600 text-white shrink-0" />
+                      </div>
+                      <span className="text-[11px] font-semibold text-emerald-700">
+                        Verified Buyer
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Review Text */}
+                  <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-600 font-normal">
+                    &ldquo;{r.text}&rdquo;
+                  </p>
                 </div>
 
-                <div className="mt-4 flex items-center gap-3">
-                  {r.avatar ? (
+                {/* Purchased Product Badge */}
+                {r.product && (
+                  <Link
+                    to={r.product.slug ? `/products/${r.product.slug}` : '/products'}
+                    className="mt-5 flex items-center gap-3 rounded-xl border border-neutral-200/80 bg-neutral-50/80 p-2.5 transition-all duration-200 hover:bg-neutral-100 hover:border-black/30 group/prod"
+                  >
                     <img
-                      src={r.avatar}
-                      alt={r.name}
-                      className="h-10 w-10 rounded-full object-cover border border-slate-200 shrink-0 shadow-xs"
+                      src={r.product.image}
+                      alt={r.product.name}
+                      className="h-12 w-12 rounded-lg object-cover bg-white border border-neutral-200 shrink-0"
                     />
-                  ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white font-bold text-xs">
-                      {r.name.charAt(0)}
+                    <div className="min-w-0 flex-1">
+                      <span className="inline-block text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
+                        Purchased Item
+                      </span>
+                      <p className="mt-0.5 text-xs font-bold text-neutral-900 truncate group-hover/prod:text-black">
+                        {r.product.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-neutral-500">
+                        <span className="font-medium text-neutral-600 truncate">{r.product.variant}</span>
+                        <span>•</span>
+                        <span className="font-extrabold text-black">₹{r.product.price}</span>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-black">
-                      {r.name}
-                    </span>
-                    <CheckCircle2 className="h-4 w-4 fill-[#00c853] text-white" />
-                  </div>
-                </div>
-                <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-black/70 font-normal">
-                  {r.text}
-                </p>
+                    <div className="h-7 w-7 rounded-full bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-neutral-500 group-hover/prod:bg-black group-hover/prod:text-white group-hover/prod:border-black transition-colors">
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </div>
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>
