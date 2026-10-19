@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { X, ArrowUpRight, CheckCircle2, Phone, Mail, Edit2 } from 'lucide-react';
 import { setCredentials } from '../features/auth/authSlice';
+import api from '../lib/axios';
 
 export default function AuthPopupModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
@@ -27,7 +28,7 @@ export default function AuthPopupModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !email.includes('@') || !email.includes('.')) {
       setError('Please enter a valid email address');
@@ -37,21 +38,42 @@ export default function AuthPopupModal({ isOpen, onClose }) {
     setIsSubmitting(true);
     setError('');
 
-    setTimeout(() => {
-      const userObj = {
+    try {
+      const cleanPhone = phone ? `+91${phone.replace(/\D/g, '')}` : '+917809730968';
+      const cleanName = email.split('@')[0];
+
+      let resData = null;
+      try {
+        const { data } = await api.post('/auth/quick-login', {
+          email: email.trim(),
+          phone: cleanPhone,
+          name: cleanName,
+        });
+        resData = data.data;
+      } catch (apiErr) {
+        console.warn('Backend quick-login failed, using fallback:', apiErr);
+      }
+
+      const userObj = resData?.user || {
         _id: 'user_' + Date.now(),
-        name: email.split('@')[0],
-        phone: phone ? `+91${phone.replace(/\D/g, '')}` : '+917809730968',
+        name: cleanName,
+        phone: cleanPhone,
         email: email.trim(),
         role: 'user',
       };
 
+      const token = resData?.accessToken || 'ay_token_' + Date.now();
+
       dispatch(
         setCredentials({
           user: userObj,
-          accessToken: 'ay_token_' + Date.now(),
+          accessToken: token,
         })
       );
+
+      if (resData?.refreshToken) {
+        localStorage.setItem('ay_refresh_token', resData.refreshToken);
+      }
 
       sessionStorage.setItem('auth_popup_shown', 'true');
       setSuccess(true);
@@ -59,8 +81,11 @@ export default function AuthPopupModal({ isOpen, onClose }) {
 
       setTimeout(() => {
         onClose();
-      }, 900);
-    }, 400);
+      }, 700);
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   const handlePhoneSubmit = (e) => {

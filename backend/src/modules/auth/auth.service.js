@@ -175,9 +175,49 @@ async function getMe(userId) {
   return user;
 }
 
+async function quickLogin({ email, phone, name }) {
+  const cleanEmail = email ? email.trim().toLowerCase() : null;
+  const cleanPhone = phone ? phone.trim() : null;
+  const identifierEmail = cleanEmail || (cleanPhone ? `${cleanPhone.replace(/\D/g, '')}@guest.ama-yaar.com` : `guest_${Date.now()}@ama-yaar.com`);
+
+  const queryOr = [];
+  if (cleanEmail) queryOr.push({ email: cleanEmail });
+  if (cleanPhone) queryOr.push({ phone: cleanPhone });
+
+  let user = null;
+  if (queryOr.length > 0) {
+    user = await User.findOne({ $or: queryOr });
+  }
+
+  if (!user) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(`quick_${Date.now()}_pwd`, salt);
+    const userName = name || (cleanEmail ? cleanEmail.split('@')[0] : 'Guest User');
+    user = await User.create({
+      name: userName,
+      email: identifierEmail,
+      phone: cleanPhone || '',
+      password: hashedPassword,
+      role: 'customer',
+    });
+    await Cart.create({ user: user._id, items: [] }).catch(() => {});
+    await Wishlist.create({ user: user._id, products: [] }).catch(() => {});
+  }
+
+  const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name };
+  const accessToken = generateAccessToken(tokenPayload);
+  const refreshToken = generateRefreshToken(tokenPayload);
+
+  const sanitizedUser = user.toObject();
+  delete sanitizedUser.password;
+
+  return { user: sanitizedUser, accessToken, refreshToken };
+}
+
 module.exports = {
   register,
   login,
+  quickLogin,
   refreshToken,
   logout,
   forgotPassword,

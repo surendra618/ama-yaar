@@ -11,6 +11,7 @@ const addressSchema = new mongoose.Schema(
     state: { type: String, required: true },
     pincode: { type: String, required: true },
     country: { type: String, default: 'India' },
+    addressType: { type: String, default: 'Home' },
     isDefault: { type: Boolean, default: false },
   },
   { timestamps: true }

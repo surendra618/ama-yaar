@@ -45,6 +45,7 @@ export default function CheckoutPage() {
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const selectedAddr = addresses.find((a) => a._id === selectedAddressId) || addresses[0];
 
   // Address Form State
   const [addressForm, setAddressForm] = useState({
@@ -59,10 +60,34 @@ export default function CheckoutPage() {
     isDefault: true,
   });
 
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+
   useEffect(() => {
     dispatch(fetchAddresses());
     dispatch(fetchCart());
   }, [dispatch]);
+
+  // Upgrade dummy token to real JWT if user had a client-only mock session
+  useEffect(() => {
+    const existingToken = localStorage.getItem('ay_access_token');
+    if (existingToken && (existingToken.startsWith('ay_token_') || existingToken.startsWith('dummy_token_'))) {
+      api
+        .post('/auth/quick-login', {
+          email: user?.email || 'surendr2026a@gmail.com',
+          phone: user?.phone || '+917809730968',
+          name: user?.name || 'surendr2026a',
+        })
+        .then((res) => {
+          if (res.data?.data?.accessToken) {
+            localStorage.setItem('ay_access_token', res.data.data.accessToken);
+            if (res.data.data.refreshToken) {
+              localStorage.setItem('ay_refresh_token', res.data.data.refreshToken);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (addresses.length > 0 && !selectedAddressId) {
@@ -118,19 +143,29 @@ export default function CheckoutPage() {
 
   const handleSaveAddress = async (e) => {
     e.preventDefault();
-    if (editingAddress) {
-      const res = await dispatch(updateAddress({ id: editingAddress._id, data: addressForm }));
-      if (res.payload?._id) {
-        setSelectedAddressId(res.payload._id);
+    setIsSavingAddress(true);
+    try {
+      let saved = null;
+      if (editingAddress) {
+        const res = await dispatch(updateAddress({ id: editingAddress._id, data: addressForm }));
+        saved = res.payload;
+      } else {
+        const res = await dispatch(addAddress(addressForm));
+        saved = res.payload;
       }
-    } else {
-      const res = await dispatch(addAddress(addressForm));
-      if (res.payload?._id) {
-        setSelectedAddressId(res.payload._id);
+
+      if (saved && saved._id) {
+        setSelectedAddressId(saved._id);
+        // Automatically advance to Step 2 so user proceeds immediately to Payment!
+        setStep(2);
       }
+      setAddressModalOpen(false);
+      setEditingAddress(null);
+    } catch (err) {
+      console.error('Failed to save address:', err);
+    } finally {
+      setIsSavingAddress(false);
     }
-    setAddressModalOpen(false);
-    setEditingAddress(null);
   };
 
   const [orderError, setOrderError] = useState('');
@@ -343,21 +378,34 @@ export default function CheckoutPage() {
         
         {/* Step Indicator Header */}
         <div className="mb-10 flex items-center justify-center gap-4 text-xs font-black">
-          <div className={`flex items-center gap-2.5 ${step >= 1 ? 'text-black' : 'text-neutral-400'}`}>
-            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${step >= 1 ? 'bg-black text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            className={`flex items-center gap-2.5 cursor-pointer transition ${step === 1 ? 'text-black' : 'text-neutral-500 hover:text-black'}`}
+          >
+            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition ${step >= 1 ? 'bg-black text-white' : 'bg-neutral-200 text-neutral-500'}`}>
               1
             </div>
             <span className="uppercase tracking-wider">Delivery Address</span>
-          </div>
+          </button>
 
           <div className="h-0.5 w-12 bg-neutral-200"></div>
 
-          <div className={`flex items-center gap-2.5 ${step >= 2 ? 'text-black' : 'text-neutral-400'}`}>
-            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${step >= 2 ? 'bg-black text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+          <button
+            type="button"
+            disabled={!selectedAddressId && addresses.length === 0}
+            onClick={() => {
+              if (selectedAddressId || addresses.length > 0) setStep(2);
+            }}
+            className={`flex items-center gap-2.5 transition ${step === 2 ? 'text-black' : 'text-neutral-500'} ${
+              selectedAddressId || addresses.length > 0 ? 'cursor-pointer hover:text-black' : 'cursor-not-allowed opacity-50'
+            }`}
+          >
+            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition ${step >= 2 ? 'bg-black text-white' : 'bg-neutral-200 text-neutral-500'}`}>
               2
             </div>
             <span className="uppercase tracking-wider">Payment & Review</span>
-          </div>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -485,11 +533,40 @@ export default function CheckoutPage() {
                   </h2>
                   <button
                     onClick={() => setStep(1)}
-                    className="text-xs font-black text-black uppercase tracking-wider hover:underline"
+                    className="text-xs font-black text-black uppercase tracking-wider hover:underline cursor-pointer"
                   >
-                    Edit Address
+                    Change Address
                   </button>
                 </div>
+
+                {/* Active Shipping Address Preview */}
+                {selectedAddr && (
+                  <div className="mb-5 p-4 bg-neutral-50 rounded-xl border border-neutral-200/90 flex items-center justify-between gap-3 shadow-2xs">
+                    <div className="text-xs">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-black text-neutral-500 uppercase tracking-wider text-[10px]">
+                          Delivering To:
+                        </span>
+                        <span className="rounded-md bg-neutral-200/80 px-2 py-0.5 text-[10px] font-black uppercase text-neutral-700">
+                          {selectedAddr.addressType || 'Home'}
+                        </span>
+                      </div>
+                      <p className="font-extrabold text-black text-sm">
+                        {selectedAddr.fullName} <span className="font-semibold text-neutral-500 text-xs">({selectedAddr.phone})</span>
+                      </p>
+                      <p className="text-neutral-600 text-xs mt-0.5 font-medium leading-relaxed">
+                        {selectedAddr.line1}{selectedAddr.line2 ? `, ${selectedAddr.line2}` : ''}, {selectedAddr.city}, {selectedAddr.state} - {selectedAddr.pincode}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-xs font-extrabold text-black underline hover:text-neutral-600 shrink-0 cursor-pointer px-2 py-1"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   {/* UPI Option */}
@@ -782,9 +859,19 @@ export default function CheckoutPage() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-black px-6 py-2.5 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition shadow-sm cursor-pointer"
+                  disabled={isSavingAddress}
+                  className="rounded-lg bg-black px-6 py-2.5 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
-                  {editingAddress ? 'Update Address' : 'Save & Deliver Here'}
+                  {isSavingAddress ? (
+                    <>
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span>Saving Address...</span>
+                    </>
+                  ) : editingAddress ? (
+                    'Update Address'
+                  ) : (
+                    'Save & Deliver Here'
+                  )}
                 </button>
               </div>
             </form>
