@@ -2,7 +2,7 @@ require('dotenv').config();
 
 module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
-  port: process.env.PORT || 5000,
+  port: process.env.PORT || 5005,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   adminUrl: process.env.ADMIN_URL || 'http://localhost:5174',
   mongoUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ama-yaar',

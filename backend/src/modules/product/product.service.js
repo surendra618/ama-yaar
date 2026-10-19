@@ -264,6 +264,12 @@ async function create(data) {
   if (!data.slug && data.name) {
     data.slug = slugify(data.name);
   }
+  if (!data.category || data.category === '') {
+    data.category = null;
+  }
+  if (!data.subCategory || data.subCategory === '') {
+    data.subCategory = null;
+  }
   try {
     return await Product.create(data);
   } catch (err) {
@@ -274,6 +280,12 @@ async function create(data) {
 async function update(id, data) {
   if (data.name && !data.slug) {
     data.slug = slugify(data.name);
+  }
+  if (data.category !== undefined && (!data.category || data.category === '')) {
+    data.category = null;
+  }
+  if (data.subCategory !== undefined && (!data.subCategory || data.subCategory === '')) {
+    data.subCategory = null;
   }
   try {
     const doc = await Product.findByIdAndUpdate(id, data, { new: true, runValidators: true });

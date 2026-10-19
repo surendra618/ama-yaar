@@ -6,6 +6,7 @@ const Coupon = require('../coupon/coupon.model');
 const Payment = require('../payment/payment.model');
 const Notification = require('../notification/notification.model');
 const ApiError = require('../../utils/ApiError');
+const settingService = require('../setting/setting.service');
 
 async function createOrder(userId, payload) {
   const { shippingAddressId, shippingAddress: directAddress, paymentProvider = 'cod', paymentMethod = 'Cash on Delivery', paymentId } = payload;
@@ -85,8 +86,22 @@ async function createOrder(userId, payload) {
     await Coupon.findByIdAndUpdate(c._id, { $inc: { usedCount: 1 } });
   }
 
-  const isFreeDelivery = subtotal >= 500 || cart.coupon?.discountType === 'freeDelivery';
-  const deliveryCharge = isFreeDelivery ? 0 : 49;
+  // Delivery charge configuration from admin settings
+  let deliverySettings;
+  try {
+    deliverySettings = await settingService.getDeliverySettings();
+  } catch {
+    deliverySettings = { deliveryCharge: 49, freeDeliveryThreshold: 500, isFreeDeliveryEnabled: true, isDeliveryFeeActive: true };
+  }
+
+  const threshold = deliverySettings?.freeDeliveryThreshold ?? 500;
+  const isFreeThreshold = deliverySettings?.isFreeDeliveryEnabled !== false && subtotal >= threshold;
+  const isCouponFree = cart.coupon?.discountType === 'freeDelivery';
+  const feeActive = deliverySettings?.isDeliveryFeeActive !== false;
+  const baseCharge = feeActive ? (deliverySettings?.deliveryCharge ?? 49) : 0;
+
+  const isFreeDelivery = !feeActive || isFreeThreshold || isCouponFree;
+  const deliveryCharge = isFreeDelivery ? 0 : baseCharge;
   const tax = Math.round(subtotal * 0.05);
   const total = Math.max(0, Math.round(subtotal - couponDiscount + deliveryCharge + tax));
 

@@ -3,7 +3,7 @@ import axios from 'axios';
 const defaultBaseUrl = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.MODE === 'production' 
     ? 'https://ama-yaar.vercel.app/api/v1' 
-    : 'http://localhost:5000/api/v1');
+    : 'http://localhost:5005/api/v1');
 
 const api = axios.create({
   baseURL: defaultBaseUrl,

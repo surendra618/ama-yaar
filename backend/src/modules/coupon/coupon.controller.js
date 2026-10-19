@@ -7,6 +7,11 @@ const list = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, items));
 });
 
+const getActiveCoupons = asyncHandler(async (req, res) => {
+  const items = await service.list({ activeOnly: 'true' });
+  res.status(200).json(new ApiResponse(200, items, 'Active coupons retrieved'));
+});
+
 const getById = asyncHandler(async (req, res) => {
   const item = await service.getById(req.params.id);
   res.status(200).json(new ApiResponse(200, item));
@@ -32,4 +37,4 @@ const remove = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, null, 'Coupon deleted'));
 });
 
-module.exports = { list, getById, validateCoupon, create, update, remove };
+module.exports = { list, getActiveCoupons, getById, validateCoupon, create, update, remove };

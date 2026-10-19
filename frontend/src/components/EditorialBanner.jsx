@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 const LOOKS = [
   {
@@ -11,12 +11,13 @@ const LOOKS = [
     title: 'CARGO HIGH RIB',
     subtitle: 'JOGGER FIT',
     tag: 'FALL / WINTER',
-    season: '2026 EDITION',
-    drop: '2026 DROP',
-    status: 'DELIVERY',
-    category1: 'HOODIE',
-    category2: 'SNEAKER',
-    gradient: 'from-[#202125] via-[#3a3d44] to-[#bfc4c9]',
+    season: '2026 RUNWAY DROP',
+    drop: 'DROP 01',
+    status: 'READY TO SHIP',
+    gsm: '260 GSM TERRY',
+    fit: 'AGGRESSIVE TAPER',
+    category1: 'HEAVY HOODIE',
+    category2: 'HIGH-RIB JOGGERS',
     isCutout: true,
   },
   {
@@ -28,10 +29,11 @@ const LOOKS = [
     tag: 'LIMITED RUN',
     season: 'STREET COUTURE',
     drop: 'DROP 02',
-    status: 'IN STOCK',
-    category1: 'CAP',
-    category2: 'CARGO',
-    gradient: 'from-[#171d24] via-[#2d3946] to-[#b8c7d8]',
+    status: 'LOW STOCK',
+    gsm: '240 GSM COMBED',
+    fit: 'BOXY OVERSIZED',
+    category1: 'TACTICAL CAP',
+    category2: '6-POCKET CARGO',
     isCutout: true,
   },
   {
@@ -42,11 +44,12 @@ const LOOKS = [
     subtitle: 'OVERSIZED DRIP',
     tag: 'TIMELESS CUT',
     season: '2026 EDITION',
-    drop: 'EXCLUSIVE',
-    status: 'LIMITED RUN',
+    drop: 'EXCLUSIVE DROP',
+    status: 'FLAGSHIP PIECE',
+    gsm: '280 GSM FLEECE',
+    fit: 'DROP SHOULDER',
     category1: 'BAGGY DENIM',
-    category2: 'LOAFER',
-    gradient: 'from-[#28211b] via-[#483a2f] to-[#d4c6b8]',
+    category2: 'CHUNKY SNEAKERS',
     isCutout: true,
   },
   {
@@ -54,29 +57,31 @@ const LOOKS = [
     image: '/Curly-Haired Model in Beige Polo.png',
     fallback: '/boyse.png',
     title: 'GRAPHIC EAGLE TEE',
-    subtitle: 'HEAVYWEIGHT COTTON',
+    subtitle: 'HEAVYWEIGHT POLO',
     tag: 'CORE ESSENTIAL',
     season: 'SPRING / SUMMER',
     drop: 'SPECIAL DROP',
     status: 'SELLING FAST',
-    category1: 'TRACK PANTS',
-    category2: 'RETRO KICKS',
-    gradient: 'from-[#211624] via-[#3d2744] to-[#cbbece]',
+    gsm: '240 GSM COMBED',
+    fit: 'RELAXED BOX CUT',
+    category1: 'OVERSIZED POLO',
+    category2: 'VINTAGE WASH DENIM',
     isCutout: true,
   },
   {
     id: 5,
     image: '/Stylish Streetwear Man with Backpack.png',
     fallback: '/boyse.png',
-    title: 'BOXY POLO SHIRT',
-    subtitle: 'SUMMER EDITION',
+    title: 'BOXY UTILITY POLO',
+    subtitle: 'URBAN EXPLORER',
     tag: 'AVANT-GARDE',
     season: '2026 EDITION',
     drop: 'CYBER DROP',
     status: 'NEW ARRIVAL',
-    category1: 'DENIM SHORTS',
-    category2: 'SNEAKER',
-    gradient: 'from-[#17211f] via-[#2c3d39] to-[#bed3cd]',
+    gsm: '250 GSM BIO-WASH',
+    fit: 'ENGINEERED DRAPE',
+    category1: 'UTILITY TEE',
+    category2: 'TECHNICAL BACKPACK',
     isCutout: true,
   },
 ];
@@ -96,19 +101,20 @@ export default function EditorialBanner() {
             id: item._id || idx,
             title: item.title,
             subtitle: item.subtitle,
-            tag: item.tag,
-            season: item.season,
-            drop: item.drop,
-            status: item.status,
-            category1: item.category1,
-            category2: item.category2,
+            tag: item.tag || 'EXCLUSIVE',
+            season: item.season || '2026 EDITION',
+            drop: item.drop || `DROP 0${idx + 1}`,
+            status: item.status || 'IN STOCK',
+            gsm: item.gsm || '240+ GSM',
+            fit: item.fit || 'OVERSIZED',
+            category1: item.category1 || 'STREETWEAR TOP',
+            category2: item.category2 || 'UTILITY BOTTOM',
             image: item.image?.startsWith('http')
               ? item.image
               : item.image?.startsWith('/uploads')
                 ? `http://localhost:5000${item.image}`
                 : item.image,
             fallback: item.fallback || '/boyse.png',
-            gradient: item.gradient || 'from-[#202125] via-[#3a3d44] to-[#bfc4c9]',
             isCutout: item.isCutout !== undefined ? Boolean(item.isCutout) : true,
           }));
           setDbLooks(parsed);
@@ -119,24 +125,23 @@ export default function EditorialBanner() {
 
   const displayLooks = dbLooks.length > 0 ? dbLooks : LOOKS;
 
-  // Auto-cycle look every 3.8 seconds unless hovered/paused
+  // Auto-cycle look every 4.5 seconds unless hovered/paused
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % displayLooks.length);
-    }, 3800);
+    }, 4500);
     return () => clearInterval(interval);
   }, [isPaused, displayLooks.length]);
 
   const activeLook = displayLooks[currentIndex] || displayLooks[0];
 
-  // 3D Tilt calculation
+  // 3D subtle tilt
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-
   const springConfig = { stiffness: 180, damping: 20 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-6, 6]), springConfig);
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [3, -3]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-3, 3]), springConfig);
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
@@ -156,198 +161,251 @@ export default function EditorialBanner() {
   };
 
   const handleNext = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % displayLooks.length);
   };
 
   const handlePrev = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setCurrentIndex((prev) => (prev - 1 + displayLooks.length) % displayLooks.length);
   };
 
-  // Repeated text strings for continuous infinite marquee
-  const topMarqueeText = "FITS FOR YOUR NEXT OUTFIT • AMA YAAR STREETWEAR • OVERSIZED DRIP • 2026 EDITION • ";
-  const bottomMarqueeText = "NEXT OUTFIT • URBAN LUXURY • NEW GENERATION FIT • RAW VINTAGE • TIMELESS CUT • ";
-
   return (
-    <section className="relative w-full py-12 sm:py-16 bg-[#edf0f4] overflow-hidden select-none">
+    <section className="w-full bg-[#fbfbfb] text-neutral-900 py-14 sm:py-20 select-none overflow-hidden relative border-t border-b border-neutral-200">
+      {/* Background Subtle Luxury Light Ambience */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(225,29,72,0.03),transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
 
-      {/* ── 1. Background Continuous Marquee Typography (Outer Section Tracks) ── */}
-      <div
-        className="pointer-events-none absolute bottom-[9%] sm:bottom-[12%] left-0 right-0 overflow-hidden z-30"
-        style={{
-          maskImage: 'linear-gradient(to left, #000 0%, #000 min(calc(50% + 80px), calc(50% + 22vw)), transparent min(calc(50% + 210px), calc(50% + 45vw)))',
-          WebkitMaskImage: 'linear-gradient(to left, #000 0%, #000 min(calc(50% + 80px), calc(50% + 22vw)), transparent min(calc(50% + 210px), calc(50% + 45vw)))',
-        }}
-      >
-        <div className="w-full overflow-hidden whitespace-nowrap flex">
-          <div className="flex shrink-0 items-center marquee-track-fast">
-            <span
-              className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/85 pr-8"
-              style={{
-                fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif',
-              }}
-            >
-              {bottomMarqueeText.repeat(4)}
-            </span>
+      {/* Main Standardized Container */}
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 relative z-10">
+
+        {/* Section Top Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-neutral-200">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="h-2 w-2 rounded-full bg-[#e11d48] animate-pulse" />
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-[#e11d48]">
+                AMA YAAR EDITORIAL RUNWAY • 2026
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase italic tracking-tight text-neutral-900 leading-none">
+              CURATED STREETWEAR <span className="text-neutral-500">LOOKBOOK</span>
+            </h2>
           </div>
-          <div className="flex shrink-0 items-center marquee-track-fast" aria-hidden="true">
-            <span
-              className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/85 pr-8"
-              style={{
-                fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif',
-              }}
-            >
-              {bottomMarqueeText.repeat(4)}
+
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-mono font-bold tracking-widest text-neutral-500 uppercase">
+              LOOK <span className="text-neutral-900 font-black text-sm">0{currentIndex + 1}</span> / 0{displayLooks.length}
             </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrev}
+                aria-label="Previous Look"
+                className="h-10 w-10 rounded-full border border-neutral-200 bg-white text-neutral-800 flex items-center justify-center hover:bg-neutral-900 hover:text-white hover:border-black transition active:scale-95 shadow-xs"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={handleNext}
+                aria-label="Next Look"
+                className="h-10 w-10 rounded-full border border-neutral-200 bg-white text-neutral-800 flex items-center justify-center hover:bg-neutral-900 hover:text-white hover:border-black transition active:scale-95 shadow-xs"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── 2. Central 3D Editorial Model Card ── */}
-      <div className="relative z-20 mx-auto max-w-7xl px-4 flex flex-col items-center justify-center">
-        <motion.div
-          ref={cardRef}
-          onMouseMove={handleMouseMove}
+        {/* Full-Page Editorial Lookbook Display - Light Theme */}
+        <div
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={handleMouseLeave}
-          style={{
-            rotateX,
-            rotateY,
-            transformStyle: 'preserve-3d',
-          }}
-          initial={{ opacity: 0, y: 50, scale: 0.96 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{
-            type: 'spring',
-            stiffness: 90,
-            damping: 16,
-          }}
-          className="group relative w-full max-w-[340px] sm:max-w-[380px] md:max-w-[420px] h-[500px] sm:h-[550px] md:h-[580px] rounded-[32px] sm:rounded-[36px] shadow-[0_24px_60px_rgba(0,0,0,0.2)] cursor-pointer"
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch"
         >
-          {/* Fixed Editorial Card Gradient Background */}
-          <div className="absolute inset-0 rounded-[32px] sm:rounded-[36px] overflow-hidden z-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#222327] via-[#43454d] to-[#c2c6cb] transition-transform duration-700 ease-out group-hover:scale-105" />
-          </div>
+          {/* Left Column: Rich Editorial Dossier & Specs (5 Cols) - Light Theme */}
+          <div className="lg:col-span-5 bg-white border border-neutral-200 p-6 sm:p-8 lg:p-10 flex flex-col justify-between shadow-xs">
+            <div className="space-y-6">
+              {/* Badges Row */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="bg-[#e11d48] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1">
+                  {activeLook.tag}
+                </span>
+                <span className="bg-neutral-100 text-neutral-700 text-[10px] font-bold uppercase tracking-wider px-3 py-1 border border-neutral-200">
+                  {activeLook.season}
+                </span>
+                <span className="bg-neutral-100 text-neutral-500 text-[10px] font-mono tracking-wider px-2.5 py-1 border border-neutral-200 ml-auto">
+                  {activeLook.drop}
+                </span>
+              </div>
 
-          {/* Top Marquee (Comes from left outside card, passes BELOW model image z-[3], ends at right edge of card right-0) */}
-          <div className="pointer-events-none absolute top-[12%] sm:top-[15%] right-0 -left-[100vw] overflow-hidden z-[3]">
-            <div className="w-full overflow-hidden whitespace-nowrap flex">
-              <div className="flex shrink-0 items-center marquee-track-reverse">
-                <span
-                  className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/85 pr-8"
-                  style={{ fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif' }}
-                >
-                  {topMarqueeText.repeat(4)}
-                </span>
+              {/* Title & Subtitle */}
+              <div>
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase italic tracking-tight text-neutral-900 leading-tight">
+                  {activeLook.title}
+                </h3>
+                <p className="text-sm sm:text-base font-bold uppercase tracking-widest text-neutral-500 mt-1">
+                  {activeLook.subtitle}
+                </p>
               </div>
-              <div className="flex shrink-0 items-center marquee-track-reverse" aria-hidden="true">
-                <span
-                  className="text-[6.5vw] sm:text-[5.5vw] md:text-[4.8vw] font-[500] uppercase leading-none tracking-wider text-white/85 pr-8"
-                  style={{ fontFamily: '"Syne", "Unbounded", "Syncopate", sans-serif' }}
-                >
-                  {topMarqueeText.repeat(4)}
-                </span>
+
+              {/* Streetwear Engineered Specs - Light Theme Cards */}
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-neutral-200">
+                <div className="bg-neutral-50 border border-neutral-200/90 p-3.5">
+                  <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider block">FABRIC DENSITY</span>
+                  <span className="text-sm font-black text-neutral-900 uppercase tracking-wide mt-0.5 block">{activeLook.gsm || '240+ GSM TERRY'}</span>
+                </div>
+                <div className="bg-neutral-50 border border-neutral-200/90 p-3.5">
+                  <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider block">SILHOUETTE</span>
+                  <span className="text-sm font-black text-neutral-900 uppercase tracking-wide mt-0.5 block">{activeLook.fit || 'BOXY DROP SHOULDER'}</span>
+                </div>
               </div>
+
+              {/* Styled Ensemble Breakdown - Light Theme */}
+              <div className="space-y-2.5 bg-neutral-50/70 p-4 border border-neutral-200/90">
+                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-1">
+                  STYLED OUTFIT ENSEMBLE
+                </span>
+                <div className="flex items-center justify-between text-xs text-neutral-700">
+                  <span className="text-neutral-500 font-bold uppercase">TOP LAYER:</span>
+                  <span className="font-black text-neutral-900 uppercase">{activeLook.category1}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-neutral-700 pt-2 border-t border-neutral-200/80">
+                  <span className="text-neutral-500 font-bold uppercase">BOTTOM LAYER:</span>
+                  <span className="font-black text-neutral-900 uppercase">{activeLook.category2}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-neutral-700 pt-2 border-t border-neutral-200/80">
+                  <span className="text-neutral-500 font-bold uppercase">AVAILABILITY:</span>
+                  <span className="font-black text-[#e11d48] uppercase flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#e11d48]" />
+                    {activeLook.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Look Switcher Thumbnails & CTA */}
+            <div className="mt-8 pt-6 border-t border-neutral-200 space-y-5">
+              {/* Thumbnail Selector Strip - Light Theme */}
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-2.5">
+                  SELECT RUNWAY LOOK
+                </span>
+                <div className="grid grid-cols-5 gap-2">
+                  {displayLooks.map((look, idx) => {
+                    const isSelected = currentIndex === idx;
+                    return (
+                      <button
+                        key={look.id}
+                        onClick={() => setCurrentIndex(idx)}
+                        className={`relative aspect-[3/4] overflow-hidden border transition duration-200 group/thumb ${isSelected
+                            ? 'border-[#e11d48] ring-2 ring-[#e11d48]/40 scale-102 bg-white shadow-xs'
+                            : 'border-neutral-200 hover:border-neutral-400 bg-neutral-100'
+                          }`}
+                      >
+                        <img
+                          src={look.image}
+                          alt={look.title}
+                          className="h-full w-full object-cover object-top transition duration-300 group-hover/thumb:scale-110"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = look.fallback;
+                          }}
+                        />
+                        <span className={`absolute bottom-0 inset-x-0 text-[9px] font-mono font-bold py-0.5 text-center ${isSelected ? 'bg-[#e11d48] text-white' : 'bg-neutral-900/80 text-white'
+                          }`}>
+                          0{idx + 1}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Shop Fit Action CTA */}
+              <Link
+                to="/products"
+                className="w-full inline-flex items-center justify-center gap-3 bg-neutral-950 text-white py-4 px-6 text-xs font-black uppercase tracking-widest hover:bg-black transition duration-200 group/btn shadow-md"
+              >
+                <span>SHOP THIS LOOKBOOK FIT</span>
+                <ArrowRight className="h-4 w-4 text-white group-hover/btn:translate-x-1 transition duration-200" />
+              </Link>
             </div>
           </div>
 
-          {/* Card Shimmer Sheen Beam */}
-          <div className="card-shine rounded-[32px] sm:rounded-[36px]" />
+          {/* Right Column: Hero High-Impact Visual Showcase (7 Cols) - Light Theme */}
+          <div
+            ref={cardRef}
+            onMouseMove={handleMouseMove}
+            style={{
+              rotateX,
+              rotateY,
+              transformStyle: 'preserve-3d',
+            }}
+            className="lg:col-span-7 relative h-[520px] sm:h-[600px] lg:h-[660px] bg-gradient-to-b from-[#f5f7fa] via-[#eef1f5] to-[#e4e8ed] border border-neutral-200 overflow-hidden flex items-center justify-center group shadow-xs"
+          >
+            {/* Ambient Dynamic Background Light Glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.85)_0%,transparent_75%)] pointer-events-none" />
 
-          {/* Ambient Inner Lighting Glow */}
-          <div className="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-white/10 blur-[80px]" />
+            {/* Subtle Editorial Background Watermark Typography */}
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center pointer-events-none select-none overflow-hidden z-0 opacity-10">
+              <span className="text-[12vw] font-black uppercase tracking-tighter text-neutral-900 whitespace-nowrap block leading-none font-display italic">
+                AMA YAAR
+              </span>
+            </div>
 
-          {/* ── Auto-Switching Model Image in FRONT of top text with Vertical Reveal (z-10) ── */}
-          <div className="absolute inset-0 flex items-center justify-center pt-8 pb-4 pointer-events-none overflow-hidden z-10 rounded-[32px] sm:rounded-[36px]">
-            <AnimatePresence>
-              <motion.img
-                key={activeLook.id}
-                src={activeLook.image}
-                alt={activeLook.title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = activeLook.fallback;
-                }}
-                initial={{
-                  opacity: 0,
-                  y: currentIndex % 2 === 0 ? 40 : -40,
-                  clipPath: currentIndex % 2 === 0 ? 'inset(100% 0% 0% 0%)' : 'inset(0% 0% 100% 0%)',
-                  scale: 0.96,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                  clipPath: 'inset(0% 0% 0% 0%)',
-                  scale: 1,
-                }}
-                exit={{
-                  opacity: 0,
-                  y: currentIndex % 2 === 0 ? -30 : 30,
-                  clipPath: currentIndex % 2 === 0 ? 'inset(0% 0% 100% 0%)' : 'inset(100% 0% 0% 0%)',
-                  scale: 0.97,
-                }}
-                transition={{
-                  duration: 2,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className={
-                  activeLook.isCutout
-                    ? "absolute h-[88%] sm:h-[92%] w-auto object-contain object-bottom filter drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] transition-transform duration-700 ease-out group-hover:scale-105"
-                    : "absolute h-full w-full object-cover object-center filter brightness-95 transition-transform duration-700 ease-out group-hover:scale-105"
-                }
-              />
-            </AnimatePresence>
-          </div>
+            {/* Top Right Floating Season Tag - Light Theme */}
+            <div className="absolute top-5 right-5 z-20 bg-white/90 backdrop-blur-md border border-neutral-200 px-3.5 py-1.5 flex items-center gap-2 shadow-xs">
+              <Sparkles className="h-3.5 w-3.5 text-[#e11d48]" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-900">
+                {activeLook.season}
+              </span>
+            </div>
 
+            {/* Top Left Look ID - Light Theme */}
+            <div className="absolute top-5 left-5 z-20 bg-white/90 backdrop-blur-md border border-neutral-200 px-3.5 py-1.5 shadow-xs">
+              <span className="text-[10px] font-mono font-bold tracking-widest text-neutral-700 uppercase">
+                SERIES NO. {activeLook.id}
+              </span>
+            </div>
 
-
-          {/* ── 4. Mini Look Switcher Arrows (Visible on hover) ── */}
-          <div className="absolute inset-y-0 left-3 right-3 flex items-center justify-between z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            <button
-              onClick={handlePrev}
-              aria-label="Previous Look"
-              className="pointer-events-auto h-9 w-9 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/80 active:scale-90 transition-all shadow-lg border border-white/10"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleNext}
-              aria-label="Next Look"
-              className="pointer-events-auto h-9 w-9 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/80 active:scale-90 transition-all shadow-lg border border-white/10"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* ── 5. Center Bottom Floating CTA Button (Appears on hover) ── */}
-          <div className="absolute inset-x-0 bottom-5 flex flex-col items-center gap-2.5 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-y-0 translate-y-3">
-            <Link
-              to="/products"
-              className="inline-flex items-center gap-2 rounded-full bg-neutral-950 px-6 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-2xl hover:bg-black active:scale-95 transition-all border border-white/15"
-            >
-              <span>EXPLORE OUTFIT</span>
-              <ArrowUpRight className="h-3.5 w-3.5 text-[#facc15]" />
-            </Link>
-
-            {/* Slide Indicator Dots */}
-            <div className="flex items-center gap-1.5 pt-1">
-              {displayLooks.map((look, i) => (
-                <button
-                  key={look.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentIndex(i);
+            {/* Main Animated Model Image */}
+            <div className="relative z-10 w-full h-full flex items-center justify-center p-6 sm:p-10">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={activeLook.id}
+                  src={activeLook.image}
+                  alt={activeLook.title}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = activeLook.fallback;
                   }}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${currentIndex === i ? 'w-6 bg-white shadow-sm' : 'w-1.5 bg-white/40 hover:bg-white/70'
-                    }`}
-                  aria-label={`Go to look ${i + 1}`}
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 1.04, y: -20 }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  className="max-h-[92%] sm:max-h-[95%] w-auto object-contain object-bottom drop-shadow-[0_20px_30px_rgba(0,0,0,0.18)] filter contrast-105"
                 />
-              ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Bottom Overlay Info Pill - Light Theme */}
+            <div className="absolute bottom-5 inset-x-5 z-20 flex items-center justify-between bg-white/90 backdrop-blur-md border border-neutral-200 px-5 py-3 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-[#e11d48]" />
+                <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                  {activeLook.title} — {activeLook.subtitle}
+                </span>
+              </div>
+              <Link
+                to="/products"
+                className="text-[11px] font-black uppercase tracking-widest text-neutral-800 hover:text-[#e11d48] flex items-center gap-1.5 transition"
+              >
+                EXPLORE FIT <ArrowRight className="h-3.5 w-3.5 text-[#e11d48]" />
+              </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
+
       </div>
     </section>
   );

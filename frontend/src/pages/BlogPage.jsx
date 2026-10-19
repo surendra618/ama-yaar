@@ -26,12 +26,12 @@ import {
 
 const CATEGORIES = ['All Stories', 'Style Guide', 'Vibe & Trends', 'Streetwear Essentials', 'Culture Lab'];
 
-const FEATURED_IMAGES = [
-  '/Streetwear Model in Oversized Hoodie.png',
-  '/Curly-Haired Model in Beige Polo.png',
-  '/Streetwear Cutout with Headphones.png',
-  '/Stylish Streetwear Man with Backpack.png',
-  '/Ivory Jacket Streetwear Cutout.png',
+const FEATURED_EDITORIAL_IMAGES = [
+  'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&q=85',
+  '/model-nirvana.jpg',
+  '/fashion-model.jpg',
+  '/sectionbanner.png',
+  '/sectionbanner2.png',
 ];
 
 const DEFAULT_ARTICLES = [
@@ -44,7 +44,7 @@ const DEFAULT_ARTICLES = [
     date: 'Oct 02, 2026',
     readTime: '4 min read',
     views: '14.8K',
-    image: '/Streetwear Model in Oversized Hoodie.png',
+    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&q=85',
     featured: true,
     excerpt: 'Why standard thin cotton tees are dead. How 240+ GSM boxy cut streetwear tees maintain shape, drape, and long-lasting urban presence. Crafted from 100% combed heavyweight cotton with a ribbed high-density neck collar and preshrunk bio-wash finish, engineered for raw street presence and all-day relaxed comfort.',
   },
@@ -124,8 +124,8 @@ export default function BlogPage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveImgIndex((prev) => (prev + 1) % FEATURED_IMAGES.length);
-    }, 3200);
+      setActiveImgIndex((prev) => (prev + 1) % FEATURED_EDITORIAL_IMAGES.length);
+    }, 4500);
     return () => clearInterval(timer);
   }, []);
 
@@ -173,12 +173,12 @@ export default function BlogPage() {
     <div className="min-h-screen bg-white text-slate-900 select-none font-sans">
       {/* 1. Top Header Banner */}
       <section className="bg-black py-14 sm:py-20 text-white text-center border-b border-neutral-800">
-        <div className="max-w-4xl mx-auto px-4">
-          <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#facc15]">
+        <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
+          <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#e11d48]">
             <BookOpen className="h-4 w-4" /> AMA YAAR JOURNAL &amp; LOOKBOOKS
           </span>
           <h1 className="mt-4 font-display text-4xl sm:text-6xl font-black italic uppercase tracking-tight text-white leading-none">
-            STREETWEAR <span className="text-[#facc15]">STORIES &amp; CULTURE</span>
+            STREETWEAR <span className="text-[#e11d48]">STORIES &amp; CULTURE</span>
           </h1>
           <p className="mt-4 text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto font-medium uppercase tracking-wider leading-relaxed">
             Style guides, fabric technology, drop shoulder fits, and deep dives into Indian urban fashion culture.
@@ -188,9 +188,9 @@ export default function BlogPage() {
 
       {/* 2. Sticky Category Chips & Search Bar */}
       <section className="border-b border-neutral-200 bg-neutral-50 sticky top-[64px] z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
 
-          {/* Category Chips - Sharp Corners */}
+          {/* Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide w-full md:w-auto pb-1 md:pb-0">
             {CATEGORIES.map((cat) => {
               const isActive = selectedCategory === cat;
@@ -199,7 +199,7 @@ export default function BlogPage() {
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition whitespace-nowrap rounded-none border ${isActive
-                    ? 'bg-black text-[#facc15] border-black font-black'
+                    ? 'bg-black text-white border-black font-black'
                     : 'bg-white text-neutral-600 border-neutral-200 hover:border-black hover:text-black'
                     }`}
                 >
@@ -209,8 +209,8 @@ export default function BlogPage() {
             })}
           </div>
 
-          {/* Search Input - Sharp Corners */}
-          <div className="relative w-full md:w-64">
+          {/* Search Input */}
+          <div className="relative w-full md:w-72">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
             <input
               type="text"
@@ -224,26 +224,26 @@ export default function BlogPage() {
         </div>
       </section>
 
-      {/* 3. Featured Hero Main Article - Borderless with Rich Image Color Presentation */}
+      {/* 3. Featured Hero Main Article - Magazine Editorial Presentation */}
       {selectedCategory === 'All Stories' && !searchQuery && featuredArticle && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
+        <section className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 pt-8 sm:pt-12">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             onClick={handleArticleClick}
-            className="group cursor-pointer bg-white text-slate-900 shadow-none flex flex-col lg:flex-row items-stretch overflow-hidden rounded-none transition duration-300 border-none"
+            className="group cursor-pointer bg-white text-slate-900 border border-neutral-200 hover:border-neutral-300 grid grid-cols-1 lg:grid-cols-12 overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md"
           >
-            {/* Left Content Column - Pure White Background - Fully Packed Content */}
-            <div className="flex-1 p-6 sm:p-8 lg:p-10 flex flex-col justify-start space-y-5 order-2 lg:order-1 bg-white">
-              <div>
-                <div className="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-wider mb-3">
-                  <span className="bg-black text-[#facc15] px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xs">
-                    ★ FEATURED DROP
+            {/* Left Content Column (7 cols) */}
+            <div className="lg:col-span-7 p-6 sm:p-8 lg:p-12 flex flex-col justify-between space-y-6 bg-white">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold uppercase tracking-wider">
+                  <span className="bg-[#e11d48] text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest">
+                    ★ FEATURED STORY
                   </span>
                   <span className="text-neutral-300">•</span>
                   <span className="inline-flex items-center gap-1.5 text-black">
-                    <Tag className="h-3.5 w-3.5 text-amber-500" />
+                    <Tag className="h-3.5 w-3.5 text-[#e11d48]" />
                     {featuredArticle.category}
                   </span>
                   <span className="text-neutral-300">•</span>
@@ -258,44 +258,44 @@ export default function BlogPage() {
                   </span>
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase italic text-black tracking-tight leading-tight group-hover:text-amber-600 transition-colors duration-200">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase italic text-black tracking-tight leading-tight group-hover:text-[#e11d48] transition-colors duration-200">
                   {featuredArticle.title}
                 </h2>
 
-                <p className="mt-3 text-xs sm:text-sm text-neutral-600 leading-relaxed font-medium">
+                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed font-medium">
                   {featuredArticle.excerpt}
                 </p>
 
-                {/* Key Story Takeaways to fill space */}
-                <div className="mt-4 space-y-2 pt-3 border-t border-neutral-200/60">
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-700">
-                    <span className="font-black text-black bg-neutral-100 px-2 py-0.5 border border-neutral-200 shrink-0">01</span>
-                    <p className="font-medium"><strong className="text-black font-extrabold">Zero Translucency &amp; Drape:</strong> 240+ GSM cotton holds clean boxy shape all day long.</p>
+                {/* Key Story Takeaways */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-neutral-100">
+                  <div className="flex items-start gap-2.5 text-xs text-neutral-700 bg-neutral-50 p-2.5 border border-neutral-200/80">
+                    <span className="font-black text-white bg-black px-1.5 py-0.5 text-[10px] shrink-0">01</span>
+                    <p className="font-medium"><strong className="text-black font-extrabold">Zero Translucency:</strong> 240+ GSM holds structured boxy shape all day.</p>
                   </div>
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-700">
-                    <span className="font-black text-black bg-neutral-100 px-2 py-0.5 border border-neutral-200 shrink-0">02</span>
-                    <p className="font-medium"><strong className="text-black font-extrabold">Engineered Drop Shoulder:</strong> Extra room around sleeves &amp; torso for raw streetwear silhouette.</p>
+                  <div className="flex items-start gap-2.5 text-xs text-neutral-700 bg-neutral-50 p-2.5 border border-neutral-200/80">
+                    <span className="font-black text-white bg-black px-1.5 py-0.5 text-[10px] shrink-0">02</span>
+                    <p className="font-medium"><strong className="text-black font-extrabold">Drop Shoulder:</strong> Extra room around torso for signature street drape.</p>
                   </div>
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-700">
-                    <span className="font-black text-black bg-neutral-100 px-2 py-0.5 border border-neutral-200 shrink-0">03</span>
-                    <p className="font-medium"><strong className="text-black font-extrabold">Preshrunk Bio-Wash:</strong> Pre-washed fabric maintains collar firmness even after 50+ washes.</p>
+                  <div className="flex items-start gap-2.5 text-xs text-neutral-700 bg-neutral-50 p-2.5 border border-neutral-200/80">
+                    <span className="font-black text-white bg-black px-1.5 py-0.5 text-[10px] shrink-0">03</span>
+                    <p className="font-medium"><strong className="text-black font-extrabold">Bio-Wash Finish:</strong> Ribbed collar firmness preserved after 50+ washes.</p>
                   </div>
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-700">
-                    <span className="font-black text-black bg-neutral-100 px-2 py-0.5 border border-neutral-200 shrink-0">04</span>
-                    <p className="font-medium"><strong className="text-black font-extrabold">All-Season Breathability:</strong> Comb combed weave engineered specifically for Indian climate comfort.</p>
+                  <div className="flex items-start gap-2.5 text-xs text-neutral-700 bg-neutral-50 p-2.5 border border-neutral-200/80">
+                    <span className="font-black text-white bg-black px-1.5 py-0.5 text-[10px] shrink-0">04</span>
+                    <p className="font-medium"><strong className="text-black font-extrabold">100% Combed:</strong> All-day breathable weave designed for Indian comfort.</p>
                   </div>
                 </div>
 
-                {/* Designer Insight Note Box */}
-                <div className="mt-4 p-3.5 bg-neutral-50 border-l-4 border-black text-xs text-neutral-800 italic font-medium">
+                {/* Designer Quote Box */}
+                <div className="p-3.5 bg-neutral-50 border-l-4 border-black text-xs text-neutral-800 italic font-medium">
                   "Our 240+ GSM oversized tees were custom engineered to bridge the gap between heavy skater utility and effortless everyday casual luxury."
                 </div>
               </div>
 
-              {/* Author Row - Sits naturally right below content */}
-              <div className="pt-4 border-t border-neutral-200/80 flex items-center justify-between">
+              {/* Author Row */}
+              <div className="pt-4 border-t border-neutral-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-black text-[#facc15] flex items-center justify-center font-black text-xs rounded-xl shadow-xs">
+                  <div className="h-10 w-10 bg-black text-white flex items-center justify-center font-black text-xs shadow-xs">
                     <User className="h-5 w-5" />
                   </div>
                   <div>
@@ -304,42 +304,54 @@ export default function BlogPage() {
                   </div>
                 </div>
 
-                <span className="inline-flex items-center gap-2 text-xs font-black bg-black text-[#facc15] px-5 py-2.5 uppercase tracking-wider group-hover:bg-neutral-800 transition duration-200 shadow-xs rounded-xl">
-                  SHOP FITS <ArrowRight className="h-4 w-4" />
+                <span className="inline-flex items-center gap-2 text-xs font-black bg-black text-white px-5 py-2.5 uppercase tracking-wider group-hover:bg-[#e11d48] transition duration-200 shadow-xs">
+                  EXPLORE DROP <ArrowRight className="h-4 w-4" />
                 </span>
               </div>
             </div>
 
-            {/* Right Image Column - 5 Images Auto Slideshow with Style */}
-            <div className="w-full lg:w-[510px] xl:w-[590px] shrink-0 h-[510px] sm:h-[550px] lg:h-[590px] xl:h-[610px] bg-white overflow-hidden relative order-1 lg:order-2 border-none flex items-center justify-center p-4 group/slider">
+            {/* Right Image Column (5 cols) - Magazine Full Cover Presentation */}
+            <div className="lg:col-span-5 relative min-h-[360px] sm:min-h-[440px] lg:min-h-[520px] bg-neutral-950 overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.img
                   key={activeImgIndex}
-                  src={FEATURED_IMAGES[activeImgIndex]}
-                  alt="AMA YAAR Streetwear Lookbook Model"
-                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 1.05, y: -8 }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
-                  className="h-full w-full object-contain object-center z-10"
+                  src={FEATURED_EDITORIAL_IMAGES[activeImgIndex] || featuredArticle.image}
+                  alt={featuredArticle.title}
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                  className="absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
-                    e.currentTarget.src = '/Streetwear Model in Oversized Hoodie.png';
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&q=85';
                   }}
                 />
               </AnimatePresence>
 
-
-
-
+              {/* Editorial Gradient & Floating Pill */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+              <div className="absolute bottom-5 inset-x-5 z-20 flex items-center justify-between text-white">
+                <div>
+                  <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase block">LOOKBOOK EDITION</span>
+                  <span className="text-xs font-black uppercase tracking-wider text-white">AUTUMN / WINTER 2026</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {FEATURED_EDITORIAL_IMAGES.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${activeImgIndex === i ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-
           </motion.div>
         </section>
       )}
 
-      {/* 4. Articles Grid Section - White Clean Theme with Sharp Square Cards */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      {/* 4. Articles Grid Section */}
+      <section className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 py-12 sm:py-16">
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-neutral-200">
           <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 italic">
             LATEST JOURNAL ARTICLES <span className="text-neutral-400 text-sm font-normal">({filteredArticles.length})</span>
@@ -361,20 +373,20 @@ export default function BlogPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: idx * 0.05 }}
                 onClick={handleArticleClick}
-                className="bg-white border border-neutral-200 overflow-hidden flex flex-col group cursor-pointer hover:border-neutral-300 transition duration-300 rounded-none"
+                className="bg-white border border-neutral-200 overflow-hidden flex flex-col group cursor-pointer hover:border-neutral-400 transition duration-300 rounded-none shadow-xs"
               >
                 {/* Image Box */}
-                <div className="h-48 sm:h-52 bg-neutral-100 overflow-hidden relative border-b border-neutral-200">
+                <div className="h-52 sm:h-56 bg-neutral-100 overflow-hidden relative border-b border-neutral-200">
                   <img
                     src={article.image}
                     alt={article.title}
-                    className="h-full w-full object-cover object-top group-hover:scale-108 transition duration-500 ease-out"
+                    className="h-full w-full object-cover object-center group-hover:scale-105 transition duration-500 ease-out"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80';
                     }}
                   />
-                  <span className="absolute top-3 left-3 bg-black/90 text-[#facc15] px-3 py-1 text-[10px] font-black uppercase tracking-wider border border-neutral-700 rounded-none">
+                  <span className="absolute top-3 left-3 bg-black/90 text-white px-3 py-1 text-[10px] font-black uppercase tracking-wider border border-neutral-700 rounded-none">
                     {article.category}
                   </span>
                 </div>
@@ -392,7 +404,7 @@ export default function BlogPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-base font-black text-slate-900 group-hover:text-black transition leading-snug uppercase tracking-wide">
+                    <h3 className="text-base font-black text-slate-900 group-hover:text-[#e11d48] transition leading-snug uppercase tracking-wide">
                       {article.title}
                     </h3>
                     <p className="mt-2.5 text-xs text-neutral-600 leading-relaxed font-medium line-clamp-3">
@@ -402,8 +414,8 @@ export default function BlogPage() {
 
                   <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-neutral-500">{article.author}</span>
-                    <span className="inline-flex items-center gap-1 text-xs font-black text-black uppercase tracking-wider group-hover:translate-x-1 transition">
-                      SHOP FITS <ArrowRight className="h-3.5 w-3.5 text-[#facc15]" />
+                    <span className="inline-flex items-center gap-1 text-xs font-black text-black uppercase tracking-wider group-hover:translate-x-1 transition group-hover:text-[#e11d48]">
+                      SHOP FITS <ArrowRight className="h-3.5 w-3.5 text-[#e11d48]" />
                     </span>
                   </div>
                 </div>
@@ -418,7 +430,7 @@ export default function BlogPage() {
         {/* Background Subtle Accent Grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-25 pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 relative z-10">
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto mb-14">
             <h2 className="text-3xl sm:text-5xl font-black uppercase italic tracking-tight text-white">
@@ -435,10 +447,10 @@ export default function BlogPage() {
             <div className="bg-neutral-900/90 border border-neutral-800 p-6 flex flex-col justify-between hover:border-neutral-700 transition duration-300 group rounded-none">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black tracking-widest text-[#facc15] uppercase">
+                  <span className="text-[10px] font-black tracking-widest text-[#e11d48] uppercase">
                     01 / FABRIC DENSITY
                   </span>
-                  <ShieldCheck className="h-5 w-5 text-[#facc15] group-hover:scale-110 transition duration-300" />
+                  <ShieldCheck className="h-5 w-5 text-[#e11d48] group-hover:scale-110 transition duration-300" />
                 </div>
                 <h3 className="text-lg font-black uppercase italic text-white transition">
                   240+ GSM Heavy Cotton
@@ -448,11 +460,9 @@ export default function BlogPage() {
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-neutral-800/80">
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 font-bold">
-                  <span>DENSITY RATING</span>
-                  <span className="text-[#facc15]">240+ GSM</span>
-                </div>
+              <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-[11px] font-bold text-neutral-500">
+                <span>TEST RATING</span>
+                <span className="text-[#e11d48]">240+ GSM</span>
               </div>
             </div>
 
@@ -460,24 +470,22 @@ export default function BlogPage() {
             <div className="bg-neutral-900/90 border border-neutral-800 p-6 flex flex-col justify-between hover:border-neutral-700 transition duration-300 group rounded-none">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black tracking-widest text-[#facc15] uppercase">
+                  <span className="text-[10px] font-black tracking-widest text-[#e11d48] uppercase">
                     02 / SILHOUETTE
                   </span>
-                  <Maximize2 className="h-5 w-5 text-[#facc15] group-hover:scale-110 transition duration-300" />
+                  <Maximize2 className="h-5 w-5 text-[#e11d48] group-hover:scale-110 transition duration-300" />
                 </div>
                 <h3 className="text-lg font-black uppercase italic text-white transition">
-                  Boxy Drop Shoulder Cut
+                  Boxy Drop Shoulder
                 </h3>
                 <p className="mt-2 text-xs text-neutral-400 leading-relaxed font-medium">
-                  Engineered with lowered armholes, extended shoulders, and a thick non-sag ribbed collar for an effortless street drape.
+                  Extended sleeve length with an exaggerated dropped shoulder seam engineered to create a relaxed silhouette without feeling baggy.
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-neutral-800/80">
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 font-bold">
-                  <span>OVERSIZED CUT</span>
-                  <span className="text-[#facc15]">100% RELAXED</span>
-                </div>
+              <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-[11px] font-bold text-neutral-500">
+                <span>FIT PROFILE</span>
+                <span className="text-[#e11d48]">100% RELAXED</span>
               </div>
             </div>
 
@@ -485,24 +493,22 @@ export default function BlogPage() {
             <div className="bg-neutral-900/90 border border-neutral-800 p-6 flex flex-col justify-between hover:border-neutral-700 transition duration-300 group rounded-none">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black tracking-widest text-[#facc15] uppercase">
-                    03 / TREATMENT
+                  <span className="text-[10px] font-black tracking-widest text-[#e11d48] uppercase">
+                    03 / PRESHRUNK BIO-WASH
                   </span>
-                  <Zap className="h-5 w-5 text-[#facc15] group-hover:scale-110 transition duration-300" />
+                  <Zap className="h-5 w-5 text-[#e11d48] group-hover:scale-110 transition duration-300" />
                 </div>
                 <h3 className="text-lg font-black uppercase italic text-white transition">
-                  Preshrunk Bio-Wash
+                  Zero Shrinkage Guarantee
                 </h3>
                 <p className="mt-2 text-xs text-neutral-400 leading-relaxed font-medium">
-                  Pre-washed with organic enzymes to eliminate post-purchase shrinkage and provide a premium, velvety soft touch.
+                  Enzymatic pre-wash treatment strips unwanted fuzz and pre-shrinks fibers, ensuring zero deformation wash after wash.
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-neutral-800/80">
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 font-bold">
-                  <span>SHRINKAGE</span>
-                  <span className="text-[#facc15]">0.0% ZERO</span>
-                </div>
+              <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-[11px] font-bold text-neutral-500">
+                <span>SHRINK TOLERANCE</span>
+                <span className="text-[#e11d48]">0.0% ZERO</span>
               </div>
             </div>
 
@@ -510,44 +516,42 @@ export default function BlogPage() {
             <div className="bg-neutral-900/90 border border-neutral-800 p-6 flex flex-col justify-between hover:border-neutral-700 transition duration-300 group rounded-none">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black tracking-widest text-[#facc15] uppercase">
-                    04 / PRINT LAB
+                  <span className="text-[10px] font-black tracking-widest text-[#e11d48] uppercase">
+                    04 / HIGH-DENSITY PRINT
                   </span>
-                  <Palette className="h-5 w-5 text-[#facc15] group-hover:scale-110 transition duration-300" />
+                  <Palette className="h-5 w-5 text-[#e11d48] group-hover:scale-110 transition duration-300" />
                 </div>
                 <h3 className="text-lg font-black uppercase italic text-white transition">
-                  High-Density Graphics
+                  Crack-Resistant Pigments
                 </h3>
                 <p className="mt-2 text-xs text-neutral-400 leading-relaxed font-medium">
-                  Screen-printed using crack-proof eco inks designed for 50+ heavy machine washes without fading or peeling.
+                  Cured plastisol and water-based pigments fused into cotton grain. No peeling, cracking, or color bleeding over lifetime wear.
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-neutral-800/80">
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 font-bold">
-                  <span>WASH ENDURANCE</span>
-                  <span className="text-[#facc15]">50+ WASHES</span>
-                </div>
+              <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-[11px] font-bold text-neutral-500">
+                <span>DURABILITY</span>
+                <span className="text-[#e11d48]">50+ WASHES</span>
               </div>
             </div>
           </div>
 
-          {/* Bottom Highlight Stat Strip */}
-          <div className="mt-12 bg-neutral-900 border border-neutral-800 p-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center rounded-none">
-            <div className="border-r border-neutral-800 last:border-r-0">
-              <span className="text-2xl sm:text-3xl font-black text-[#facc15] uppercase italic block">240+ GSM</span>
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400">Heavyweight Cotton</span>
-            </div>
-            <div className="border-r border-neutral-800 last:border-r-0">
-              <span className="text-2xl sm:text-3xl font-black text-[#facc15] uppercase italic block">100%</span>
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400">Signature Boxy Drop</span>
-            </div>
-            <div className="border-r border-neutral-800 last:border-r-0">
-              <span className="text-2xl sm:text-3xl font-black text-[#facc15] uppercase italic block">0.0%</span>
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400">Post Wash Shrinkage</span>
+          {/* Quick Metrics Strip */}
+          <div className="mt-14 pt-10 border-t border-neutral-800 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+            <div>
+              <span className="text-2xl sm:text-3xl font-black text-[#e11d48] uppercase italic block">240+ GSM</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400">Cotton Terry</span>
             </div>
             <div>
-              <span className="text-2xl sm:text-3xl font-black text-[#facc15] uppercase italic block">50+</span>
+              <span className="text-2xl sm:text-3xl font-black text-[#e11d48] uppercase italic block">100%</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400">Combed Organic</span>
+            </div>
+            <div>
+              <span className="text-2xl sm:text-3xl font-black text-[#e11d48] uppercase italic block">0.0%</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400">Post-Wash Shrinkage</span>
+            </div>
+            <div>
+              <span className="text-2xl sm:text-3xl font-black text-[#e11d48] uppercase italic block">50+</span>
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400">Machine Wash Tested</span>
             </div>
           </div>
@@ -555,7 +559,7 @@ export default function BlogPage() {
       </section>
 
       {/* 6. Trending Lookbook Banners Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
+      <section className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 py-14 sm:py-16">
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-neutral-200">
           <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 italic flex items-center gap-2">
             <Layers className="h-5 w-5 text-black" />
@@ -575,10 +579,10 @@ export default function BlogPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
             <div className="relative z-10">
-              <span className="bg-[#facc15] text-black px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest inline-block mb-2">
+              <span className="bg-[#e11d48] text-white px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest inline-block mb-2">
                 NEW DROP
               </span>
-              <h3 className="text-xl font-black uppercase italic text-white group-hover:text-[#facc15] transition">
+              <h3 className="text-xl font-black uppercase italic text-white group-hover:text-[#e11d48] transition">
                 SUMMER HEAVYWEIGHT DROP
               </h3>
               <p className="text-xs text-neutral-300 mt-1 font-medium">240 GSM preshrunk oversized fits built for raw daily presence.</p>
@@ -599,7 +603,7 @@ export default function BlogPage() {
               <span className="bg-white text-black px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest inline-block mb-2">
                 HANDCRAFTED
               </span>
-              <h3 className="text-xl font-black uppercase italic text-white group-hover:text-[#facc15] transition">
+              <h3 className="text-xl font-black uppercase italic text-white group-hover:text-[#e11d48] transition">
                 VIRAL ACID WASH SERIES
               </h3>
               <p className="text-xs text-neutral-300 mt-1 font-medium">Distressed vintage washed tops paired with utility 6-pocket cargos.</p>
@@ -617,10 +621,10 @@ export default function BlogPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
             <div className="relative z-10">
-              <span className="bg-[#facc15] text-black px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest inline-block mb-2">
+              <span className="bg-[#e11d48] text-white px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest inline-block mb-2">
                 ART LAB
               </span>
-              <h3 className="text-xl font-black uppercase italic text-white group-hover:text-[#facc15] transition">
+              <h3 className="text-xl font-black uppercase italic text-white group-hover:text-[#e11d48] transition">
                 CYBER ANIME BACK-PRINTS
               </h3>
               <p className="text-xs text-neutral-300 mt-1 font-medium">Original screen-printed back artwork on heavy boxy silhouettes.</p>
@@ -631,8 +635,8 @@ export default function BlogPage() {
 
       {/* 7. Newsletter VIP Access Section */}
       <section className="bg-black py-16 sm:py-20 text-white text-center border-t border-neutral-800">
-        <div className="max-w-xl mx-auto px-4">
-          <span className="inline-flex items-center justify-center h-12 w-12 bg-neutral-900 text-[#facc15] border border-neutral-800 rounded-md mb-4">
+        <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
+          <span className="inline-flex items-center justify-center h-12 w-12 bg-neutral-900 text-[#e11d48] border border-neutral-800 rounded-md mb-4">
             <Flame className="h-6 w-6" />
           </span>
           <h2 className="text-2xl sm:text-4xl font-black text-white uppercase italic tracking-tight">STAY AHEAD OF THE DROPS</h2>
@@ -651,11 +655,11 @@ export default function BlogPage() {
               type="email"
               required
               placeholder="Enter your email address..."
-              className="flex-1 border border-neutral-700 bg-neutral-900 px-6 py-3.5 text-xs text-white placeholder:text-neutral-500 focus:border-[#facc15] focus:outline-none rounded-md font-medium shadow-xs"
+              className="flex-1 border border-neutral-700 bg-neutral-900 px-6 py-3.5 text-xs text-white placeholder:text-neutral-500 focus:border-[#e11d48] focus:outline-none rounded-none font-medium shadow-xs"
             />
             <button
               type="submit"
-              className="bg-[#facc15] px-8 py-3.5 text-xs font-black text-black hover:bg-yellow-300 transition uppercase tracking-widest rounded-md border border-black shadow-xs"
+              className="bg-[#e11d48] px-8 py-3.5 text-xs font-black text-white hover:bg-[#be123c] transition uppercase tracking-widest rounded-none border border-[#e11d48] shadow-xs"
             >
               SUBSCRIBE
             </button>

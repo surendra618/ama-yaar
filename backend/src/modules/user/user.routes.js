@@ -9,6 +9,7 @@ router.use(authenticate);
 
 router.get('/profile', controller.getProfile);
 router.put('/profile', controller.updateProfile);
+router.put('/change-password', controller.changePassword);
 router.get('/', role('admin'), controller.list);
 router.get('/:id', role('admin'), controller.getById);
 router.patch('/:id/status', role('admin'), controller.updateStatus);

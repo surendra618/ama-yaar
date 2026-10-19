@@ -1,6 +1,7 @@
 const User = require('./user.model');
 const Order = require('../order/order.model');
 const ApiError = require('../../utils/ApiError');
+const bcrypt = require('bcryptjs');
 
 async function list(query = {}) {
   const { search, role, status, page = 1, limit = 20 } = query;
@@ -93,4 +94,27 @@ async function remove(id) {
   return doc;
 }
 
-module.exports = { list, getById, updateProfile, updateStatus, remove };
+async function changePassword(userId, { currentPassword, newPassword }) {
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, 'Current and new password are required');
+  }
+  if (newPassword.length < 6) {
+    throw new ApiError(400, 'New password must be at least 6 characters');
+  }
+
+  const user = await User.findById(userId).select('+password');
+  if (!user) throw new ApiError(404, 'User not found');
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    throw new ApiError(400, 'Current password is incorrect');
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword, salt);
+  await user.save();
+
+  return { message: 'Password changed successfully' };
+}
+
+module.exports = { list, getById, updateProfile, updateStatus, remove, changePassword };

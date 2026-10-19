@@ -22,6 +22,7 @@ const reelRoutes = require('../modules/reel');
 const editorialLookRoutes = require('../modules/editorialLook');
 const blogRoutes = require('../modules/blog');
 const { contactRoutes } = require('../modules/contact');
+const settingRoutes = require('../modules/setting');
 
 const cardSliderRoutes = require('../modules/cardSlider');
 
@@ -50,5 +51,6 @@ router.use('/admin', adminRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/reports', reportRoutes);
+router.use('/settings', settingRoutes);
 
 module.exports = router;

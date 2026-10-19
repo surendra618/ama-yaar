@@ -16,9 +16,17 @@ import {
   X,
   Phone,
   AlertCircle,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import api from '../../../lib/axios';
-import { fetchAddresses, addAddress } from '../../account/accountSlice';
+import {
+  fetchAddresses,
+  addAddress,
+  updateAddress,
+  deleteAddress,
+  setDefaultAddress,
+} from '../../account/accountSlice';
 import { fetchCart } from '../../cart/cartSlice';
 import { createOrder } from '../../orders/ordersSlice';
 
@@ -34,9 +42,11 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1); // 1: Address, 2: Payment, 3: Confirmation
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('UPI'); // 'UPI', 'CARD', 'NETBANKING', 'COD'
-  const [newAddressModal, setNewAddressModal] = useState(false);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
-  // New Address Form
+  // Address Form State
   const [addressForm, setAddressForm] = useState({
     fullName: user?.name || '',
     phone: user?.phone || '',
@@ -61,13 +71,66 @@ export default function CheckoutPage() {
     }
   }, [addresses, selectedAddressId]);
 
-  const handleCreateAddress = async (e) => {
-    e.preventDefault();
-    const created = await dispatch(addAddress(addressForm));
-    if (created.payload?._id) {
-      setSelectedAddressId(created.payload._id);
+  const openAddAddressModal = () => {
+    setEditingAddress(null);
+    setAddressForm({
+      fullName: user?.name || '',
+      phone: user?.phone || '',
+      line1: '',
+      line2: '',
+      city: '',
+      state: '',
+      pincode: '',
+      addressType: 'Home',
+      isDefault: addresses.length === 0,
+    });
+    setAddressModalOpen(true);
+  };
+
+  const openEditAddressModal = (addr, e) => {
+    if (e) e.stopPropagation();
+    setEditingAddress(addr);
+    setAddressForm({
+      fullName: addr.fullName || '',
+      phone: addr.phone || '',
+      line1: addr.line1 || '',
+      line2: addr.line2 || '',
+      city: addr.city || '',
+      state: addr.state || '',
+      pincode: addr.pincode || '',
+      addressType: addr.addressType || 'Home',
+      isDefault: Boolean(addr.isDefault),
+    });
+    setAddressModalOpen(true);
+  };
+
+  const handleDeleteAddress = async (addrId, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this address?')) return;
+    setDeletingId(addrId);
+    await dispatch(deleteAddress(addrId));
+    setDeletingId(null);
+    if (selectedAddressId === addrId) {
+      const remaining = addresses.filter((a) => a._id !== addrId);
+      setSelectedAddressId(remaining[0]?._id || '');
     }
-    setNewAddressModal(false);
+  };
+
+  const handleSaveAddress = async (e) => {
+    e.preventDefault();
+    if (editingAddress) {
+      const res = await dispatch(updateAddress({ id: editingAddress._id, data: addressForm }));
+      if (res.payload?._id) {
+        setSelectedAddressId(res.payload._id);
+      }
+    } else {
+      const res = await dispatch(addAddress(addressForm));
+      if (res.payload?._id) {
+        setSelectedAddressId(res.payload._id);
+      }
+    }
+    setAddressModalOpen(false);
+    setEditingAddress(null);
   };
 
   const [orderError, setOrderError] = useState('');
@@ -147,7 +210,7 @@ export default function CheckoutPage() {
       const rzpData = rzpRes.data || rzpRes;
 
       const options = {
-        key: rzpData.keyId || 'rzp_test_S7lSvWtu89c6zD',
+        key: rzpData.keyId || 'rzp_live_TpNj0k4nh8EVkG',
         amount: rzpData.amount,
         currency: rzpData.currency || 'INR',
         name: 'AMA YAAR',
@@ -177,16 +240,19 @@ export default function CheckoutPage() {
         },
         modal: {
           ondismiss: function () {
-            setOrderError('Payment checkout modal was closed.');
+            setOrderError('Payment checkout modal was closed. You can retry payment or select another method.');
           },
         },
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        setOrderError(response.error?.description || 'Payment failed. Please retry.');
+      });
       rzp.open();
     } catch (err) {
       console.error('Razorpay Error:', err);
-      setStep(3);
+      setOrderError(err.response?.data?.message || 'Unable to open payment gateway. Please try again.');
     }
   };
 
@@ -249,9 +315,31 @@ export default function CheckoutPage() {
     );
   }
 
+  if (items.length === 0 && step !== 3) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-neutral-50/50 py-16 px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-neutral-200/80 p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 mb-4">
+            <Package className="h-8 w-8 stroke-[1.5]" />
+          </div>
+          <h2 className="text-xl font-black uppercase tracking-tight text-black">Your Cart is Empty</h2>
+          <p className="text-xs text-neutral-500 font-medium mt-1.5 mb-6 leading-relaxed">
+            You don't have any items in your cart to checkout. Add your favorite fits before placing an order!
+          </p>
+          <Link
+            to="/products"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-6 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition shadow-sm w-full"
+          >
+            Explore All Products &rarr;
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50/50 py-10">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         
         {/* Step Indicator Header */}
         <div className="mb-10 flex items-center justify-center gap-4 text-xs font-black">
@@ -285,8 +373,8 @@ export default function CheckoutPage() {
                 </h2>
                 <button
                   type="button"
-                  onClick={() => setNewAddressModal(true)}
-                  className="flex items-center gap-1.5 rounded-lg bg-neutral-100 px-3.5 py-2 text-xs font-black text-black uppercase tracking-wider hover:bg-neutral-200 transition"
+                  onClick={openAddAddressModal}
+                  className="flex items-center gap-1.5 rounded-lg bg-neutral-100 px-3.5 py-2 text-xs font-black text-black uppercase tracking-wider hover:bg-neutral-200 transition cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" /> Add New Address
                 </button>
@@ -299,8 +387,8 @@ export default function CheckoutPage() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setNewAddressModal(true)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-black px-6 py-3 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition shadow-sm"
+                    onClick={openAddAddressModal}
+                    className="inline-flex items-center gap-2 rounded-lg bg-black px-6 py-3 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition shadow-sm cursor-pointer"
                   >
                     <Plus className="h-4 w-4" /> Add Address Now
                   </button>
@@ -313,7 +401,7 @@ export default function CheckoutPage() {
                       onClick={() => setSelectedAddressId(addr._id)}
                       className={`relative cursor-pointer rounded-xl p-5 border-2 transition ${
                         selectedAddressId === addr._id
-                          ? 'border-black bg-neutral-50/80 shadow-xs'
+                          ? 'border-black bg-neutral-50/80 shadow-xs ring-1 ring-black'
                           : 'border-neutral-200 bg-white hover:border-neutral-300'
                       }`}
                     >
@@ -323,10 +411,19 @@ export default function CheckoutPage() {
                           <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-black uppercase text-neutral-600">
                             {addr.addressType || 'Home'}
                           </span>
+                          {addr.isDefault && (
+                            <span className="rounded-md bg-black px-2 py-0.5 text-[10px] font-black uppercase text-white">
+                              Default
+                            </span>
+                          )}
                         </div>
-                        {selectedAddressId === addr._id && (
+                        {selectedAddressId === addr._id ? (
                           <span className="flex items-center gap-1 rounded-full bg-black px-2.5 py-1 text-[10px] font-black text-white uppercase tracking-wider shrink-0">
                             <Check className="h-3 w-3" /> Selected
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-neutral-400">
+                            Click to Select
                           </span>
                         )}
                       </div>
@@ -334,9 +431,33 @@ export default function CheckoutPage() {
                         {addr.line1}, {addr.line2 && `${addr.line2}, `}
                         {addr.city}, {addr.state} - {addr.pincode}
                       </p>
-                      <p className="text-xs text-neutral-700 font-extrabold mt-3 pt-2.5 border-t border-neutral-100 flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 text-black shrink-0" /> {addr.phone}
-                      </p>
+                      
+                      <div className="text-xs text-neutral-700 font-extrabold mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Phone className="h-3.5 w-3.5 text-black shrink-0" /> {addr.phone}
+                        </span>
+
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={(e) => openEditAddressModal(addr, e)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-700 hover:text-black hover:underline cursor-pointer"
+                            title="Edit address"
+                          >
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </button>
+                          <span className="text-neutral-300">|</span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteAddress(addr._id, e)}
+                            disabled={deletingId === addr._id}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer disabled:opacity-50"
+                            title="Delete address"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> {deletingId === addr._id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -537,21 +658,24 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Add Address Modal */}
-      {newAddressModal && (
+      {/* Add / Edit Address Modal */}
+      {addressModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl border border-neutral-200">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl border border-neutral-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-neutral-100">
-              <h3 className="text-sm font-black text-black uppercase tracking-wider">Add Shipping Address</h3>
+              <h3 className="text-sm font-black text-black uppercase tracking-wider">
+                {editingAddress ? 'Edit Shipping Address' : 'Add Shipping Address'}
+              </h3>
               <button
-                onClick={() => setNewAddressModal(false)}
-                className="text-neutral-400 hover:text-black transition"
+                type="button"
+                onClick={() => setAddressModalOpen(false)}
+                className="text-neutral-400 hover:text-black transition cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateAddress} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveAddress} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">Full Name</label>
@@ -582,6 +706,16 @@ export default function CheckoutPage() {
                   type="text"
                   value={addressForm.line1}
                   onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 px-3.5 py-2.5 text-xs font-semibold text-black focus:border-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">Landmark, Area (Optional)</label>
+                <input
+                  type="text"
+                  value={addressForm.line2}
+                  onChange={(e) => setAddressForm({ ...addressForm, line2: e.target.value })}
                   className="w-full rounded-lg border border-neutral-200 px-3.5 py-2.5 text-xs font-semibold text-black focus:border-black focus:outline-none"
                 />
               </div>
@@ -628,7 +762,7 @@ export default function CheckoutPage() {
                       key={t}
                       type="button"
                       onClick={() => setAddressForm({ ...addressForm, addressType: t })}
-                      className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
+                      className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wider transition cursor-pointer ${
                         addressForm.addressType === t ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                       }`}
                     >
@@ -641,16 +775,16 @@ export default function CheckoutPage() {
               <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100">
                 <button
                   type="button"
-                  onClick={() => setNewAddressModal(false)}
-                  className="rounded-lg border border-neutral-200 px-5 py-2.5 text-xs font-bold text-neutral-600 hover:bg-neutral-50 transition"
+                  onClick={() => setAddressModalOpen(false)}
+                  className="rounded-lg border border-neutral-200 px-5 py-2.5 text-xs font-bold text-neutral-600 hover:bg-neutral-50 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-black px-6 py-2.5 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition shadow-sm"
+                  className="rounded-lg bg-black px-6 py-2.5 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition shadow-sm cursor-pointer"
                 >
-                  Save Address
+                  {editingAddress ? 'Update Address' : 'Save & Deliver Here'}
                 </button>
               </div>
             </form>

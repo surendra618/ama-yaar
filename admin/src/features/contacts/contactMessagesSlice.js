@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_URL = 'http://localhost:5000/api/v1/contacts';
+const API_URL = 'http://localhost:5005/api/v1/contacts';
 
 export const fetchContactMessages = createAsyncThunk(
   'contactMessages/fetchContactMessages',

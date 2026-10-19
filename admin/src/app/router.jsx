@@ -26,6 +26,7 @@ import BlogsListPage from '../features/blogs/pages/BlogsListPage';
 import ContactMessagesPage from '../features/contacts/pages/ContactMessagesPage';
 import CardSlidersListPage from '../features/cardSliders/pages/CardSlidersListPage';
 import CardSliderFormPage from '../features/cardSliders/pages/CardSliderFormPage';
+import DeliverySettingsPage from '../features/settings/pages/DeliverySettingsPage';
 
 export const router = createBrowserRouter([
   {
@@ -60,6 +61,8 @@ export const router = createBrowserRouter([
       { path: '/returns', element: <ReturnsListPage /> },
       { path: '/returns/:id', element: <ReturnDetailsPage /> },
       { path: '/reports', element: <ReportsPage /> },
+      { path: '/settings/delivery', element: <DeliverySettingsPage /> },
+      { path: '/settings', element: <DeliverySettingsPage /> },
     ],
   },
   {

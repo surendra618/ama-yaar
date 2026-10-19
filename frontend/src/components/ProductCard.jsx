@@ -1,155 +1,174 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { Star, Heart, ShoppingCart, Check } from 'lucide-react';
-import { addToCart } from '../features/cart/cartSlice';
-import { toggleWishlist } from '../features/wishlist/wishlistSlice';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { Heart, ChevronLeft, ChevronRight, Star, ShoppingBag } from 'lucide-react';
+import { addToCart, openDrawer } from '../features/cart/cartSlice';
 
 export default function ProductCard({ product }) {
+  if (!product) return null;
+
   const dispatch = useDispatch();
-  const { items: wishlistItems } = useSelector((state) => state.wishlist);
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [activeImgIndex, setActiveImgIndex] = useState(0);
 
-  const isWishlisted = wishlistItems.some(
-    (item) => (item._id || item) === product._id || (item.slug && item.slug === product.slug)
-  );
+  // Normalize images array
+  const rawImages = (product.images && product.images.length > 0)
+    ? product.images
+    : [product.image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80'];
 
-  const [added, setAdded] = React.useState(false);
+  const images = rawImages.map((img) => {
+    if (!img) return 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80';
+    if (img.startsWith('http') || img.startsWith('data:')) return img;
+    if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+    return img;
+  });
+
+  const currentImage = images[activeImgIndex % images.length];
+
+  // Calculate discount percentage
+  const discountPercent = product.discount > 0
+    ? product.discount
+    : (product.mrp && product.mrp > product.price)
+    ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+    : 15;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) {
-      window.location.href = '/login';
+
+    if (product.sizes?.length > 1 || product.variants?.length > 1) {
+      navigate(`/products/${product.slug || product._id}`);
       return;
     }
-    dispatch(addToCart({ productId: product._id, quantity: 1 }));
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
+
+    const defaultVariant = product.sizes?.[0] || 'Free Size';
+    dispatch(
+      addToCart({
+        productId: product._id,
+        quantity: 1,
+        variant: defaultVariant,
+      })
+    );
+    dispatch(openDrawer());
   };
 
-  const handleToggleWishlist = (e) => {
+  const handlePrevImage = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) {
-      window.location.href = '/login';
-      return;
-    }
-    dispatch(toggleWishlist(product._id));
+    setActiveImgIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
   };
 
-  const rawImg = product.images?.[0];
-  const mainImage = rawImg
-    ? rawImg.startsWith('http') || rawImg.startsWith('data:')
-      ? rawImg
-      : rawImg.startsWith('/uploads')
-      ? `http://localhost:5000${rawImg}`
-      : rawImg
-    : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80';
+  const handleNextImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveImgIndex((prev) => (prev + 1) % images.length);
+  };
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-md border border-neutral-200/60 bg-white shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow hover:border-neutral-300">
-      {/* Product Image Container */}
-      <Link to={`/products/${product.slug || product._id}`} className="relative aspect-square overflow-hidden bg-slate-50">
-        <img
-          src={mainImage}
-          alt={product.name}
-          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80';
-          }}
-        />
+    <div className="group relative flex flex-col bg-transparent select-none">
+      {/* Product Image Container (3:4 portrait, tall streetwear framing) */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-neutral-900/10">
+        <Link to={`/products/${product.slug || product._id}`} className="block h-full w-full">
+          <img
+            src={currentImage}
+            alt={product.name}
+            className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80';
+            }}
+          />
+        </Link>
 
-        {/* Badges */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
-          {product.discount > 0 && (
-            <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
-              {product.discount}% OFF
-            </span>
-          )}
-          {product.isBestSeller && (
-            <span className="rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
-              BESTSELLER
-            </span>
-          )}
-          {product.isNewArrival && (
-            <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
-              NEW
-            </span>
-          )}
+        {/* Top-Left Action: Wishlist Heart Button */}
+        <div className="absolute top-2.5 left-2.5 z-10">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsWishlisted((prev) => !prev);
+            }}
+            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#272732]/90 hover:bg-[#353544] text-white flex items-center justify-center shadow-md transition cursor-pointer backdrop-blur-xs"
+            aria-label="Save to wishlist"
+          >
+            <Heart
+              className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
+                isWishlisted ? 'fill-[#e11d48] text-[#e11d48]' : 'text-neutral-200'
+              }`}
+            />
+          </button>
         </div>
 
-        {/* Wishlist Button */}
-        <button
-          onClick={handleToggleWishlist}
-          className={`absolute top-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs shadow-md transition hover:scale-110 ${isWishlisted ? 'text-rose-500 fill-rose-500' : 'text-slate-500 hover:text-rose-500'
-            }`}
-          title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
-        >
-          <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-rose-500' : ''}`} />
-        </button>
-      </Link>
-
-      {/* Product Info */}
-      <div className="flex flex-1 flex-col p-4">
-        {/* Brand & Category */}
-        <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium mb-1">
-          <span className="uppercase tracking-wider font-semibold text-indigo-600 truncate">
-            {product.brand || product.category?.name || 'AMA-YAAR'}
+        {/* Top-Right: Rating Badge Pill */}
+        <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-[#272732]/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-white/10 shadow-xs">
+          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+          <span className="text-white text-[9.5px]">
+            {product.rating ? Number(product.rating).toFixed(1) : '4.3'}
           </span>
-          {product.rating > 0 && (
-            <span className="flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 font-bold text-amber-700">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              {product.rating}
-              {product.numReviews > 0 && (
-                <span className="text-[10px] text-slate-400 font-normal">({product.numReviews})</span>
-              )}
-            </span>
-          )}
         </div>
 
-        {/* Title */}
+        {/* Bottom-Right Bag Button */}
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="absolute bottom-2.5 right-2.5 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#272732]/90 hover:bg-[#e07a5f] text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-md backdrop-blur-xs group/bag"
+          title="Add to Cart"
+          aria-label="Add to Cart"
+        >
+          <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.2]" />
+        </button>
+
+        {/* Image Carousel Arrows (shown on hover) */}
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={handlePrevImage}
+              className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-xs hover:bg-black transition opacity-0 group-hover:opacity-100"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleNextImage}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-xs hover:bg-black transition opacity-0 group-hover:opacity-100"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Details Below Image */}
+      <div className="pt-2 px-0.5">
+        {/* Product Title: Clean sans-serif title case */}
         <Link
           to={`/products/${product.slug || product._id}`}
-          className="text-sm font-semibold text-slate-800 line-clamp-2 hover:text-indigo-600 transition leading-snug mb-2"
+          className="block text-xs sm:text-[13px] font-semibold text-neutral-900 hover:underline leading-snug line-clamp-1 tracking-tight"
         >
           {product.name}
         </Link>
 
-        {/* Pricing & Add Button */}
-        <div className="mt-auto flex items-center justify-between pt-2 border-t border-slate-100">
-          <div className="flex flex-col">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-base font-extrabold text-slate-900">
-                ₹{product.price?.toLocaleString('en-IN')}
+        {/* Price Row matching Video 00:01: $189 $229 Sale */}
+        <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+          <span className="text-xs sm:text-[13.5px] font-bold text-neutral-900">
+            ₹{product.price?.toLocaleString('en-IN')}.00
+          </span>
+          {product.mrp && product.mrp > product.price && (
+            <>
+              <span className="text-[11px] sm:text-xs text-neutral-400 line-through font-normal">
+                ₹{product.mrp?.toLocaleString('en-IN')}.00
               </span>
-              {product.mrp && product.mrp > product.price && (
-                <span className="text-xs text-slate-400 line-through">
-                  ₹{product.mrp?.toLocaleString('en-IN')}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock <= 0}
-            className={`flex items-center justify-center rounded-md p-2.5 text-xs font-semibold shadow-xs transition-all duration-200 ${product.stock <= 0
-              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-              : added
-                ? 'bg-emerald-600 text-white'
-                : 'bg-indigo-50 text-indigo-600 hover:bg-yellow-400 hover:text-black'
-              }`}
-            title="Add to Cart"
-          >
-            {added ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <ShoppingCart className="h-4 w-4" />
-            )}
-          </button>
+              <span className="text-[9px] font-bold text-[#e07a5f] bg-[#e07a5f]/10 px-1.5 py-0.2 rounded-xs uppercase tracking-wider">
+                Sale
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>

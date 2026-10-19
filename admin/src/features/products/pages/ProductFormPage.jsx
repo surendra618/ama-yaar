@@ -115,6 +115,7 @@ export default function ProductFormPage() {
 
     const payload = {
       ...form,
+      category: form.category || null,
       price: Number(form.price),
       mrp: Number(form.mrp),
       stock: Number(form.stock),
@@ -210,16 +211,15 @@ export default function ProductFormPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Category <span className="text-rose-500">*</span>
+                Category <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
               </label>
               <select
                 name="category"
-                required
                 value={form.category}
                 onChange={handleChange}
                 className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
               >
-                <option value="">Select Category</option>
+                <option value="">None / No Category (Optional)</option>
                 {categories.map((c) => (
                   <option key={c._id} value={c._id}>
                     {c.name}

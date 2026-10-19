@@ -98,8 +98,18 @@ const cartSlice = createSlice({
     actionLoading: false,
     error: null,
     couponError: null,
+    isDrawerOpen: false,
   },
   reducers: {
+    openDrawer: (state) => {
+      state.isDrawerOpen = true;
+    },
+    closeDrawer: (state) => {
+      state.isDrawerOpen = false;
+    },
+    toggleDrawer: (state) => {
+      state.isDrawerOpen = !state.isDrawerOpen;
+    },
     resetCart: (state) => {
       state.items = [];
       state.itemCount = 0;
@@ -113,6 +123,7 @@ const cartSlice = createSlice({
         tax: 0,
         total: 0,
       };
+      state.isDrawerOpen = false;
     },
     clearCouponError: (state) => {
       state.couponError = null;
@@ -141,7 +152,10 @@ const cartSlice = createSlice({
       .addCase(addToCart.pending, (state) => {
         state.actionLoading = true;
       })
-      .addCase(addToCart.fulfilled, handleCartData)
+      .addCase(addToCart.fulfilled, (state, action) => {
+        handleCartData(state, action);
+        state.isDrawerOpen = true;
+      })
       .addCase(addToCart.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
@@ -162,5 +176,11 @@ const cartSlice = createSlice({
   },
 });
 
-export const { resetCart, clearCouponError } = cartSlice.actions;
+export const {
+  openDrawer,
+  closeDrawer,
+  toggleDrawer,
+  resetCart,
+  clearCouponError,
+} = cartSlice.actions;
 export default cartSlice.reducer;

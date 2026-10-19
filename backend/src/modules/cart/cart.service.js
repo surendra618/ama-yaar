@@ -2,8 +2,9 @@ const Cart = require('./cart.model');
 const Product = require('../product/product.model');
 const Coupon = require('../coupon/coupon.model');
 const ApiError = require('../../utils/ApiError');
+const settingService = require('../setting/setting.service');
 
-function calculateSummary(cart) {
+async function calculateSummary(cart, customSettings) {
   let subtotal = 0;
   let mrpTotal = 0;
 
@@ -64,9 +65,24 @@ function calculateSummary(cart) {
     }
   }
 
-  // Delivery charge: Free above 500, or if freeDelivery coupon applied
-  const isFreeDelivery = subtotal >= 500 || cart.coupon?.discountType === 'freeDelivery';
-  const deliveryCharge = items.length === 0 || isFreeDelivery ? 0 : 49;
+  // Delivery charge configuration from admin settings
+  let deliverySettings = customSettings;
+  if (!deliverySettings) {
+    try {
+      deliverySettings = await settingService.getDeliverySettings();
+    } catch {
+      deliverySettings = { deliveryCharge: 49, freeDeliveryThreshold: 500, isFreeDeliveryEnabled: true, isDeliveryFeeActive: true };
+    }
+  }
+
+  const threshold = deliverySettings?.freeDeliveryThreshold ?? 500;
+  const isFreeThreshold = deliverySettings?.isFreeDeliveryEnabled !== false && subtotal >= threshold;
+  const isCouponFree = cart.coupon?.discountType === 'freeDelivery';
+  const feeActive = deliverySettings?.isDeliveryFeeActive !== false;
+  const baseCharge = feeActive ? (deliverySettings?.deliveryCharge ?? 49) : 0;
+
+  const isFreeDelivery = !feeActive || isFreeThreshold || isCouponFree;
+  const deliveryCharge = items.length === 0 || isFreeDelivery ? 0 : baseCharge;
   const tax = Math.round(subtotal * 0.05); // 5% GST
   const total = Math.max(0, subtotal - couponDiscount + deliveryCharge + tax);
 
@@ -82,6 +98,8 @@ function calculateSummary(cart) {
       productDiscount,
       couponDiscount: Math.round(couponDiscount),
       deliveryCharge,
+      freeDeliveryThreshold: threshold,
+      isFreeDelivery,
       tax,
       total: Math.round(total),
     },
@@ -97,7 +115,7 @@ async function getCart(userId) {
     cart = await Cart.create({ user: userId, items: [] });
   }
 
-  return calculateSummary(cart);
+  return await calculateSummary(cart);
 }
 
 async function addItem(userId, { productId, quantity = 1, variant = {} }) {

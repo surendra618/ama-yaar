@@ -11,14 +11,14 @@ const InstagramIcon = (props) => (
 
 export default function InstagramBanner() {
   return (
-    <section className="relative overflow-hidden bg-black py-12 lg:py-16 text-white border-t border-b border-yellow-500/20">
-      {/* Background Yellow Glow */}
-      <div className="pointer-events-none absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-yellow-500/15 blur-3xl" />
+    <section className="relative overflow-hidden bg-black py-12 lg:py-16 text-white border-t border-b border-neutral-800">
+      {/* Background Crimson Glow */}
+      <div className="pointer-events-none absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-[#e11d48]/15 blur-3xl" />
 
-      {/* Right Diagonal Yellow Geometric Slice */}
-      <div className="pointer-events-none absolute top-0 right-0 h-full w-[25%] bg-[#facc15] [clip-path:polygon(35%_0,100%_0,100%_100%,0%_100%)] hidden lg:block z-0" />
+      {/* Right Diagonal Brand Crimson Geometric Slice */}
+      <div className="pointer-events-none absolute top-0 right-0 h-full w-[25%] bg-[#e11d48] [clip-path:polygon(35%_0,100%_0,100%_100%,0%_100%)] hidden lg:block z-0" />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         <div className="flex flex-col items-center justify-between gap-10 lg:flex-row">
 
           {/* Left: Brand Logo & Underline Tagline */}
@@ -31,11 +31,11 @@ export default function InstagramBanner() {
               />
             </a>
             <div className="mt-2 flex items-center justify-center gap-2">
-              <div className="h-[2px] w-8 bg-[#facc15]" />
-              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[#facc15]">
+              <div className="h-[2px] w-8 bg-[#e11d48]" />
+              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[#e11d48]">
                 STYLE KA LAFDA
               </span>
-              <div className="h-[2px] w-8 bg-[#facc15]" />
+              <div className="h-[2px] w-8 bg-[#e11d48]" />
             </div>
           </div>
 
@@ -50,8 +50,8 @@ export default function InstagramBanner() {
 
             {/* Outline Instagram Icon + INSTAGRAM text */}
             <div className="mt-1.5 flex items-center justify-center gap-3 sm:gap-4">
-              <InstagramIcon className="h-12 w-12 sm:h-16 sm:w-16 text-[#facc15] stroke-[2.2] shrink-0" />
-              <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl font-black italic tracking-tight text-[#facc15] uppercase">
+              <InstagramIcon className="h-12 w-12 sm:h-16 sm:w-16 text-[#e11d48] stroke-[2.2] shrink-0" />
+              <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl font-black italic tracking-tight text-[#e11d48] uppercase">
                 INSTAGRAM
               </h2>
             </div>
@@ -64,7 +64,7 @@ export default function InstagramBanner() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
               {/* Feature: DAILY NEW STOCK */}
               <div className="flex items-center gap-2.5 text-xs sm:text-sm font-black tracking-wider text-white">
-                <Shirt className="h-5 w-5 text-[#facc15] fill-[#facc15]" />
+                <Shirt className="h-5 w-5 text-[#e11d48] fill-[#e11d48]" />
                 <span>DAILY NEW STOCK</span>
               </div>
 
@@ -73,11 +73,11 @@ export default function InstagramBanner() {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2.5 rounded-full bg-[#facc15] px-6 py-2.5 text-xs sm:text-sm font-black text-black transition-all hover:bg-yellow-300 hover:scale-105 shadow-xl shadow-yellow-500/30"
+                className="inline-flex items-center gap-2.5 rounded-full bg-[#e11d48] px-6 py-2.5 text-xs sm:text-sm font-black text-white transition-all hover:bg-rose-700 hover:scale-105 shadow-xl shadow-rose-950/50"
               >
                 <InstagramIcon className="h-4 w-4 stroke-[2.5]" />
-                <span className="text-black/40 font-normal">|</span>
-                <span className="tracking-wide">amayaan.in</span>
+                <span className="text-white/40 font-normal">|</span>
+                <span className="tracking-wide">amayaar.in</span>
               </a>
             </div>
           </div>
@@ -96,7 +96,7 @@ export default function InstagramBanner() {
               <div className="flex items-center justify-between pb-2 text-xs border-b border-neutral-800">
                 <span className="text-white/60 font-bold text-sm cursor-pointer">&larr;</span>
                 <div className="flex items-center gap-1">
-                  <span className="font-bold text-white text-xs">amayaan.in</span>
+                  <span className="font-bold text-white text-xs">amayaar.in</span>
                   <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-blue-500 text-[8px] font-bold text-white">✓</span>
                 </div>
                 <span className="text-white/60 font-bold text-xs">•••</span>
@@ -104,8 +104,8 @@ export default function InstagramBanner() {
 
               {/* Profile Main info */}
               <div className="mt-3 flex items-center justify-between gap-2">
-                {/* Avatar with yellow border ring */}
-                <div className="relative flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-black p-0.5 ring-2 ring-[#facc15]">
+                {/* Avatar with brand red border ring */}
+                <div className="relative flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-black p-0.5 ring-2 ring-[#e11d48]">
                   <img src="/logo.png" alt="Ama Yaar" className="h-9 w-9 object-contain filter invert" />
                 </div>
 
@@ -137,7 +137,7 @@ export default function InstagramBanner() {
 
               {/* Action Buttons */}
               <div className="mt-3 flex items-center gap-2">
-                <button className="flex-1 rounded-lg bg-[#facc15] py-1 text-center text-xs font-bold text-black hover:bg-yellow-400 transition">
+                <button className="flex-1 rounded-lg bg-[#e11d48] py-1 text-center text-xs font-bold text-white hover:bg-rose-700 transition">
                   Follow
                 </button>
                 <button className="flex-1 rounded-lg bg-neutral-800 py-1 text-center text-xs font-semibold text-white hover:bg-neutral-700 transition">
@@ -148,25 +148,25 @@ export default function InstagramBanner() {
               {/* Highlights Row */}
               <div className="mt-3 flex items-center justify-between gap-1 overflow-x-auto text-[8px] text-white/70">
                 <div className="flex flex-col items-center gap-1">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-yellow-400">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-rose-400">
                     <Crown className="h-3.5 w-3.5" />
                   </div>
                   <span className="scale-90 text-[7px]">NEW DROPS</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-yellow-400">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-rose-400">
                     <Shirt className="h-3.5 w-3.5" />
                   </div>
                   <span className="scale-90 text-[7px]">FITS CHECK</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-yellow-400">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-rose-400">
                     <Sparkles className="h-3.5 w-3.5" />
                   </div>
                   <span className="scale-90 text-[7px]">STORE VIBES</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-yellow-400">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-rose-400">
                     <Smile className="h-3.5 w-3.5" />
                   </div>
                   <span className="scale-90 text-[7px]">YOU ❤</span>
