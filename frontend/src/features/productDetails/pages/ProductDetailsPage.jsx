@@ -391,20 +391,20 @@ export default function ProductDetailsPage() {
               </div>
             </div>
 
-            {/* ADD TO CART & BUY NOW Buttons */}
-            <div className="pt-1.5 space-y-2">
-              <div className="flex flex-col sm:flex-row gap-2.5">
+            {/* ADD TO CART & BUY NOW Buttons (Stacked Vertically, Full Width, Sleek Height) */}
+            <div className="pt-1 space-y-2">
+              <div className="flex flex-col gap-2 w-full">
                 {/* ADD TO CART Button */}
                 <button
                   type="button"
                   onClick={handleAddToCart}
                   disabled={product.stock <= 0 || isAddingToCart}
-                  className="flex-1 bg-white hover:bg-neutral-50 text-black border-2 border-black text-xs font-black uppercase tracking-wider py-3.5 px-3 rounded-xs transition-all duration-200 cursor-pointer shadow-xs text-center flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99]"
+                  className="w-full h-10 sm:h-10.5 bg-white hover:bg-neutral-50 text-black border-2 border-black text-xs font-black uppercase tracking-wider px-4 rounded-xs transition-all duration-200 cursor-pointer shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99]"
                 >
                   {isAddingToCart ? (
                     <>
                       <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-black border-t-transparent" />
-                      <span>Adding...</span>
+                      <span>Adding to Bag...</span>
                     </>
                   ) : added ? (
                     <>
@@ -424,16 +424,16 @@ export default function ProductDetailsPage() {
                   type="button"
                   onClick={handleBuyNow}
                   disabled={product.stock <= 0 || isBuyingNow}
-                  className="flex-1 bg-[#111111] hover:bg-black text-white text-xs font-black uppercase tracking-wider py-3.5 px-4 rounded-xs transition-all duration-200 cursor-pointer shadow-md text-center flex items-center justify-center gap-2 border-2 border-[#111111] hover:border-black disabled:opacity-50 active:scale-[0.99] group"
+                  className="w-full h-10 sm:h-10.5 bg-[#111111] hover:bg-black text-white text-xs font-black uppercase tracking-wider px-4 rounded-xs transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-2 border-2 border-[#111111] hover:border-black disabled:opacity-50 active:scale-[0.99] group"
                 >
                   {isBuyingNow ? (
                     <>
                       <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      <span>Processing...</span>
+                      <span>Processing Checkout...</span>
                     </>
                   ) : (
                     <>
-                      <Zap className="h-4 w-4 fill-amber-400 text-amber-400 group-hover:scale-110 transition-transform" />
+                      <Zap className="h-3.5 w-3.5 fill-amber-400 text-amber-400 group-hover:scale-110 transition-transform" />
                       <span>BUY NOW — ₹{product.price?.toLocaleString("en-IN") || "3,299"}</span>
                     </>
                   )}
