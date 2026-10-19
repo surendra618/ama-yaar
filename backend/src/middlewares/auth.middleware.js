@@ -22,4 +22,24 @@ const authenticate = asyncHandler(async (req, res, next) => {
   }
 });
 
+const optionalAuth = asyncHandler(async (req, res, next) => {
+  const bearer = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.split(' ')[1]
+    : null;
+  const token = bearer || req.cookies?.accessToken;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, env.jwt.accessSecret);
+      req.user = decoded;
+    } catch (_) {
+      // Ignore token failure for optional authentication
+    }
+  }
+  next();
+});
+
+authenticate.authenticate = authenticate;
+authenticate.optionalAuth = optionalAuth;
+
 module.exports = authenticate;

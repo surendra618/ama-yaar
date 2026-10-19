@@ -50,9 +50,27 @@ api.interceptors.response.use(
 
       const refreshToken = localStorage.getItem('ay_refresh_token');
       if (!refreshToken) {
-        localStorage.removeItem('ay_access_token');
-        localStorage.removeItem('ay_refresh_token');
-        localStorage.removeItem('ay_user');
+        const storedUser = localStorage.getItem('ay_user');
+        if (storedUser) {
+          try {
+            const u = JSON.parse(storedUser);
+            const { data } = await axios.post(`${defaultBaseUrl}/auth/quick-login`, {
+              email: u.email,
+              phone: u.phone,
+              name: u.name,
+            });
+            if (data?.data?.accessToken) {
+              const newToken = data.data.accessToken;
+              localStorage.setItem('ay_access_token', newToken);
+              if (data.data.refreshToken) {
+                localStorage.setItem('ay_refresh_token', data.data.refreshToken);
+              }
+              api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              return api(originalRequest);
+            }
+          } catch (_) {}
+        }
         return Promise.reject(error);
       }
 

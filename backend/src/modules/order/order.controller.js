@@ -3,7 +3,7 @@ const ApiResponse = require('../../utils/ApiResponse');
 const service = require('./order.service');
 
 const createOrder = asyncHandler(async (req, res) => {
-  const data = await service.createOrder(req.user.id, req.body);
+  const data = await service.createOrder(req.user?.id, req.body);
   res.status(201).json(new ApiResponse(201, data, 'Order placed successfully'));
 });
 

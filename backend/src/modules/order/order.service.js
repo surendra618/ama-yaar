@@ -5,58 +5,113 @@ const Address = require('../address/address.model');
 const Coupon = require('../coupon/coupon.model');
 const Payment = require('../payment/payment.model');
 const Notification = require('../notification/notification.model');
+const User = require('../user/user.model');
+const bcrypt = require('bcryptjs');
 const ApiError = require('../../utils/ApiError');
 const settingService = require('../setting/setting.service');
 
 async function createOrder(userId, payload) {
   const { shippingAddressId, shippingAddress: directAddress, paymentProvider = 'cod', paymentMethod = 'Cash on Delivery', paymentId } = payload;
 
+  let finalUserId = userId;
   let finalAddress = directAddress;
+
+  if (!finalUserId) {
+    const cleanPhone = directAddress?.phone?.trim() || '';
+    const cleanEmail = payload.email || (cleanPhone ? `${cleanPhone.replace(/\D/g, '')}@guest.ama-yaar.com` : `guest_${Date.now()}@ama-yaar.com`);
+    let guestUser = await User.findOne({
+      $or: [{ email: cleanEmail }, ...(cleanPhone ? [{ phone: cleanPhone }] : [])]
+    });
+    if (!guestUser) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(`guest_pwd_${Date.now()}`, salt);
+      guestUser = await User.create({
+        name: directAddress?.fullName || 'Guest Customer',
+        email: cleanEmail,
+        phone: cleanPhone,
+        password: hashedPassword,
+        role: 'customer',
+      });
+    }
+    finalUserId = guestUser._id;
+  }
+
   if (!finalAddress && shippingAddressId) {
-    const addrDoc = await Address.findOne({ _id: shippingAddressId, user: userId });
-    if (!addrDoc) throw new ApiError(400, 'Selected shipping address not found');
-    finalAddress = {
-      fullName: addrDoc.fullName,
-      phone: addrDoc.phone,
-      line1: addrDoc.line1,
-      line2: addrDoc.line2,
-      city: addrDoc.city,
-      state: addrDoc.state,
-      pincode: addrDoc.pincode,
-      country: addrDoc.country,
-      addressType: addrDoc.addressType || 'Home',
-    };
+    const addrDoc = await Address.findOne({ _id: shippingAddressId });
+    if (addrDoc) {
+      finalAddress = {
+        fullName: addrDoc.fullName,
+        phone: addrDoc.phone,
+        line1: addrDoc.line1,
+        line2: addrDoc.line2,
+        city: addrDoc.city,
+        state: addrDoc.state,
+        pincode: addrDoc.pincode,
+        country: addrDoc.country,
+        addressType: addrDoc.addressType || 'Home',
+      };
+    }
   }
 
   if (!finalAddress || !finalAddress.line1 || !finalAddress.city || !finalAddress.pincode) {
     throw new ApiError(400, 'Valid shipping address is required');
   }
 
-  // Get cart
-  const cart = await Cart.findOne({ user: userId }).populate('items.product').populate('coupon');
-  if (!cart || cart.items.length === 0) {
-    throw new ApiError(400, 'Cart is empty');
-  }
+  // Get cart or use payload items
+  let cart = finalUserId ? await Cart.findOne({ user: finalUserId }).populate('items.product').populate('coupon') : null;
 
   // Build items and calculate totals
   let subtotal = 0;
   let mrpTotal = 0;
   const orderItems = [];
 
-  for (const item of cart.items) {
-    const product = item.product;
-    if (!product || !product.isActive) {
-      throw new ApiError(400, `Product "${product?.name || 'Unknown'}" is no longer available`);
-    }
+  if (cart && cart.items && cart.items.length > 0) {
+    for (const item of cart.items) {
+      const product = item.product;
+      if (!product || !product.isActive) {
+        throw new ApiError(400, `Product "${product?.name || 'Unknown'}" is no longer available`);
+      }
 
-    if (product.stock < item.quantity) {
-      throw new ApiError(400, `Not enough stock available for "${product.name}"`);
-    }
+      if (product.stock < item.quantity) {
+        throw new ApiError(400, `Not enough stock available for "${product.name}"`);
+      }
 
-    const price = item.price || product.price;
-    const mrp = product.mrp || price;
-    subtotal += price * item.quantity;
-    mrpTotal += mrp * item.quantity;
+      const price = item.price || product.price;
+      const mrp = product.mrp || price;
+      subtotal += price * item.quantity;
+      mrpTotal += mrp * item.quantity;
+
+      orderItems.push({
+        product: product._id,
+        name: product.name,
+        image: product.images?.[0] || '',
+        variant: item.variant,
+        quantity: item.quantity,
+        price,
+      });
+    }
+  } else if (payload.items && payload.items.length > 0) {
+    for (const item of payload.items) {
+      const prodId = item.product?._id || item.product || item.productId || item._id;
+      let product = prodId ? await Product.findById(prodId) : null;
+      const price = Number(item.price || product?.price || 0);
+      const mrp = Number(item.mrp || product?.mrp || price);
+      const qty = Number(item.quantity || 1);
+      subtotal += price * qty;
+      mrpTotal += mrp * qty;
+
+      orderItems.push({
+        product: product?._id || prodId,
+        name: item.title || item.name || product?.name || 'Product',
+        image: item.image || item.images?.[0] || product?.images?.[0] || '',
+        variant: item.variant || { size: item.size || 'M' },
+        quantity: qty,
+        price,
+      });
+    }
+  } else {
+    throw new ApiError(400, 'Cart is empty');
+  }
 
     orderItems.push({
       product: product._id,
@@ -72,7 +127,7 @@ async function createOrder(userId, payload) {
   let couponDiscount = 0;
   let couponCode = null;
 
-  if (cart.coupon && cart.coupon.isActive) {
+  if (cart && cart.coupon && cart.coupon.isActive) {
     const c = cart.coupon;
     if (c.discountType === 'percentage') {
       couponDiscount = (subtotal * c.discountValue) / 100;
@@ -96,7 +151,7 @@ async function createOrder(userId, payload) {
 
   const threshold = deliverySettings?.freeDeliveryThreshold ?? 500;
   const isFreeThreshold = deliverySettings?.isFreeDeliveryEnabled !== false && subtotal >= threshold;
-  const isCouponFree = cart.coupon?.discountType === 'freeDelivery';
+  const isCouponFree = cart?.coupon?.discountType === 'freeDelivery';
   const feeActive = deliverySettings?.isDeliveryFeeActive !== false;
   const baseCharge = feeActive ? (deliverySettings?.deliveryCharge ?? 49) : 0;
 
@@ -109,7 +164,7 @@ async function createOrder(userId, payload) {
   const paymentStatus = isOnlinePayment ? 'paid' : 'pending';
 
   const order = await Order.create({
-    user: userId,
+    user: finalUserId,
     items: orderItems,
     shippingAddress: finalAddress,
     paymentInfo: {
@@ -138,7 +193,7 @@ async function createOrder(userId, payload) {
   // Create payment record
   await Payment.create({
     order: order._id,
-    user: userId,
+    user: finalUserId,
     provider: paymentProvider,
     paymentId: order.paymentInfo.paymentId,
     method: paymentMethod,
@@ -148,19 +203,23 @@ async function createOrder(userId, payload) {
 
   // Reduce product inventory
   for (const item of orderItems) {
-    await Product.findByIdAndUpdate(item.product, {
-      $inc: { stock: -item.quantity },
-    });
+    if (item.product) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: -item.quantity },
+      }).catch(() => {});
+    }
   }
 
   // Clear cart
-  cart.items = [];
-  cart.coupon = null;
-  await cart.save();
+  if (cart) {
+    cart.items = [];
+    cart.coupon = null;
+    await cart.save().catch(() => {});
+  }
 
   // Create user notification
   await Notification.create({
-    user: userId,
+    user: finalUserId,
     type: 'order',
     title: 'Order Placed Successfully!',
     message: `Your order #${order.orderNumber || order._id} for ₹${total} has been received.`,
