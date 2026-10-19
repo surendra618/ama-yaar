@@ -148,32 +148,19 @@ export default function ProductDetailsPage() {
 
   const handleAddToCart = async () => {
     const sizeToUse = selectedSize || availableSizes[0] || "M";
-    if (!isAuthenticated) {
-      sessionStorage.setItem(
-        "pending_cart_item",
-        JSON.stringify({
-          productId: product._id,
-          quantity,
-          variant: { size: sizeToUse, color: selectedColor },
-        }),
-      );
-      navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
-      return;
-    }
     setIsAddingToCart(true);
     try {
-      const res = await dispatch(
+      await dispatch(
         addToCart({
           productId: product._id,
+          product,
           quantity,
           variant: { size: sizeToUse, color: selectedColor },
         }),
       );
-      if (addToCart.fulfilled.match(res)) {
-        setAdded(true);
-        setTimeout(() => setAdded(false), 3000);
-        dispatch(openDrawer());
-      }
+      setAdded(true);
+      setTimeout(() => setAdded(false), 3000);
+      dispatch(openDrawer());
     } finally {
       setIsAddingToCart(false);
     }
@@ -181,28 +168,19 @@ export default function ProductDetailsPage() {
 
   const handleBuyNow = async () => {
     const sizeToUse = selectedSize || availableSizes[0] || "M";
-    if (!isAuthenticated) {
-      sessionStorage.setItem(
-        "pending_cart_item",
-        JSON.stringify({
-          productId: product._id,
-          quantity,
-          variant: { size: sizeToUse, color: selectedColor },
-        }),
-      );
-      navigate(`/login?redirect=${encodeURIComponent('/checkout')}`);
-      return;
-    }
     setIsBuyingNow(true);
     try {
-      const res = await dispatch(
+      await dispatch(
         addToCart({
           productId: product._id,
+          product,
           quantity,
           variant: { size: sizeToUse, color: selectedColor },
         }),
       );
-      if (addToCart.fulfilled.match(res)) {
+      if (!isAuthenticated) {
+        navigate(`/login?redirect=${encodeURIComponent('/checkout')}`);
+      } else {
         navigate('/checkout');
       }
     } finally {

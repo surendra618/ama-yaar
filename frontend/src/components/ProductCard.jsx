@@ -46,6 +46,7 @@ export default function ProductCard({ product }) {
     dispatch(
       addToCart({
         productId: product._id,
+        product,
         quantity: 1,
         variant: defaultVariant,
       })
