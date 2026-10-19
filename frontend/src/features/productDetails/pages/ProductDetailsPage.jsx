@@ -63,6 +63,8 @@ export default function ProductDetailsPage() {
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [pincode, setPincode] = useState("");
   const [pincodeChecked, setPincodeChecked] = useState(false);
 
@@ -139,21 +141,72 @@ export default function ProductDetailsPage() {
       ? PLACEHOLDER_GALLERY
       : Array.from({ length: 4 }, (_, i) => rawImages[i % rawImages.length]);
 
+  const availableSizes =
+    product.variants?.length > 0 && product.variants.some((v) => v.size)
+      ? Array.from(new Set(product.variants.map((v) => v.size).filter(Boolean)))
+      : ["S", "M", "L", "XL"];
+
   const handleAddToCart = async () => {
+    const sizeToUse = selectedSize || availableSizes[0] || "M";
     if (!isAuthenticated) {
+      sessionStorage.setItem(
+        "pending_cart_item",
+        JSON.stringify({
+          productId: product._id,
+          quantity,
+          variant: { size: sizeToUse, color: selectedColor },
+        }),
+      );
       navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
       return;
     }
-    const res = await dispatch(
-      addToCart({
-        productId: product._id,
-        quantity,
-        variant: { size: selectedSize, color: selectedColor },
-      }),
-    );
-    if (addToCart.fulfilled.match(res)) {
-      setAdded(true);
-      setTimeout(() => setAdded(false), 3000);
+    setIsAddingToCart(true);
+    try {
+      const res = await dispatch(
+        addToCart({
+          productId: product._id,
+          quantity,
+          variant: { size: sizeToUse, color: selectedColor },
+        }),
+      );
+      if (addToCart.fulfilled.match(res)) {
+        setAdded(true);
+        setTimeout(() => setAdded(false), 3000);
+        dispatch(openDrawer());
+      }
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    const sizeToUse = selectedSize || availableSizes[0] || "M";
+    if (!isAuthenticated) {
+      sessionStorage.setItem(
+        "pending_cart_item",
+        JSON.stringify({
+          productId: product._id,
+          quantity,
+          variant: { size: sizeToUse, color: selectedColor },
+        }),
+      );
+      navigate(`/login?redirect=${encodeURIComponent('/checkout')}`);
+      return;
+    }
+    setIsBuyingNow(true);
+    try {
+      const res = await dispatch(
+        addToCart({
+          productId: product._id,
+          quantity,
+          variant: { size: sizeToUse, color: selectedColor },
+        }),
+      );
+      if (addToCart.fulfilled.match(res)) {
+        navigate('/checkout');
+      }
+    } finally {
+      setIsBuyingNow(false);
     }
   };
 
@@ -187,11 +240,6 @@ export default function ProductDetailsPage() {
       prev === displayImages.length - 1 ? 0 : prev + 1,
     );
   };
-
-  const availableSizes =
-    product.variants?.length > 0 && product.variants.some((v) => v.size)
-      ? Array.from(new Set(product.variants.map((v) => v.size).filter(Boolean)))
-      : ["S", "M", "L", "XL"];
 
   return (
     <div className="min-h-screen bg-white py-1 sm:py-2 text-neutral-900 font-sans">
@@ -365,28 +413,58 @@ export default function ProductDetailsPage() {
               </div>
             </div>
 
-            {/* ADD TO CART Button */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={product.stock <= 0}
-                className="w-full bg-[#1c1c1c] hover:bg-black text-white text-xs font-black uppercase tracking-wider py-3.5 px-4 rounded-xs transition duration-200 cursor-pointer shadow-sm text-center flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {added ? (
-                  <>
-                    <Check className="h-4 w-4 text-emerald-400" /> Added to Cart
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="h-4 w-4" /> ADD TO CART — ₹{product.price?.toLocaleString("en-IN") || "3,299"}
-                  </>
-                )}
-              </button>
+            {/* ADD TO CART & BUY NOW Buttons */}
+            <div className="pt-1.5 space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                {/* ADD TO CART Button */}
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={product.stock <= 0 || isAddingToCart}
+                  className="flex-1 bg-white hover:bg-neutral-50 text-black border-2 border-black text-xs font-black uppercase tracking-wider py-3.5 px-3 rounded-xs transition-all duration-200 cursor-pointer shadow-xs text-center flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99]"
+                >
+                  {isAddingToCart ? (
+                    <>
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                      <span>Adding...</span>
+                    </>
+                  ) : added ? (
+                    <>
+                      <Check className="h-4 w-4 text-emerald-600" />
+                      <span>Added to Bag</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="h-4 w-4 text-black" />
+                      <span>ADD TO CART</span>
+                    </>
+                  )}
+                </button>
+
+                {/* BUY NOW Button */}
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={product.stock <= 0 || isBuyingNow}
+                  className="flex-1 bg-[#111111] hover:bg-black text-white text-xs font-black uppercase tracking-wider py-3.5 px-4 rounded-xs transition-all duration-200 cursor-pointer shadow-md text-center flex items-center justify-center gap-2 border-2 border-[#111111] hover:border-black disabled:opacity-50 active:scale-[0.99] group"
+                >
+                  {isBuyingNow ? (
+                    <>
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 fill-amber-400 text-amber-400 group-hover:scale-110 transition-transform" />
+                      <span>BUY NOW — ₹{product.price?.toLocaleString("en-IN") || "3,299"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               {/* View Cart banner when item added */}
               {added && (
-                <div className="mt-2 p-2.5 rounded-md bg-emerald-50 border border-emerald-200 flex items-center justify-between animate-in fade-in duration-200">
+                <div className="p-2.5 rounded-md bg-emerald-50 border border-emerald-200 flex items-center justify-between animate-in fade-in duration-200">
                   <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
                     <Check className="h-3.5 w-3.5 text-emerald-600" /> Item added to your bag!
                   </span>

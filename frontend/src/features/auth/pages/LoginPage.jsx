@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { loginUser, clearError } from '../authSlice';
+import { addToCart } from '../../cart/cartSlice';
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -31,6 +32,15 @@ export default function LoginPage() {
       const user = result.payload?.user;
       setLoggedInUser(user);
       setShowSuccessModal(true);
+
+      const pendingItem = sessionStorage.getItem('pending_cart_item');
+      if (pendingItem) {
+        try {
+          const parsed = JSON.parse(pendingItem);
+          dispatch(addToCart(parsed));
+          sessionStorage.removeItem('pending_cart_item');
+        } catch (_) {}
+      }
 
       const searchParams = new URLSearchParams(location.search);
       const redirectUrl = searchParams.get('redirect') || location.state?.from || '/';
