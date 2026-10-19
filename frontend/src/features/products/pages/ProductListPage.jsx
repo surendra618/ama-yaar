@@ -91,8 +91,8 @@ export default function ProductListPage() {
 
   return (
     <div className="min-h-screen bg-white py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
+      <div className="w-full" style={{ paddingLeft: '15px', paddingRight: '15px' }}>
+
         {/* Top Header & Breadcrumb */}
         <div className="mb-6 border-b border-neutral-100 pb-6">
           <nav className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-2">
@@ -102,7 +102,7 @@ export default function ProductListPage() {
               {search ? `Search: "${search}"` : category ? category.replace(/-/g, ' ') : 'All Products'}
             </span>
           </nav>
-          
+
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <span className="text-[11px] font-black uppercase tracking-[0.25em] text-neutral-400 block mb-1">
@@ -127,11 +127,10 @@ export default function ProductListPage() {
           <div className="mt-6 flex items-center gap-2 overflow-x-auto scrollbar-hide pt-2 pb-1">
             <button
               onClick={() => updateFilter('category', '')}
-              className={`px-4 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
-                !category
-                  ? 'bg-black text-white shadow-sm'
-                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-black border border-neutral-200/60'
-              }`}
+              className={`px-4 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${!category
+                ? 'bg-black text-white shadow-sm'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-black border border-neutral-200/60'
+                }`}
             >
               All Categories
             </button>
@@ -139,11 +138,10 @@ export default function ProductListPage() {
               <button
                 key={cat._id}
                 onClick={() => updateFilter('category', cat.slug)}
-                className={`px-4 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
-                  category === cat.slug
-                    ? 'bg-black text-white shadow-sm'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-black border border-neutral-200/60'
-                }`}
+                className={`px-4 py-2 rounded-md text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${category === cat.slug
+                  ? 'bg-black text-white shadow-sm'
+                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-black border border-neutral-200/60'
+                  }`}
               >
                 {cat.name}
               </button>
@@ -153,10 +151,10 @@ export default function ProductListPage() {
 
         {/* Main Grid & Filter Sidebar Layout */}
         <div className="flex gap-8 items-start">
-          
+
           {/* 1. Desktop Filter Sidebar */}
           <aside className="hidden md:block w-64 shrink-0 rounded-md border border-neutral-200/80 bg-white p-5 shadow-2xs sticky top-24">
-            
+
             {/* Sidebar Title */}
             <div className="flex items-center justify-between border-b border-neutral-100 pb-3 mb-5">
               <div className="flex items-center gap-2 font-black text-xs uppercase tracking-widest text-black">
@@ -173,18 +171,17 @@ export default function ProductListPage() {
             </div>
 
             <div className="space-y-6 text-xs divide-y divide-neutral-100">
-              
+
               {/* Category Filter */}
               <div>
                 <h4 className="font-extrabold text-black uppercase tracking-wider mb-3">Category</h4>
                 <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
                   <button
                     onClick={() => updateFilter('category', '')}
-                    className={`flex items-center justify-between w-full text-left rounded-md px-3 py-2 text-xs transition font-semibold ${
-                      !category
-                        ? 'bg-black text-white font-bold'
-                        : 'text-neutral-700 hover:bg-neutral-100'
-                    }`}
+                    className={`flex items-center justify-between w-full text-left rounded-md px-3 py-2 text-xs transition font-semibold ${!category
+                      ? 'bg-black text-white font-bold'
+                      : 'text-neutral-700 hover:bg-neutral-100'
+                      }`}
                   >
                     <span>All Categories</span>
                   </button>
@@ -192,11 +189,10 @@ export default function ProductListPage() {
                     <button
                       key={cat._id}
                       onClick={() => updateFilter('category', cat.slug)}
-                      className={`flex items-center justify-between w-full text-left rounded-md px-3 py-2 text-xs transition font-semibold ${
-                        category === cat.slug
-                          ? 'bg-black text-white font-bold'
-                          : 'text-neutral-700 hover:bg-neutral-100'
-                      }`}
+                      className={`flex items-center justify-between w-full text-left rounded-md px-3 py-2 text-xs transition font-semibold ${category === cat.slug
+                        ? 'bg-black text-white font-bold'
+                        : 'text-neutral-700 hover:bg-neutral-100'
+                        }`}
                     >
                       <span>{cat.name}</span>
                       {cat.productCount > 0 && (
@@ -270,11 +266,10 @@ export default function ProductListPage() {
                       <button
                         key={r}
                         onClick={() => updateFilter('minRating', isSelected ? '' : r)}
-                        className={`flex items-center justify-between w-full rounded-md px-3 py-2.5 transition text-xs font-semibold border ${
-                          isSelected
-                            ? 'bg-amber-50/80 border-amber-300 text-neutral-900 font-extrabold shadow-2xs'
-                            : 'bg-white border-neutral-100/90 text-neutral-600 hover:bg-neutral-50 hover:border-neutral-200'
-                        }`}
+                        className={`flex items-center justify-between w-full rounded-md px-3 py-2.5 transition text-xs font-semibold border ${isSelected
+                          ? 'bg-amber-50/80 border-amber-300 text-neutral-900 font-extrabold shadow-2xs'
+                          : 'bg-white border-neutral-100/90 text-neutral-600 hover:bg-neutral-50 hover:border-neutral-200'
+                          }`}
                       >
                         <div className="flex items-center gap-1">
                           {Array.from({ length: r }).map((_, sIdx) => (
@@ -301,11 +296,10 @@ export default function ProductListPage() {
                     <button
                       key={d}
                       onClick={() => updateFilter('minDiscount', minDiscount === String(d) ? '' : d)}
-                      className={`block w-full text-left rounded-md px-3 py-2 transition text-xs font-extrabold ${
-                        minDiscount === String(d)
-                          ? 'bg-rose-600 text-white shadow-xs'
-                          : 'bg-neutral-50 text-neutral-700 hover:bg-neutral-100'
-                      }`}
+                      className={`block w-full text-left rounded-md px-3 py-2 transition text-xs font-extrabold ${minDiscount === String(d)
+                        ? 'bg-rose-600 text-white shadow-xs'
+                        : 'bg-neutral-50 text-neutral-700 hover:bg-neutral-100'
+                        }`}
                     >
                       {d}% OFF or more
                     </button>
@@ -330,7 +324,7 @@ export default function ProductListPage() {
 
           {/* 2. Main Products Catalog */}
           <main className="flex-1">
-            
+
             {/* Top Toolbar */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-md border border-neutral-200/80 bg-white p-4 shadow-2xs">
               <div className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">
@@ -343,23 +337,21 @@ export default function ProductListPage() {
                 <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-md border border-neutral-200/80">
                   <button
                     onClick={() => setViewMode('grid')}
-                    title="Grid View (3 cards per row)"
-                    className={`p-1.5 rounded-md transition ${
-                      viewMode === 'grid'
-                        ? 'bg-black text-white shadow-2xs'
-                        : 'text-neutral-500 hover:text-black'
-                    }`}
+                    title="Grid View (4 cards per row)"
+                    className={`p-1.5 rounded-md transition ${viewMode === 'grid'
+                      ? 'bg-black text-white shadow-2xs'
+                      : 'text-neutral-500 hover:text-black'
+                      }`}
                   >
                     <LayoutGrid className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
                     title="List View (1 product per row - Image left, text right)"
-                    className={`p-1.5 rounded-md transition ${
-                      viewMode === 'list'
-                        ? 'bg-black text-white shadow-2xs'
-                        : 'text-neutral-500 hover:text-black'
-                    }`}
+                    className={`p-1.5 rounded-md transition ${viewMode === 'list'
+                      ? 'bg-black text-white shadow-2xs'
+                      : 'text-neutral-500 hover:text-black'
+                      }`}
                   >
                     <List className="h-4 w-4" />
                   </button>
@@ -556,8 +548,8 @@ export default function ProductListPage() {
                 })}
               </div>
             ) : (
-              /* Standard Grid View: 3 Product Cards Per Row */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              /* Standard Grid View: 4 Product Cards Per Row */
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
                 {products.map((product) => (
                   <ProductCard key={product._id} product={product} />
                 ))}
@@ -578,11 +570,10 @@ export default function ProductListPage() {
                   <button
                     key={p}
                     onClick={() => updateFilter('page', p)}
-                    className={`h-9 w-9 rounded-md text-xs font-black transition ${
-                      pagination.page === p
-                        ? 'bg-black text-white shadow-xs'
-                        : 'border border-neutral-200 bg-white text-black hover:bg-neutral-100'
-                    }`}
+                    className={`h-9 w-9 rounded-md text-xs font-black transition ${pagination.page === p
+                      ? 'bg-black text-white shadow-xs'
+                      : 'border border-neutral-200 bg-white text-black hover:bg-neutral-100'
+                      }`}
                   >
                     {p}
                   </button>

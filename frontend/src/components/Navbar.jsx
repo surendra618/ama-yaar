@@ -76,37 +76,35 @@ const MEGA_MENU_DATA = {
     ],
   },
   MEN: {
-    title: "Men's Streetwear Collection",
+    title: "Men's Apparel & Streetwear Collection",
     columns: [
       {
         heading: 'Men Topwear',
         items: [
-          { name: 'Oversized Graphic Tees', to: '/products?search=oversized&category=men' },
-          { name: 'Acid Wash Distressed', to: '/products?search=acid+wash' },
-          { name: 'Heavyweight Boxy Tees', to: '/products?search=heavyweight' },
-          { name: 'Textured Henley & Polos', to: '/products?category=polo-t-shirt' },
-          { name: 'Gym & Pump Covers', to: '/products?search=gym' },
-          { name: 'Street Jackets & Sweats', to: '/products?search=jacket' },
+          { name: 'Shirts (Formal & Linen)', to: '/products?search=shirt' },
+          { name: 'Ganji / Gym Tank Tops', to: '/products?search=ganji' },
+          { name: 'Jackets & Outerwear', to: '/products?search=jacket' },
+          { name: 'Oversized Heavyweight Tees', to: '/products?search=oversized' },
+          { name: 'Acid Wash Vintage Tees', to: '/products?search=acid+wash' },
         ],
       },
       {
         heading: 'Men Bottomwear',
         items: [
-          { name: 'Utility Cargo Pants', to: '/products?search=cargo' },
-          { name: 'Baggy 90s Skater Jeans', to: '/products?search=jeans' },
+          { name: 'Jeans (Denim & Baggy)', to: '/products?search=jeans' },
+          { name: 'Pants (Cargos & Chinos)', to: '/products?search=pants' },
+          { name: 'Lower (Trackpants & Joggers)', to: '/products?search=lower' },
           { name: 'Raw Edge Sweat Shorts', to: '/products?search=shorts' },
-          { name: 'Heavy Fleece Joggers', to: '/products?search=joggers' },
-          { name: 'Relaxed Parachute Pants', to: '/products?search=parachute' },
         ],
       },
       {
-        heading: 'Aesthetic Fits',
+        heading: 'Coats & Outerwear',
         items: [
-          { name: 'Drop Shoulder Cuts', to: '/products?search=drop+shoulder' },
-          { name: 'Cyberpunk & Anime', to: '/products?search=anime' },
-          { name: 'Minimalist Clean Fits', to: '/products?search=minimal' },
-          { name: 'All Black Everything', to: '/products?search=black' },
-          { name: "Explore Men's Shop", to: '/products?category=men' },
+          { name: 'Coat & Suit Blazers', to: '/products?search=coat' },
+          { name: 'Heavywool Overcoats', to: '/products?search=overcoat' },
+          { name: 'Leather Biker Jackets', to: '/products?search=leather' },
+          { name: 'Puffer Bubble Jackets', to: '/products?search=puffer' },
+          { name: 'Explore All Men Fits', to: '/products?search=men' },
         ],
       },
     ],
@@ -115,51 +113,7 @@ const MEGA_MENU_DATA = {
         title: "MEN'S URBAN FIT DROP",
         subtitle: 'Engineered for Comfort & Raw Style',
         image: '/boys.png',
-        to: '/products?category=men',
-      },
-    ],
-  },
-  WOMEN: {
-    title: "Women's Streetwear Collection",
-    columns: [
-      {
-        heading: 'Women Topwear',
-        items: [
-          { name: 'Crop Oversized Tees', to: '/products?search=crop' },
-          { name: 'Ribbed Baby Tees', to: '/products?search=baby+tee' },
-          { name: 'Boyfriend Oversized Fits', to: '/products?search=oversized' },
-          { name: 'Cropped Zip Hoodies', to: '/products?search=hoodie' },
-          { name: 'Street Chic Corset Tops', to: '/products?search=top' },
-          { name: 'Graphic Back-Print Tees', to: '/products?search=graphic' },
-        ],
-      },
-      {
-        heading: 'Women Bottomwear',
-        items: [
-          { name: 'High-Waist Baggy Cargos', to: '/products?search=cargo' },
-          { name: 'Wide-Leg Street Jeans', to: '/products?search=jeans' },
-          { name: 'Pleated Street Skirts', to: '/products?search=skirt' },
-          { name: 'Relaxed Baggy Sweats', to: '/products?search=joggers' },
-          { name: 'Biker Shorts & Active', to: '/products?search=shorts' },
-        ],
-      },
-      {
-        heading: 'Aesthetic & Vibes',
-        items: [
-          { name: 'Y2K Retro Aesthetic', to: '/products?search=y2k' },
-          { name: 'Pastel Tone Fits', to: '/products?search=pastel' },
-          { name: 'Airport Loungewear Sets', to: '/products?search=loungewear' },
-          { name: 'College Street Casuals', to: '/products?search=casual' },
-          { name: "Explore Women's Shop", to: '/products?category=women' },
-        ],
-      },
-    ],
-    promos: [
-      {
-        title: "WOMEN'S EXCLUSIVE DROP",
-        subtitle: 'Effortless Cool & Chic Fits',
-        image: '/fashion-model.jpg',
-        to: '/products?category=women',
+        to: '/products?search=men',
       },
     ],
   },
@@ -169,20 +123,20 @@ const MEGA_MENU_DATA = {
       {
         heading: "What's Viral",
         items: [
-          { name: 'Viral Acid Wash Series', to: '/products?search=acid+wash' },
-          { name: 'Heavyweight 280 GSM Drop', to: '/products?search=heavyweight' },
-          { name: 'Cyber Anime Back-Prints', to: '/products?search=anime' },
-          { name: 'Top Rated by 10,000+ Yaars', to: '/products?minRating=4' },
-          { name: 'Drop Shoulder Oversized', to: '/products?search=oversized' },
+          { name: 'Men Shirts & Linens', to: '/products?search=shirt' },
+          { name: 'Ganji / Tank Tops', to: '/products?search=ganji' },
+          { name: 'Acid Wash Denim Jeans', to: '/products?search=jeans' },
+          { name: '6-Pocket Utility Cargos', to: '/products?search=pants' },
+          { name: 'Heavyweight Fleece Lower', to: '/products?search=lower' },
         ],
       },
       {
         heading: 'By Style Vibe',
         items: [
-          { name: 'Quiet Luxury Minimalist', to: '/products?search=minimal' },
-          { name: 'Vintage 90s Faded Grunge', to: '/products?search=vintage' },
-          { name: 'Gym Pump Cover Staples', to: '/products?search=gym' },
-          { name: 'Urban Skater Casuals', to: '/products?search=skater' },
+          { name: 'Double Breasted Suit Coat', to: '/products?search=coat' },
+          { name: 'Leather Moto Jackets', to: '/products?search=leather' },
+          { name: 'Winter Puffer Jackets', to: '/products?search=puffer' },
+          { name: 'Drop Shoulder Boxy Tees', to: '/products?search=oversized' },
           { name: 'Monochrome Streetwear', to: '/products?search=black' },
         ],
       },
@@ -190,7 +144,7 @@ const MEGA_MENU_DATA = {
         heading: 'Offers & Special Deals',
         items: [
           { name: 'Sign Up - Flat 50% Off', to: '/register' },
-          { name: 'Under ₹799 Flash Deals', to: '/products?maxPrice=799' },
+          { name: 'Under ₹999 Steals', to: '/products?maxPrice=999' },
           { name: 'Clearance Vault (Up to 60%)', to: '/products?minDiscount=40' },
           { name: 'Free Shipping on All Prepaid', to: '/products' },
           { name: 'Explore All Trending', to: '/products?isTrending=true' },
@@ -207,42 +161,38 @@ const MEGA_MENU_DATA = {
     ],
   },
   CATEGORIES: {
-    title: 'Browse All Categories',
+    title: "Browse Men's Categories",
     columns: [
       {
-        heading: 'Topwear Categories',
+        heading: "Men's Topwear",
         items: [
-          { name: 'Oversized Printed Tees', to: '/products?category=oversized-printed' },
-          { name: 'Sleeveless Acid Wash', to: '/products?category=sleeveless-acid-wash' },
-          { name: 'Polo T-Shirts', to: '/products?category=polo-t-shirt' },
-          { name: 'Henley T-Shirts', to: '/products?category=henley-t-shirt' },
-          { name: 'Heavyweight Hoodies', to: '/products?search=hoodie' },
+          { name: 'Shirt (Linen & Formals)', to: '/products?search=shirt' },
+          { name: 'Ganji (Gym & Tank Tops)', to: '/products?search=ganji' },
+          { name: 'Jackets (Biker & Puffer)', to: '/products?search=jacket' },
+          { name: 'Oversized Tees (240+ GSM)', to: '/products?search=oversized' },
         ],
       },
       {
-        heading: 'Bottomwear & Pants',
+        heading: "Men's Bottomwear",
         items: [
-          { name: 'Street Cargos', to: '/products?search=cargo' },
-          { name: 'Baggy Jeans', to: '/products?search=jeans' },
-          { name: 'Casual Shorts', to: '/products?search=shorts' },
-          { name: 'Fleece Joggers', to: '/products?search=joggers' },
-          { name: 'Parachute Pants', to: '/products?search=parachute' },
+          { name: 'Jeans (Acid Wash & Baggy)', to: '/products?search=jeans' },
+          { name: 'Pants (Cargos & Chinos)', to: '/products?search=pants' },
+          { name: 'Lower (Joggers & Trackpants)', to: '/products?search=lower' },
         ],
       },
       {
-        heading: 'Specialty Collections',
+        heading: "Men's Coats & Jackets",
         items: [
-          { name: 'Co-ord Twin Sets', to: '/products?search=coord' },
-          { name: 'Gym & Activewear', to: '/products?search=gym' },
-          { name: 'Caps & Accessories', to: '/products?search=caps' },
-          { name: 'Limited Drops', to: '/products?isNewArrival=true' },
-          { name: 'All Categories Index', to: '/products' },
+          { name: 'Coat (Blazers & Suits)', to: '/products?search=coat' },
+          { name: 'Overcoats (Winter Wool)', to: '/products?search=overcoat' },
+          { name: 'Leather Jackets', to: '/products?search=leather' },
+          { name: 'All Men Collection', to: '/products?search=men' },
         ],
       },
     ],
     promos: [
       {
-        title: 'EXPLORE ALL CATEGORIES',
+        title: 'EXPLORE MEN CATEGORIES',
         subtitle: 'Curated For Ultimate Street Presence',
         image: '/model03.png',
         to: '/products',
@@ -369,28 +319,13 @@ export default function Navbar() {
   };
 
   const leftNavLinks = useMemo(() => {
-    const base = [
+    return [
       { key: 'SHOP', label: 'SHOP', to: '/products' },
+      { key: 'MEN', label: 'MEN', to: '/products?search=men' },
       { key: 'CATEGORIES', label: 'CATEGORIES', to: '/products' },
       { key: 'TRENDING', label: 'TRENDING', to: '/products?isTrending=true' },
     ];
-
-    if (categories && categories.length > 0) {
-      const rootCats = categories.filter((c) => !c.parent && c.isActive !== false);
-
-      if (rootCats.length > 0) {
-        const dynamicCatLinks = rootCats.map((root) => ({
-          key: `CAT_${root._id}`,
-          label: root.name.toUpperCase(),
-          to: `/products?category=${root.slug}`,
-        }));
-
-        return [base[0], base[1], ...dynamicCatLinks, base[2]];
-      }
-    }
-
-    return base;
-  }, [categories]);
+  }, []);
 
   const rightNavLinks = [
     { key: 'STORIES', label: 'STORIES', to: '/blog' },

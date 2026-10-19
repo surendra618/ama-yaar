@@ -15,6 +15,12 @@ import {
   MessageSquare,
   Sparkles,
   Tag,
+  Droplets,
+  Sun,
+  Shirt,
+  Ban,
+  Award,
+  Scissors,
 } from 'lucide-react';
 import {
   fetchProductDetails,
@@ -182,7 +188,7 @@ export default function ProductDetailsPage() {
             
             {/* Main Featured Image Container with Interactive Zoom */}
             <div
-              className="relative aspect-square w-full overflow-hidden rounded-sm border border-neutral-200/70 bg-neutral-100 cursor-zoom-in select-none group"
+              className="relative aspect-square w-full overflow-hidden rounded-md border border-neutral-200/70 bg-neutral-100 cursor-zoom-in select-none group shadow-xs"
               onMouseEnter={() => setIsHoveringZoom(true)}
               onMouseLeave={() => setIsHoveringZoom(false)}
               onMouseMove={handleMouseMove}
@@ -190,7 +196,7 @@ export default function ProductDetailsPage() {
               <img
                 src={displayImages[selectedImage] || displayImages[0]}
                 alt={product.name}
-                className="h-full w-full object-cover object-center transition-transform duration-150 ease-out rounded-sm"
+                className="h-full w-full object-cover object-center transition-transform duration-150 ease-out rounded-md"
                 style={{
                   transform: isHoveringZoom ? 'scale(2.2)' : 'scale(1)',
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
@@ -217,16 +223,16 @@ export default function ProductDetailsPage() {
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
-                  className={`relative aspect-square overflow-hidden rounded-sm border transition-all duration-200 ${
+                  className={`relative aspect-square overflow-hidden rounded-md border transition-all duration-200 ${
                     selectedImage === idx
-                      ? 'border-neutral-900 opacity-100 shadow-2xs'
+                      ? 'border-neutral-900 opacity-100 shadow-2xs ring-2 ring-black/10'
                       : 'border-neutral-200 opacity-70 hover:opacity-100 hover:border-neutral-300'
                   }`}
                 >
                   <img
                     src={img}
                     alt={`Thumbnail ${idx + 1}`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover rounded-md"
                   />
                 </button>
               ))}
@@ -563,18 +569,18 @@ export default function ProductDetailsPage() {
 
                 {/* Section 4: Why Choose AMA YAAR Quality Assurance */}
                 <div className="border-t border-neutral-200 pt-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center text-xs font-semibold text-neutral-700">
-                  <div className="p-3 bg-neutral-50/70 rounded-md border border-neutral-100">
-                    <div className="text-lg mb-1">💎</div>
+                  <div className="p-3 bg-neutral-50/70 rounded-md border border-neutral-100 flex flex-col items-center">
+                    <Award className="h-5 w-5 text-amber-500 mb-1.5" />
                     <div className="font-bold text-black">Direct-to-Consumer Value</div>
                     <div className="text-[10px] text-neutral-500 font-normal mt-0.5">Luxury quality without middleman retail markups.</div>
                   </div>
-                  <div className="p-3 bg-neutral-50/70 rounded-md border border-neutral-100">
-                    <div className="text-lg mb-1">⚡</div>
+                  <div className="p-3 bg-neutral-50/70 rounded-md border border-neutral-100 flex flex-col items-center">
+                    <Zap className="h-5 w-5 text-amber-500 mb-1.5" />
                     <div className="font-bold text-black">24-Hour Express Dispatch</div>
                     <div className="text-[10px] text-neutral-500 font-normal mt-0.5">Shipped in eco-friendly protective packaging.</div>
                   </div>
-                  <div className="p-3 bg-neutral-50/70 rounded-md border border-neutral-100">
-                    <div className="text-lg mb-1">🛡️</div>
+                  <div className="p-3 bg-neutral-50/70 rounded-md border border-neutral-100 flex flex-col items-center">
+                    <ShieldCheck className="h-5 w-5 text-emerald-600 mb-1.5" />
                     <div className="font-bold text-black">100% Quality Assurance</div>
                     <div className="text-[10px] text-neutral-500 font-normal mt-0.5">7-Day easy returns & exchanges guaranteed.</div>
                   </div>
@@ -614,29 +620,37 @@ export default function ProductDetailsPage() {
               <div className="animate-in fade-in duration-200 max-w-3xl space-y-3 text-xs text-neutral-700 font-medium">
                 <h3 className="text-sm font-extrabold uppercase tracking-wider text-black mb-2">Fabric Care Instructions</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-neutral-50 p-3 rounded-md border border-neutral-200/80 flex items-start gap-2.5">
-                    <span className="text-lg">🧼</span>
+                  <div className="bg-neutral-50 p-3.5 rounded-md border border-neutral-200/80 flex items-start gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100/80 text-blue-600 shrink-0">
+                      <Droplets className="h-4 w-4" />
+                    </div>
                     <div>
                       <h4 className="font-bold text-black text-xs">Machine Wash Cold</h4>
                       <p className="text-[11px] text-neutral-500 mt-0.5">Gentle cycle at 30°C with like colors.</p>
                     </div>
                   </div>
-                  <div className="bg-neutral-50 p-3 rounded-md border border-neutral-200/80 flex items-start gap-2.5">
-                    <span className="text-lg">☀️</span>
+                  <div className="bg-neutral-50 p-3.5 rounded-md border border-neutral-200/80 flex items-start gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100/80 text-amber-600 shrink-0">
+                      <Sun className="h-4 w-4" />
+                    </div>
                     <div>
                       <h4 className="font-bold text-black text-xs">Line Dry / Tumble Low</h4>
                       <p className="text-[11px] text-neutral-500 mt-0.5">Hang dry in shade to preserve crisp color.</p>
                     </div>
                   </div>
-                  <div className="bg-neutral-50 p-3 rounded-md border border-neutral-200/80 flex items-start gap-2.5">
-                    <span className="text-lg">👔</span>
+                  <div className="bg-neutral-50 p-3.5 rounded-md border border-neutral-200/80 flex items-start gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100/80 text-purple-600 shrink-0">
+                      <Shirt className="h-4 w-4" />
+                    </div>
                     <div>
                       <h4 className="font-bold text-black text-xs">Warm Iron</h4>
                       <p className="text-[11px] text-neutral-500 mt-0.5">Iron on medium heat if crisp finish is desired.</p>
                     </div>
                   </div>
-                  <div className="bg-neutral-50 p-3 rounded-md border border-neutral-200/80 flex items-start gap-2.5">
-                    <span className="text-lg">🚫</span>
+                  <div className="bg-neutral-50 p-3.5 rounded-md border border-neutral-200/80 flex items-start gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100/80 text-rose-600 shrink-0">
+                      <Ban className="h-4 w-4" />
+                    </div>
                     <div>
                       <h4 className="font-bold text-black text-xs">Do Not Bleach</h4>
                       <p className="text-[11px] text-neutral-500 mt-0.5">Avoid harsh chemical detergents or dry cleaning.</p>
@@ -899,11 +913,50 @@ export default function ProductDetailsPage() {
               category: { name: 'Accessories', slug: 'accessories' },
               stock: 35,
             },
+            {
+              _id: 'rec_13',
+              name: "Men's Heavyweight Fleece Athletic Jogger Lower",
+              brand: 'AMA YAAR',
+              price: 1199,
+              mrp: 2299,
+              discount: 47,
+              rating: 4.7,
+              numReviews: 88,
+              images: ['https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=600&q=80', '/boys.png'],
+              category: { name: 'Lowers', slug: 'lowers' },
+              stock: 40,
+            },
+            {
+              _id: 'rec_14',
+              name: "Men's Italian Tailored Double-Breasted Suit Coat",
+              brand: 'RAYMOND',
+              price: 4999,
+              mrp: 8999,
+              discount: 44,
+              rating: 4.9,
+              numReviews: 34,
+              images: ['https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&q=80', '/model01.png'],
+              category: { name: 'Coats', slug: 'coats' },
+              stock: 15,
+            },
+            {
+              _id: 'rec_15',
+              name: "Men's Premium Faux Leather Moto Biker Jacket",
+              brand: 'AMA YAAR',
+              price: 3499,
+              mrp: 6999,
+              discount: 50,
+              rating: 4.9,
+              numReviews: 57,
+              images: ['https://images.unsplash.com/photo-1520975916090-3105956dac38?w=600&q=80', '/boyse.png'],
+              category: { name: 'Jackets', slug: 'jackets' },
+              stock: 25,
+            },
           ];
 
-          const displayRelated = (related && related.length >= 12)
-            ? related
-            : [...(related || []), ...FEATURED_RECOMMENDATIONS].slice(0, 12);
+          const displayRelated = (related && related.length >= 15)
+            ? related.slice(0, 15)
+            : [...(related || []), ...FEATURED_RECOMMENDATIONS].slice(0, 15);
 
           return (
             <div className="mt-14 pt-8 border-t border-neutral-200">
@@ -922,8 +975,8 @@ export default function ProductDetailsPage() {
                 </Link>
               </div>
 
-              {/* 4 Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              {/* 5 Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
                 {displayRelated.map((rel) => (
                   <ProductCard key={rel._id} product={rel} />
                 ))}

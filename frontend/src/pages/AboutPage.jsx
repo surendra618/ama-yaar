@@ -107,18 +107,95 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900 select-none">
       {/* 1. Hero Header Banner */}
-      <section className="bg-black py-20 lg:py-24 text-white border-b border-neutral-800 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#facc15]">
-            <Sparkles className="h-4 w-4" /> BORN ON THE STREETS OF INDIA • EST. 2026
-          </span>
-          <h1 className="mt-5 font-display text-4xl sm:text-6xl lg:text-7xl font-black italic uppercase tracking-tight text-white leading-none">
-            STYLE KA LAFDA? <span className="text-[#facc15]">WE GOT YOU.</span>
+      <section className="relative overflow-hidden bg-neutral-950 py-16 sm:py-20 lg:py-24 text-white border-b border-neutral-800">
+        {/* Background Visual Enhancements */}
+        <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[400px] w-[700px] rounded-full bg-amber-500/5 blur-[140px]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-neutral-950 to-transparent z-10" />
+
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-20">
+          {/* Top Tag (Only Text) */}
+          <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-amber-400 mb-4 font-['Outfit']">
+            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            <span>BORN ON THE STREETS OF INDIA • EST. 2026</span>
+          </div>
+
+          {/* Main Hero Headline */}
+          <h1 className="font-['Outfit'] text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-black uppercase tracking-tight text-white leading-[1.05]">
+            STYLE KA LAFDA?{' '}
+            <span className="font-['Unbounded'] font-black text-amber-400 block sm:inline mt-1 sm:mt-0">
+              WE GOT YOU.
+            </span>
           </h1>
-          <p className="mt-5 mx-auto max-w-2xl text-xs sm:text-sm font-medium text-neutral-400 leading-relaxed uppercase tracking-wider">
-            AMA YAAR is engineered for those who wear their individuality with pride.
-            No thin cotton tees, no boring fits. Just raw, heavy, unfiltered streetwear presence.
+
+          {/* Subtitle / Philosophy */}
+          <p className="mt-6 mx-auto max-w-2xl text-sm sm:text-base font-medium text-neutral-300 leading-relaxed font-['Plus_Jakarta_Sans']">
+            AMA YAAR is engineered for those who wear their individuality with pride.{' '}
+            <span className="text-amber-400 font-bold block mt-2 text-xs sm:text-sm tracking-wider uppercase">
+              No Thin Cotton Tees • No Boring Fits • Just Raw, Heavyweight Streetwear
+            </span>
           </p>
+
+          {/* 4 Circular Streetwear Design Cards */}
+          <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 max-w-4xl mx-auto">
+            {[
+              {
+                title: 'Heavyweight Tee',
+                badge: '240+ GSM',
+                image: '/model-nirvana.jpg',
+                link: '/products?category=oversized-printed',
+              },
+              {
+                title: 'Drop Shoulder Fit',
+                badge: 'Boxy Cut',
+                image: '/model01.png',
+                link: '/products?category=heavyweight-tees',
+              },
+              {
+                title: 'Acid Wash Art',
+                badge: 'Vintage Wash',
+                image: '/model04.png',
+                link: '/products?category=vintage-acid-wash',
+              },
+              {
+                title: 'Urban Streetwear',
+                badge: 'Original Drop',
+                image: '/model03.png',
+                link: '/products?category=streetwear-hoodies',
+              },
+            ].map((card, idx) => (
+              <Link
+                key={idx}
+                to={card.link}
+                className="group flex flex-col items-center text-center"
+              >
+                {/* Outer Circular Container — no hover on border */}
+                <div className="relative mb-3.5 h-28 w-28 sm:h-36 sm:w-36 rounded-full border-2 border-neutral-800 bg-neutral-900">
+                  {/* Inner Image Mask Circle — only image zooms on hover */}
+                  <div className="h-full w-full overflow-hidden rounded-full">
+                    <img
+                      src={card.image}
+                      alt={card.title}
+                      className="h-full w-full object-cover object-top transition-transform duration-300 ease-out group-hover:scale-110"
+                    />
+                  </div>
+
+                  {/* Overlapping Badge Pill */}
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-0.5 text-[9px] font-black uppercase tracking-wider text-black shadow-md font-['Outfit'] whitespace-nowrap">
+                    {card.badge}
+                  </span>
+                </div>
+
+                {/* Title & Subtext — static, no hover change */}
+                <h3 className="mt-2 text-xs sm:text-sm font-black text-white uppercase tracking-wider font-['Outfit']">
+                  {card.title}
+                </h3>
+                <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 uppercase tracking-widest opacity-80">
+                  Explore Drop <ArrowRight className="h-3 w-3" />
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

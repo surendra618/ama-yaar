@@ -12,7 +12,7 @@ const InstagramIcon = (props) => (
     <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
   </svg>
 );
-import { fetchProducts, fetchCategories, fetchBanners } from '../../products/productsSlice';
+import { fetchProducts, fetchCategories, fetchBanners, fetchCardSliders } from '../../products/productsSlice';
 import InstagramBanner from '../../../components/InstagramBanner';
 import EditorialBanner from '../../../components/EditorialBanner';
 import WorkoutShowcaseBanner from '../../../components/WorkoutShowcaseBanner';
@@ -720,7 +720,7 @@ function TypewriterBannerTitle({ line1, line2, line3, highlightColor = '#facc15'
 export default function HomePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items: products, categories, banners } = useSelector((state) => state.products);
+  const { items: products, categories, banners, cardSliders } = useSelector((state) => state.products);
   const { isAuthenticated } = useSelector((state) => state.auth);
   const { items: wishlistItems } = useSelector((state) => state.wishlist || { items: [] });
   const categoryRailRef = useRef(null);
@@ -868,6 +868,7 @@ export default function HomePage() {
     dispatch(fetchProducts({ limit: 15 }));
     dispatch(fetchCategories());
     dispatch(fetchBanners());
+    dispatch(fetchCardSliders());
   }, [dispatch]);
 
   // Initialize AOS animation library
@@ -901,34 +902,31 @@ export default function HomePage() {
 
   const activeSlide = displaySlides[currentHeroSlide % displaySlides.length] || displaySlides[0];
 
-  const allCatList = (categories || []).reduce((acc, cat) => {
-    acc.push(cat);
-    if (cat.subcategories && cat.subcategories.length > 0) {
-      acc.push(...cat.subcategories);
-    }
-    return acc;
-  }, []);
-
-  const displayCategories = allCatList.length > 0
-    ? [...allCatList]
-      .sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0))
-      .map((c, idx) => {
-        const catImg = c.image
+  const displayCardSliders = (cardSliders && cardSliders.length > 0)
+    ? cardSliders.map((c, idx) => {
+        const cardImg = c.image
           ? (c.image.startsWith('http') || c.image.startsWith('data:') ? c.image : c.image.startsWith('/uploads') ? `http://localhost:5000${c.image}` : c.image)
           : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
         return {
-          name: c.name,
-          image: catImg,
+          id: c._id || idx,
+          name: c.title || c.name || 'Category',
+          subtitle: c.subtitle,
+          image: cardImg,
           fallback: CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.fallback || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80',
-          slug: c.slug || c._id,
+          link: c.link || (c.slug ? `/products?category=${c.slug}` : '/products'),
+          badge: c.badge,
           cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
         };
       })
-    : CATEGORY_ITEMS;
+    : CATEGORY_ITEMS.map((item, idx) => ({
+        ...item,
+        link: item.link || `/products?category=${item.slug || ''}`,
+        cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
+      }));
 
   useEffect(() => {
     AOS.refresh();
-  }, [displayCategories]);
+  }, [displayCardSliders]);
 
   return (
     <div className="bg-white">
@@ -980,19 +978,17 @@ export default function HomePage() {
             onMouseLeave={() => { isCategoryHoveredRef.current = false; }}
             className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-hide pb-6 pt-2 snap-x snap-mandatory scroll-smooth"
           >
-            {displayCategories.map((item) => (
+            {displayCardSliders.map((item) => (
               <motion.div
-                key={item.name}
+                key={item.id || item.name}
                 variants={categoryCardVariants}
                 whileHover={{ y: -8, transition: { duration: 0.25 } }}
                 className={`shrink-0 w-[220px] sm:w-[250px] lg:w-[calc(20%-1rem)] min-w-[210px] snap-start ${item.cardStyle}`}
               >
                 <Link
-                  to={`/products?category=${item.slug}`}
+                  to={item.link || '/products'}
                   className="group relative block h-full w-full overflow-hidden rounded-2xl bg-neutral-900"
                 >
-
-
                   <img
                     src={item.image}
                     alt={item.name}
@@ -1004,6 +1000,8 @@ export default function HomePage() {
                   />
                   {/* Scrim gradient overlay */}
                   <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-500 group-hover:opacity-95" />
+
+
 
                   {/* Bottom Card Content: Title Left + Arrow Right */}
                   <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4 sm:p-5">

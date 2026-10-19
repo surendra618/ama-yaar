@@ -49,6 +49,18 @@ export const fetchBanners = createAsyncThunk(
   }
 );
 
+export const fetchCardSliders = createAsyncThunk(
+  'products/fetchCardSliders',
+  async (params = { activeOnly: 'true' }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get('/card-sliders', { params });
+      return data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
 const productsSlice = createSlice({
   name: 'products',
   initialState: {
@@ -57,6 +69,7 @@ const productsSlice = createSlice({
     categories: [],
     filterOptions: { brands: [], minPrice: 0, maxPrice: 50000, categories: [] },
     banners: [],
+    cardSliders: [],
     loading: false,
     categoriesLoading: false,
     error: null,
@@ -89,6 +102,9 @@ const productsSlice = createSlice({
       })
       .addCase(fetchBanners.fulfilled, (state, action) => {
         state.banners = action.payload;
+      })
+      .addCase(fetchCardSliders.fulfilled, (state, action) => {
+        state.cardSliders = action.payload;
       });
   },
 });

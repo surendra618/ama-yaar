@@ -26,11 +26,7 @@ export default function Footer() {
         {/* Main Grid */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
           {/* Brand Info Column */}
-          <div
-            data-aos="fade-right"
-            data-aos-duration="700"
-            className="md:col-span-4 lg:col-span-4"
-          >
+          <div className="md:col-span-4 lg:col-span-4">
             <Link to="/" className="inline-block leading-none group">
               <img
                 src="/logo.png"
@@ -48,21 +44,21 @@ export default function Footer() {
               <a
                 href="#"
                 aria-label="Facebook"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877f2] text-white shadow-sm transition hover:scale-105"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877f2] text-[#ffffff] shadow-xs transition hover:scale-105"
               >
                 <FacebookIcon className="h-4 w-4" />
               </a>
               <a
                 href="#"
                 aria-label="Instagram"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-white shadow-sm transition hover:scale-105"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-[#ffffff] shadow-xs transition hover:scale-105"
               >
                 <InstagramIcon className="h-4 w-4" />
               </a>
               <a
                 href="#"
                 aria-label="YouTube"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff0000] text-white shadow-sm transition hover:scale-105"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff0000] text-[#ffffff] shadow-xs transition hover:scale-105"
               >
                 <YoutubeIcon className="h-4 w-4" />
               </a>
@@ -72,7 +68,7 @@ export default function Footer() {
           {/* Spacing / Column items */}
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 md:col-span-8 lg:col-span-8 md:pl-4">
             {/* SHOP FITS */}
-            <div data-aos="fade-up" data-aos-delay="100" data-aos-duration="600">
+            <div>
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">SHOP FITS</h4>
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
@@ -104,7 +100,7 @@ export default function Footer() {
             </div>
 
             {/* HELP */}
-            <div data-aos="fade-up" data-aos-delay="150" data-aos-duration="600">
+            <div>
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">HELP</h4>
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
@@ -136,7 +132,7 @@ export default function Footer() {
             </div>
 
             {/* FAQ & ACCOUNT */}
-            <div data-aos="fade-up" data-aos-delay="200" data-aos-duration="600">
+            <div>
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">FAQ &amp; ACCOUNT</h4>
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
@@ -168,7 +164,7 @@ export default function Footer() {
             </div>
 
             {/* COMPANY */}
-            <div data-aos="fade-up" data-aos-delay="250" data-aos-duration="600">
+            <div>
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">COMPANY</h4>
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
@@ -207,11 +203,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom copyright line */}
-        <div
-          data-aos="fade-up"
-          data-aos-delay="350"
-          className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-black/10 pt-6 text-xs text-black/50 sm:flex-row"
-        >
+        <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-black/10 pt-6 text-xs text-black/50 sm:flex-row">
           <p>© {new Date().getFullYear()} AMAYAAR. All rights reserved.</p>
           <p className="text-xs text-black/50 font-medium">Style Ka Lafda</p>
         </div>
