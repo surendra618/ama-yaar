@@ -131,7 +131,7 @@ export default function ProductDetailsPage() {
       img.startsWith("http") || img.startsWith("data:")
         ? img
         : img.startsWith("/uploads")
-          ? `http://localhost:5005${img}`
+          ? `http://localhost:5000${img}`
           : img,
     );
   const displayImages =
