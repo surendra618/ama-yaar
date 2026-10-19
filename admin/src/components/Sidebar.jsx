@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Percent,
   Image,
+  LayoutGrid,
   Video,
   Shirt,
   BookOpen,
@@ -48,6 +49,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/coupons', label: 'Coupons', icon: Percent },
       { to: '/banners', label: 'Banners', icon: Image },
+      { to: '/card-sliders', label: 'Card Sliders', icon: LayoutGrid },
       { to: '/reels', label: 'Reels Manager', icon: Video },
       { to: '/editorial-looks', label: '3D Editorial Looks', icon: Shirt, badge: '3D', badgeColor: 'bg-amber-100 text-amber-800' },
       { to: '/blogs', label: 'Blog & Stories', icon: BookOpen },

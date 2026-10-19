@@ -24,6 +24,8 @@ import ReelsListPage from '../features/reels/pages/ReelsListPage';
 import EditorialLooksListPage from '../features/editorialLooks/pages/EditorialLooksListPage';
 import BlogsListPage from '../features/blogs/pages/BlogsListPage';
 import ContactMessagesPage from '../features/contacts/pages/ContactMessagesPage';
+import CardSlidersListPage from '../features/cardSliders/pages/CardSlidersListPage';
+import CardSliderFormPage from '../features/cardSliders/pages/CardSliderFormPage';
 
 export const router = createBrowserRouter([
   {
@@ -46,6 +48,9 @@ export const router = createBrowserRouter([
       { path: '/banners', element: <BannersListPage /> },
       { path: '/banners/new', element: <BannerFormPage /> },
       { path: '/banners/:id/edit', element: <BannerFormPage /> },
+      { path: '/card-sliders', element: <CardSlidersListPage /> },
+      { path: '/card-sliders/new', element: <CardSliderFormPage /> },
+      { path: '/card-sliders/:id/edit', element: <CardSliderFormPage /> },
       { path: '/reels', element: <ReelsListPage /> },
       { path: '/editorial-looks', element: <EditorialLooksListPage /> },
       { path: '/blogs', element: <BlogsListPage /> },

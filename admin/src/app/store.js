@@ -14,6 +14,7 @@ import reelsReducer from '../features/reels/reelsSlice';
 import editorialLooksReducer from '../features/editorialLooks/editorialLooksSlice';
 import blogsReducer from '../features/blogs/blogsSlice';
 import contactMessagesReducer from '../features/contacts/contactMessagesSlice';
+import cardSlidersReducer from '../features/cardSliders/cardSlidersSlice';
 
 export const store = configureStore({
   reducer: {
@@ -25,6 +26,7 @@ export const store = configureStore({
     orders: ordersReducer,
     coupons: couponsReducer,
     banners: bannersReducer,
+    cardSliders: cardSlidersReducer,
     reels: reelsReducer,
     editorialLooks: editorialLooksReducer,
     blogs: blogsReducer,
