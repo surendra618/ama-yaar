@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Order = require('./order.model');
 const Cart = require('../cart/cart.model');
 const Product = require('../product/product.model');
@@ -91,9 +92,16 @@ async function createOrder(userId, payload) {
       });
     }
   } else if (payload.items && payload.items.length > 0) {
+    const defaultProduct = await Product.findOne({});
     for (const item of payload.items) {
-      const prodId = item.product?._id || item.product || item.productId || item._id;
-      let product = prodId ? await Product.findById(prodId) : null;
+      const rawProdId = item.product?._id || item.product || item.productId || item._id;
+      const isValidObjectId = rawProdId && mongoose.Types.ObjectId.isValid(rawProdId);
+      let product = isValidObjectId ? await Product.findById(rawProdId) : null;
+      if (!product) {
+        product = defaultProduct;
+      }
+
+      const finalProductId = product?._id || (isValidObjectId ? new mongoose.Types.ObjectId(rawProdId) : new mongoose.Types.ObjectId());
       const price = Number(item.price || product?.price || 0);
       const mrp = Number(item.mrp || product?.mrp || price);
       const qty = Number(item.quantity || 1);
@@ -101,7 +109,7 @@ async function createOrder(userId, payload) {
       mrpTotal += mrp * qty;
 
       orderItems.push({
-        product: product?._id || prodId,
+        product: finalProductId,
         name: item.title || item.name || product?.name || 'Product',
         image: item.image || item.images?.[0] || product?.images?.[0] || '',
         variant: item.variant || { size: item.size || 'M' },
@@ -111,16 +119,6 @@ async function createOrder(userId, payload) {
     }
   } else {
     throw new ApiError(400, 'Cart is empty');
-  }
-
-    orderItems.push({
-      product: product._id,
-      name: product.name,
-      image: product.images?.[0] || '',
-      variant: item.variant,
-      quantity: item.quantity,
-      price,
-    });
   }
 
   const productDiscount = Math.max(0, mrpTotal - subtotal);
