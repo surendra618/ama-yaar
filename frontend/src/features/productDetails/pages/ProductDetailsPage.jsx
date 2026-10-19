@@ -349,9 +349,9 @@ export default function ProductDetailsPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedImage(idx)}
-                    className={`h-14 w-11 sm:h-16 sm:w-13 overflow-hidden rounded-xs border transition cursor-pointer ${
+                    className={`h-14 w-11 sm:h-16 sm:w-13 overflow-hidden rounded-sm border transition cursor-pointer ${
                       selectedImage === idx
-                        ? "border-neutral-900 opacity-100 shadow-2xs ring-1 ring-neutral-900"
+                        ? "border-neutral-800 opacity-100"
                         : "border-neutral-200 opacity-60 hover:opacity-100"
                     }`}
                   >
@@ -381,8 +381,8 @@ export default function ProductDetailsPage() {
                     onClick={() => setSelectedSize(sz)}
                     className={`h-9 w-10 sm:h-10 sm:w-11 text-xs font-semibold flex items-center justify-center border transition-all cursor-pointer ${
                       selectedSize === sz
-                        ? "border-neutral-900 bg-white text-black font-bold ring-1 ring-neutral-900"
-                        : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400"
+                        ? "border-neutral-800 bg-white text-neutral-950 font-bold"
+                        : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"
                     }`}
                   >
                     {sz}
@@ -399,11 +399,11 @@ export default function ProductDetailsPage() {
                   type="button"
                   onClick={handleAddToCart}
                   disabled={product.stock <= 0 || isAddingToCart}
-                  className="w-full h-10 sm:h-10.5 bg-white hover:bg-neutral-50 text-black border-2 border-black text-xs font-black uppercase tracking-wider px-4 rounded-xs transition-all duration-200 cursor-pointer shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99]"
+                  className="w-full h-10 sm:h-10.5 bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 hover:border-neutral-400 text-xs font-bold uppercase tracking-wider px-4 rounded-sm transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99]"
                 >
                   {isAddingToCart ? (
                     <>
-                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-neutral-800 border-t-transparent" />
                       <span>Adding to Bag...</span>
                     </>
                   ) : added ? (
@@ -413,7 +413,7 @@ export default function ProductDetailsPage() {
                     </>
                   ) : (
                     <>
-                      <ShoppingBag className="h-4 w-4 text-black" />
+                      <ShoppingBag className="h-4 w-4 text-neutral-800" />
                       <span>ADD TO CART</span>
                     </>
                   )}
@@ -424,7 +424,7 @@ export default function ProductDetailsPage() {
                   type="button"
                   onClick={handleBuyNow}
                   disabled={product.stock <= 0 || isBuyingNow}
-                  className="w-full h-10 sm:h-10.5 bg-[#111111] hover:bg-black text-white text-xs font-black uppercase tracking-wider px-4 rounded-xs transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-2 border-2 border-[#111111] hover:border-black disabled:opacity-50 active:scale-[0.99] group"
+                  className="w-full h-10 sm:h-10.5 bg-[#141414] hover:bg-black text-white text-xs font-bold uppercase tracking-wider px-4 rounded-sm transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-2 border border-neutral-900 hover:border-black disabled:opacity-50 active:scale-[0.99] group"
                 >
                   {isBuyingNow ? (
                     <>
