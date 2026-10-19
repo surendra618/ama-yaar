@@ -35,6 +35,7 @@ const InstagramIcon = (props) => (
     <circle cx="12" cy="12" r="4" />
     <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
   </svg>
+);
 import {
   fetchProducts,
   fetchCategories,
