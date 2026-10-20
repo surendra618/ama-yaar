@@ -29,10 +29,11 @@ async function getShiprocketConfig() {
 
   const email = setting?.shiprocketEmail || env.shiprocket?.email || '';
   const password = setting?.shiprocketPassword || env.shiprocket?.password || '';
+  const token = setting?.shiprocketToken || env.shiprocket?.token || '';
   const pickupLocation = setting?.shiprocketPickupLocation || env.shiprocket?.pickupLocation || 'Primary';
   const senderPincode = setting?.shiprocketSenderPincode || env.shiprocket?.senderPincode || '110001';
-  const isEnabled = setting?.shiprocketEnabled || Boolean(email && password);
-  const autoCreateOrder = setting?.shiprocketAutoCreateOrder ?? Boolean(email && password);
+  const isEnabled = setting?.shiprocketEnabled || Boolean(token || (email && password));
+  const autoCreateOrder = setting?.shiprocketAutoCreateOrder ?? Boolean(token || (email && password));
   const autoGenerateAwb = setting?.shiprocketAutoGenerateAwb ?? false;
   const defaultPackageWeight = setting?.defaultPackageWeight ?? 0.5;
   const defaultPackageLength = setting?.defaultPackageLength ?? 25;
@@ -43,6 +44,7 @@ async function getShiprocketConfig() {
   return {
     email,
     password,
+    token,
     pickupLocation,
     senderPincode,
     isEnabled,
@@ -60,12 +62,18 @@ async function getShiprocketConfig() {
  * Obtain valid Shiprocket JWT Auth Token
  */
 async function getToken(forceRefresh = false) {
+  const config = await getShiprocketConfig();
+
+  // If a static/pre-generated token is configured, use it directly
+  if (config.token) {
+    return config.token;
+  }
+
   // Check cached token
   if (!forceRefresh && cachedToken && tokenExpiresAt && Date.now() < tokenExpiresAt) {
     return cachedToken;
   }
 
-  const config = await getShiprocketConfig();
   if (!config.email || !config.password) {
     throw new ApiError(
       400,
@@ -98,6 +106,12 @@ async function getToken(forceRefresh = false) {
     cachedToken = null;
     tokenExpiresAt = null;
     const msg = err.response?.data?.message || err.message || 'Shiprocket authentication failed';
+    if (msg.includes('blocked') || msg.includes('too many failed')) {
+      throw new ApiError(
+        403,
+        'Shiprocket Auth Error: User blocked due to failed attempts. Create a fresh API user (e.g. api@amayaar.in) in Shiprocket -> Settings -> API -> Create API User, or wait 15 mins.'
+      );
+    }
     throw new ApiError(err.response?.status || 500, `Shiprocket Auth Error: ${msg}`);
   }
 }

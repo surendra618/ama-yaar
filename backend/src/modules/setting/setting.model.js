@@ -50,6 +50,7 @@ const settingSchema = new mongoose.Schema(
     shiprocketEnabled: { type: Boolean, default: false },
     shiprocketEmail: { type: String, default: '' },
     shiprocketPassword: { type: String, default: '' },
+    shiprocketToken: { type: String, default: '' },
     shiprocketPickupLocation: { type: String, default: 'Primary' },
     shiprocketSenderPincode: { type: String, default: '110001' },
     shiprocketAutoCreateOrder: { type: Boolean, default: false },
