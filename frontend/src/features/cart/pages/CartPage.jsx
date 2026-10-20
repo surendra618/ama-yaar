@@ -21,6 +21,8 @@ import {
   clearCouponError,
 } from '../cartSlice';
 import { fetchActiveCoupons } from '../../coupons/couponsSlice';
+import Loader from '../../../components/Loader';
+import AuthPopupModal from '../../../components/AuthPopupModal';
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ export default function CartPage() {
   const { isAuthenticated } = useSelector((state) => state.auth || {});
 
   const [couponInput, setCouponInput] = useState('');
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -63,20 +66,34 @@ export default function CartPage() {
           </div>
           <h2 className="text-lg font-black text-black uppercase tracking-wider">YOUR CART IS WAITING</h2>
           <p className="text-xs text-neutral-500 font-medium mt-1.5 mb-7 leading-relaxed">
-            Please log in to your account to view your saved items and proceed to checkout.
+            Please log in with your email to view your saved items and proceed to checkout.
           </p>
-          <Link
-            to="/login"
-            className="inline-flex items-center justify-center gap-2 w-full rounded-lg bg-black px-6 py-3.5 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition shadow-md"
+          <button
+            type="button"
+            onClick={() => setAuthModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 w-full rounded-lg bg-black px-6 py-3.5 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition shadow-md cursor-pointer"
           >
-            Sign In Now <ArrowRight className="h-4 w-4" />
-          </Link>
+            Sign In with Email <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
+        <AuthPopupModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          onSuccess={() => {
+            setAuthModalOpen(false);
+            dispatch(fetchCart());
+          }}
+        />
       </div>
     );
   }
 
-  /* 2. Empty Cart State */
+  /* 2. Loading Cart State */
+  if (loading && items.length === 0) {
+    return <Loader size="lg" label="Loading your cart..." minHeight="min-h-[70vh]" />;
+  }
+
+  /* 3. Empty Cart State */
   if (items.length === 0 && !loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4 py-12 bg-neutral-50/50">

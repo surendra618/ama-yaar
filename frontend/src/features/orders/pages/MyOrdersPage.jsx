@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Package, ArrowRight, CheckCircle2, Truck, XCircle, RotateCcw, Clock, ShoppingBag } from 'lucide-react';
+import Loader from '../../../components/Loader';
 import { fetchMyOrders } from '../ordersSlice';
 
 const STATUS_CONFIG = {
@@ -55,11 +56,8 @@ export default function MyOrdersPage() {
 
       {/* Loading */}
       {loading && orders.length === 0 && (
-        <div className="rounded-xl border border-neutral-200/60 bg-white shadow-sm p-16 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-8 w-8 rounded-full border-2 border-black border-t-transparent animate-spin" />
-          </div>
-          <p className="text-sm text-neutral-400 font-medium">Loading your orders…</p>
+        <div className="rounded-xl border border-neutral-200/60 bg-white shadow-sm p-8 text-center">
+          <Loader size="md" label="Loading your orders..." variant="card" />
         </div>
       )}
 

@@ -28,6 +28,32 @@ export const fetchCart = createAsyncThunk('cart/fetch', async (_, { getState, re
   const { auth } = getState();
   if (auth?.isAuthenticated) {
     try {
+      // Sync guest cart items to backend cart if any exist
+      let guestItems = [];
+      try {
+        guestItems = JSON.parse(localStorage.getItem('ay_guest_cart') || '[]');
+      } catch (_) {}
+
+      if (guestItems && guestItems.length > 0) {
+        for (const gItem of guestItems) {
+          const pid = gItem.productId || gItem.product?._id;
+          if (pid) {
+            try {
+              await api.post('/cart/items', {
+                productId: pid,
+                quantity: gItem.quantity || 1,
+                variant: gItem.variant,
+              });
+            } catch (syncErr) {
+              console.warn('Backend cart sync notice:', syncErr.message);
+            }
+          }
+        }
+        try {
+          localStorage.removeItem('ay_guest_cart');
+        } catch (_) {}
+      }
+
       const { data } = await api.get('/cart');
       return data.data;
     } catch (err) {
@@ -279,7 +305,25 @@ const cartSlice = createSlice({
         state.couponError = action.payload;
       })
       .addCase(removeCoupon.fulfilled, handleCartData)
-      .addCase(clearCart.fulfilled, handleCartData);
+      .addCase(clearCart.fulfilled, handleCartData)
+      .addCase('orders/create/fulfilled', (state) => {
+        state.items = [];
+        state.itemCount = 0;
+        state.coupon = null;
+        state.summary = {
+          mrpTotal: 0,
+          subtotal: 0,
+          productDiscount: 0,
+          couponDiscount: 0,
+          deliveryCharge: 0,
+          tax: 0,
+          total: 0,
+        };
+        state.isDrawerOpen = false;
+        try {
+          localStorage.removeItem('ay_guest_cart');
+        } catch (_) {}
+      });
   },
 });
 

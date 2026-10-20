@@ -4,7 +4,7 @@ import { X, ArrowUpRight, CheckCircle2, Phone, Mail, Edit2 } from 'lucide-react'
 import { setCredentials } from '../features/auth/authSlice';
 import api from '../lib/axios';
 
-export default function AuthPopupModal({ isOpen, onClose }) {
+export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const dispatch = useDispatch();
 
   const [step, setStep] = useState('email'); // 'phone' or 'email' or 'otp'
@@ -80,6 +80,7 @@ export default function AuthPopupModal({ isOpen, onClose }) {
       setIsSubmitting(false);
 
       setTimeout(() => {
+        if (onSuccess) onSuccess(userObj);
         onClose();
       }, 700);
     } catch (err) {

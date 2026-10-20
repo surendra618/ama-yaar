@@ -27,8 +27,10 @@ import {
   deleteAddress,
   setDefaultAddress,
 } from '../../account/accountSlice';
-import { fetchCart } from '../../cart/cartSlice';
+import { fetchCart, resetCart, clearCart, closeDrawer } from '../../cart/cartSlice';
 import { createOrder } from '../../orders/ordersSlice';
+import Loader from '../../../components/Loader';
+import AuthPopupModal from '../../../components/AuthPopupModal';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -37,12 +39,13 @@ export default function CheckoutPage() {
   const { addresses = [] } = useSelector((state) => state.account || {});
   const { items = [], summary = {} } = useSelector((state) => state.cart || {});
   const { currentOrder, orderPlacing } = useSelector((state) => state.orders || {});
-  const { user } = useSelector((state) => state.auth || {});
+  const { isAuthenticated, user } = useSelector((state) => state.auth || {});
 
   const [step, setStep] = useState(1); // 1: Address, 2: Payment, 3: Confirmation
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('UPI'); // 'UPI', 'CARD', 'NETBANKING', 'COD'
   const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const selectedAddr = addresses.find((a) => a._id === selectedAddressId) || addresses[0];
@@ -62,10 +65,48 @@ export default function CheckoutPage() {
 
   const [isSavingAddress, setIsSavingAddress] = useState(false);
 
+  // Shiprocket live serviceability state
+  const [shippingServiceability, setShippingServiceability] = useState(null);
+  const [checkingShipping, setCheckingShipping] = useState(false);
+
   useEffect(() => {
-    dispatch(fetchAddresses());
-    dispatch(fetchCart());
-  }, [dispatch]);
+    if (selectedAddr?.pincode && String(selectedAddr.pincode).trim().length === 6) {
+      setCheckingShipping(true);
+      api
+        .get(`/shiprocket/serviceability?pincode=${String(selectedAddr.pincode).trim()}`)
+        .then((res) => {
+          setShippingServiceability(res.data?.data || res.data);
+        })
+        .catch(() => {
+          setShippingServiceability({ isServiceable: true, estimatedDeliveryDate: '2-4 business days', codAvailable: true });
+        })
+        .finally(() => setCheckingShipping(false));
+    }
+  }, [selectedAddr?.pincode]);
+
+  useEffect(() => {
+    if (!isAuthenticated && step !== 3) {
+      setAuthModalOpen(true);
+    }
+  }, [isAuthenticated, step]);
+
+  useEffect(() => {
+    if (user) {
+      setAddressForm((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.name || '',
+        phone: prev.phone || user.phone || '',
+      }));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    dispatch(closeDrawer());
+    if (isAuthenticated) {
+      dispatch(fetchAddresses());
+      dispatch(fetchCart());
+    }
+  }, [dispatch, isAuthenticated]);
 
   // Upgrade dummy token to real JWT if user had a client-only mock session
   useEffect(() => {
@@ -229,6 +270,8 @@ export default function CheckoutPage() {
     const createdOrder = orderRes.payload;
 
     if (paymentMethod === 'COD') {
+      dispatch(resetCart());
+      dispatch(clearCart());
       setStep(3); // Direct COD success
       return;
     }
@@ -275,6 +318,8 @@ export default function CheckoutPage() {
               method,
             });
           } catch (_) {}
+          dispatch(resetCart());
+          dispatch(clearCart());
           setStep(3);
         },
         prefill: {
@@ -358,6 +403,44 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  /* Require Login for Checkout */
+  if (!isAuthenticated && step !== 3) {
+    return (
+      <div className="min-h-[75vh] flex flex-col items-center justify-center bg-neutral-50/50 py-16 px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-neutral-200/80 p-8 sm:p-10 text-center shadow-lg">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-neutral-100 text-black mb-5 border border-neutral-200/80 shadow-inner">
+            <ShieldCheck className="h-9 w-9 stroke-[1.8]" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-neutral-400 block mb-1">
+            LOGIN REQUIRED
+          </span>
+          <h2 className="text-xl font-black uppercase tracking-tight text-black">
+            Sign In to Checkout
+          </h2>
+          <p className="text-xs text-neutral-500 font-medium mt-2 mb-7 leading-relaxed">
+            Please enter your email address to proceed with your order, access saved delivery addresses, and track your package live.
+          </p>
+          <button
+            type="button"
+            onClick={() => setAuthModalOpen(true)}
+            className="w-full rounded-xl bg-black py-4 text-xs font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99]"
+          >
+            Enter Email to Checkout &rarr;
+          </button>
+        </div>
+        <AuthPopupModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          onSuccess={() => {
+            setAuthModalOpen(false);
+            dispatch(fetchCart());
+            dispatch(fetchAddresses());
+          }}
+        />
       </div>
     );
   }
@@ -569,6 +652,22 @@ export default function CheckoutPage() {
                       <p className="text-neutral-600 text-xs mt-0.5 font-medium leading-relaxed">
                         {selectedAddr.line1}{selectedAddr.line2 ? `, ${selectedAddr.line2}` : ''}, {selectedAddr.city}, {selectedAddr.state} - {selectedAddr.pincode}
                       </p>
+                      {/* Shiprocket delivery serviceability badge */}
+                      {checkingShipping ? (
+                        <p className="text-[10px] text-neutral-400 mt-1.5 flex items-center gap-1 font-medium">
+                          <Truck className="h-3 w-3 animate-pulse" /> Verifying pincode serviceability...
+                        </p>
+                      ) : shippingServiceability ? (
+                        <div className="mt-2 pt-2 border-t border-neutral-200/60 flex items-center gap-3 flex-wrap text-[11px]">
+                          <span className="flex items-center gap-1 font-bold text-emerald-700">
+                            <Truck className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>Delivery by {shippingServiceability.estimatedDeliveryDate || '2-4 business days'}</span>
+                          </span>
+                          <span className="text-[10px] text-neutral-400 font-medium">
+                            {shippingServiceability.codAvailable ? '• COD Supported' : '• Prepaid Only'}
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                     <button
                       type="button"
@@ -889,6 +988,15 @@ export default function CheckoutPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Full Screen Order Placing Loader */}
+      {orderPlacing && (
+        <Loader
+          fullScreen
+          size="lg"
+          label="Securing your order with AMA YAAR..."
+        />
       )}
     </div>
   );

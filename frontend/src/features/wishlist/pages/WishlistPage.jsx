@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Heart, ShoppingCart, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { fetchWishlist, toggleWishlist, moveWishlistItemToCart } from '../wishlistSlice';
+import Loader from '../../../components/Loader';
 
 export default function WishlistPage() {
   const dispatch = useDispatch();
@@ -55,8 +56,12 @@ export default function WishlistPage() {
         )}
       </div>
 
-      {/* Empty State */}
-      {items.length === 0 && !loading ? (
+      {/* Loading State */}
+      {loading && items.length === 0 ? (
+        <div className="rounded-xl border border-neutral-200/60 bg-white p-8 text-center shadow-sm">
+          <Loader size="md" label="Loading wishlist..." variant="card" />
+        </div>
+      ) : items.length === 0 ? (
         <div className="rounded-xl border border-neutral-200/60 bg-white p-14 text-center shadow-sm">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-neutral-100 text-black mb-5 border border-neutral-200/80 shadow-inner">
             <Heart className="h-9 w-9 text-neutral-800 stroke-[1.8]" />
