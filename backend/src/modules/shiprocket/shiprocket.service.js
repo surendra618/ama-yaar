@@ -1,6 +1,8 @@
 const axios = require('axios');
 const mongoose = require('mongoose');
 const Order = require('../order/order.model');
+const User = require('../user/user.model');
+const Product = require('../product/product.model');
 const Setting = require('../setting/setting.model');
 const Notification = require('../notification/notification.model');
 const env = require('../../config/env');
@@ -29,8 +31,8 @@ async function getShiprocketConfig() {
   const password = setting?.shiprocketPassword || env.shiprocket?.password || '';
   const pickupLocation = setting?.shiprocketPickupLocation || env.shiprocket?.pickupLocation || 'Primary';
   const senderPincode = setting?.shiprocketSenderPincode || env.shiprocket?.senderPincode || '110001';
-  const isEnabled = setting?.shiprocketEnabled ?? false;
-  const autoCreateOrder = setting?.shiprocketAutoCreateOrder ?? false;
+  const isEnabled = setting?.shiprocketEnabled || Boolean(email && password);
+  const autoCreateOrder = setting?.shiprocketAutoCreateOrder ?? Boolean(email && password);
   const autoGenerateAwb = setting?.shiprocketAutoGenerateAwb ?? false;
   const defaultPackageWeight = setting?.defaultPackageWeight ?? 0.5;
   const defaultPackageLength = setting?.defaultPackageLength ?? 25;

@@ -356,6 +356,13 @@ async function updateStatus(id, { status, note, trackingNumber }) {
     message: `Your order #${order.orderNumber} is now ${status.replace(/_/g, ' ')}. ${note || ''}`,
   }).catch(() => {});
 
+  // If status is updated to confirmed/processing/shipped/out_for_delivery and not yet in Shiprocket, auto-push
+  if (['confirmed', 'processing', 'packed', 'shipped', 'out_for_delivery'].includes(status) && !order.shiprocket?.orderId) {
+    shiprocketService.createShiprocketOrder(order._id).catch((err) => {
+      console.warn('Auto Shiprocket push on updateStatus error:', err.message);
+    });
+  }
+
   return order;
 }
 
