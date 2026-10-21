@@ -28,10 +28,13 @@ import {
   submitProductReview,
   clearProductDetails,
 } from "../productDetailsSlice";
-import { addToCart, openDrawer } from "../../cart/cartSlice";
+import { addToCart, openDrawer, closeDrawer } from "../../cart/cartSlice";
 import { toggleWishlist } from "../../wishlist/wishlistSlice";
 import ProductCard from "../../../components/ProductCard";
+import Loader from "../../../components/Loader";
+import AuthPopupModal from "../../../components/AuthPopupModal";
 import api from "../../../lib/axios";
+import { getMediaUrl } from "../../../utils/mediaUrl";
 
 export default function ProductDetailsPage() {
   const { slug } = useParams();
@@ -51,7 +54,7 @@ export default function ProductDetailsPage() {
       .catch(() => {});
   }, []);
 
-  const { product, related, reviews, reviewStats, loading } = useSelector(
+  const { product, related, reviews, reviewStats, loading, error } = useSelector(
     (state) => state.productDetails,
   );
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -65,8 +68,39 @@ export default function ProductDetailsPage() {
   const [added, setAdded] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
-  const [pincode, setPincode] = useState("");
-  const [pincodeChecked, setPincodeChecked] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authSuccessCallback, setAuthSuccessCallback] = useState(null);
+  const [pincode, setPincode] = useState(() => localStorage.getItem("ay_delivery_pincode") || "");
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeResult, setPincodeResult] = useState(null);
+  const [pincodeError, setPincodeError] = useState("");
+
+  const handleCheckPincode = async (e) => {
+    if (e) e.preventDefault();
+    if (!/^[1-9][0-9]{5}$/.test(pincode.trim())) {
+      setPincodeError("Please enter a valid 6-digit Indian PIN code");
+      return;
+    }
+    setPincodeLoading(true);
+    setPincodeError("");
+    try {
+      const res = await api.get(`/shiprocket/serviceability?pincode=${pincode.trim()}`);
+      const data = res.data?.data || res.data;
+      setPincodeResult(data);
+      localStorage.setItem("ay_delivery_pincode", pincode.trim());
+    } catch (err) {
+      setPincodeError(err.response?.data?.message || "Serviceability check failed. Please try again.");
+    } finally {
+      setPincodeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const savedPin = localStorage.getItem("ay_delivery_pincode");
+    if (savedPin && savedPin.length === 6 && !pincodeResult) {
+      handleCheckPincode();
+    }
+  }, []);
 
   const [activeTab, setActiveTab] = useState("description");
 
@@ -106,10 +140,28 @@ export default function ProductDetailsPage() {
     }
   }, [dispatch, product?._id]);
 
-  if (loading || !product) {
+  if (loading) {
+    return <Loader size="lg" label="Loading fit details..." minHeight="min-h-[70vh]" />;
+  }
+
+  if (!product) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-black border-t-transparent"></div>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-neutral-50/50 py-16 px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-neutral-200/80 p-8 text-center shadow-xs">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 mb-4">
+            <ShoppingBag className="h-8 w-8 stroke-[1.5]" />
+          </div>
+          <h2 className="text-xl font-black uppercase tracking-tight text-black">Fit Not Found</h2>
+          <p className="text-xs text-neutral-500 font-medium mt-1.5 mb-6 leading-relaxed">
+            {error || "The product you're looking for doesn't exist, is temporarily unavailable, or has been discontinued."}
+          </p>
+          <Link
+            to="/products"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-6 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition shadow-sm w-full cursor-pointer"
+          >
+            Explore All Fits &rarr;
+          </Link>
+        </div>
       </div>
     );
   }
@@ -129,13 +181,7 @@ export default function ProductDetailsPage() {
 
   const rawImages = (product.images || [])
     .filter(Boolean)
-    .map((img) =>
-      img.startsWith("http") || img.startsWith("data:")
-        ? img
-        : img.startsWith("/uploads")
-          ? `http://localhost:5000${img}`
-          : img,
-    );
+    .map((img) => getMediaUrl(img));
   const displayImages =
     rawImages.length === 0
       ? PLACEHOLDER_GALLERY
@@ -178,8 +224,10 @@ export default function ProductDetailsPage() {
           variant: { size: sizeToUse, color: selectedColor },
         }),
       );
+      dispatch(closeDrawer());
       if (!isAuthenticated) {
-        navigate(`/login?redirect=${encodeURIComponent('/checkout')}`);
+        setAuthSuccessCallback(() => () => navigate('/checkout'));
+        setAuthModalOpen(true);
       } else {
         navigate('/checkout');
       }
@@ -191,7 +239,8 @@ export default function ProductDetailsPage() {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      navigate("/login");
+      setAuthSuccessCallback(() => () => setReviewModalOpen(true));
+      setAuthModalOpen(true);
       return;
     }
     setSubmittingReview(true);
@@ -461,7 +510,11 @@ export default function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (!isAuthenticated) return navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
+                    if (!isAuthenticated) {
+                      setAuthSuccessCallback(() => () => dispatch(toggleWishlist(product._id)));
+                      setAuthModalOpen(true);
+                      return;
+                    }
                     dispatch(toggleWishlist(product._id));
                   }}
                   className={`flex items-center gap-1.5 transition cursor-pointer ${
@@ -508,6 +561,76 @@ export default function ProductDetailsPage() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Delivery & Shiprocket Serviceability Checker */}
+            <div className="pt-3 border-t border-neutral-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Truck className="h-3.5 w-3.5 text-neutral-700" /> Delivery Options
+                </span>
+                {pincodeResult?.isServiceable && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                    <Check className="h-3 w-3 text-emerald-600" /> Serviceable
+                  </span>
+                )}
+              </div>
+
+              <form onSubmit={handleCheckPincode} className="relative flex items-center">
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={pincode}
+                  onChange={(e) => {
+                    setPincode(e.target.value.replace(/\D/g, ''));
+                    setPincodeError('');
+                  }}
+                  placeholder="Enter 6-digit delivery PIN code"
+                  className="w-full h-9 rounded-sm border border-neutral-200 pl-3 pr-20 text-xs font-medium text-black placeholder:text-neutral-400 focus:border-black focus:outline-hidden"
+                />
+                <button
+                  type="submit"
+                  disabled={pincodeLoading || pincode.length !== 6}
+                  className="absolute right-1 top-1 bottom-1 px-3 bg-black hover:bg-neutral-800 text-white text-[11px] font-bold uppercase tracking-wider rounded-xs transition disabled:opacity-40 cursor-pointer flex items-center justify-center"
+                >
+                  {pincodeLoading ? 'Checking…' : 'Check'}
+                </button>
+              </form>
+
+              {pincodeError && (
+                <p className="text-[11px] text-rose-600 font-medium">{pincodeError}</p>
+              )}
+
+              {pincodeResult && (
+                <div className="rounded-lg bg-neutral-50/80 border border-neutral-200 p-3 space-y-2 text-xs animate-in fade-in">
+                  <div className="flex items-center justify-between font-semibold text-neutral-900">
+                    <span className="flex items-center gap-1.5 text-emerald-700">
+                      <Truck className="h-4 w-4 text-emerald-600" />
+                      <span>Expected by <strong>{pincodeResult.estimatedDeliveryDate || '3-4 Days'}</strong></span>
+                    </span>
+                    <span className="text-[11px] text-neutral-500">
+                      {pincodeResult.estimatedDays} Days Delivery
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-200/60 text-[11px] text-neutral-600 font-medium">
+                    <div className="flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>{pincodeResult.codAvailable ? 'Cash on Delivery Available' : 'Prepaid Orders Only'}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>{policySettings?.freeDeliveryThreshold ? `Free shipping above ₹${policySettings.freeDeliveryThreshold}` : 'Free Standard Shipping'}</span>
+                    </div>
+                  </div>
+
+                  {pincodeResult.fastestCourier && (
+                    <p className="text-[10px] text-neutral-400 font-medium">
+                      Fulfilled via Shiprocket Express ({pincodeResult.fastestCourier.name || 'Express Courier'})
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Sizing Chart Bar matching user screenshot */}
@@ -976,6 +1099,24 @@ export default function ProductDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Email Login Popup Modal */}
+      <AuthPopupModal
+        isOpen={authModalOpen}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setAuthSuccessCallback(null);
+        }}
+        onSuccess={(user) => {
+          setAuthModalOpen(false);
+          if (authSuccessCallback) {
+            authSuccessCallback(user);
+            setAuthSuccessCallback(null);
+          } else {
+            navigate('/checkout');
+          }
+        }}
+      />
     </div>
   );
 }

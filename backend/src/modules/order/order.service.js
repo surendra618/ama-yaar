@@ -10,6 +10,7 @@ const User = require('../user/user.model');
 const bcrypt = require('bcryptjs');
 const ApiError = require('../../utils/ApiError');
 const settingService = require('../setting/setting.service');
+const shiprocketService = require('../shiprocket/shiprocket.service');
 
 async function createOrder(userId, payload) {
   const { shippingAddressId, shippingAddress: directAddress, paymentProvider = 'cod', paymentMethod = 'Cash on Delivery', paymentId } = payload;
@@ -214,6 +215,12 @@ async function createOrder(userId, payload) {
     cart.coupon = null;
     await cart.save().catch(() => {});
   }
+  if (finalUserId) {
+    await Cart.findOneAndUpdate(
+      { user: finalUserId },
+      { $set: { items: [], coupon: null } }
+    ).catch(() => {});
+  }
 
   // Create user notification
   await Notification.create({
@@ -222,6 +229,13 @@ async function createOrder(userId, payload) {
     title: 'Order Placed Successfully!',
     message: `Your order #${order.orderNumber || order._id} for ₹${total} has been received.`,
   }).catch(() => {});
+
+  // Auto-push order to Shiprocket if enabled in settings
+  if (deliverySettings?.shiprocketEnabled && deliverySettings?.shiprocketAutoCreateOrder) {
+    shiprocketService.createShiprocketOrder(order._id).catch((err) => {
+      console.warn('Auto Shiprocket order creation error for order', order._id, err.message);
+    });
+  }
 
   return order;
 }
@@ -342,6 +356,13 @@ async function updateStatus(id, { status, note, trackingNumber }) {
     message: `Your order #${order.orderNumber} is now ${status.replace(/_/g, ' ')}. ${note || ''}`,
   }).catch(() => {});
 
+  // If status is updated to confirmed/processing/shipped/out_for_delivery and not yet in Shiprocket, auto-push
+  if (['confirmed', 'processing', 'packed', 'shipped', 'out_for_delivery'].includes(status) && !order.shiprocket?.orderId) {
+    shiprocketService.createShiprocketOrder(order._id).catch((err) => {
+      console.warn('Auto Shiprocket push on updateStatus error:', err.message);
+    });
+  }
+
   return order;
 }
 
@@ -375,6 +396,13 @@ async function cancelOrder(id, user, { reason = 'Cancelled by user' }) {
   }
 
   await order.save();
+
+  // Cancel order in Shiprocket if previously pushed
+  if (order.shiprocket?.orderId) {
+    shiprocketService.cancelShiprocketOrder(order._id).catch((err) => {
+      console.warn('Shiprocket cancellation notice:', err.message);
+    });
+  }
 
   // Notify
   await Notification.create({

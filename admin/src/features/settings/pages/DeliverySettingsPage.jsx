@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import {
   Truck,
   IndianRupee,
@@ -15,6 +14,15 @@ import {
   FileText,
   Eye,
   Check,
+  Box,
+  Key,
+  ExternalLink,
+  Copy,
+  MapPin,
+  Zap,
+  Lock,
+  EyeOff,
+  Link2,
 } from 'lucide-react';
 import api from '../../../lib/axios';
 import Loader from '../../../components/Loader';
@@ -24,8 +32,16 @@ export default function DeliverySettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('delivery'); // 'delivery' | 'exchange' | 'details' | 'preview'
+  const [activeTab, setActiveTab] = useState('delivery'); // 'delivery' | 'exchange' | 'details' | 'preview' | 'shiprocket'
   const [previewTab, setPreviewTab] = useState('description'); // for the storefront tab preview
+
+  // Shiprocket states
+  const [pickupLocations, setPickupLocations] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [webhookCopied, setWebhookCopied] = useState(false);
 
   const [formData, setFormData] = useState({
     // Delivery
@@ -54,6 +70,18 @@ export default function DeliverySettingsPage() {
       'Complete the look with our Black Rugged Jeans or Cargo Pants and clean white sneakers for an effortless street vibe.',
     defaultWhatsOnPrint:
       'High-density puff and screen print with reinforced twin needle stitching.',
+    // Shiprocket Logistics
+    shiprocketEnabled: false,
+    shiprocketEmail: '',
+    shiprocketPassword: '',
+    shiprocketPickupLocation: 'Primary',
+    shiprocketSenderPincode: '110001',
+    shiprocketAutoCreateOrder: false,
+    shiprocketAutoGenerateAwb: false,
+    defaultPackageWeight: 0.5,
+    defaultPackageLength: 25,
+    defaultPackageBreadth: 20,
+    defaultPackageHeight: 5,
   });
 
   const [previewSubtotal, setPreviewSubtotal] = useState(399);
@@ -98,6 +126,17 @@ export default function DeliverySettingsPage() {
           defaultWhatsOnPrint:
             data.defaultWhatsOnPrint ||
             'High-density puff and screen print with reinforced twin needle stitching.',
+          shiprocketEnabled: data.shiprocketEnabled ?? false,
+          shiprocketEmail: data.shiprocketEmail || '',
+          shiprocketPassword: data.shiprocketPassword || '',
+          shiprocketPickupLocation: data.shiprocketPickupLocation || 'Primary',
+          shiprocketSenderPincode: data.shiprocketSenderPincode || '110001',
+          shiprocketAutoCreateOrder: data.shiprocketAutoCreateOrder ?? false,
+          shiprocketAutoGenerateAwb: data.shiprocketAutoGenerateAwb ?? false,
+          defaultPackageWeight: data.defaultPackageWeight ?? 0.5,
+          defaultPackageLength: data.defaultPackageLength ?? 25,
+          defaultPackageBreadth: data.defaultPackageBreadth ?? 20,
+          defaultPackageHeight: data.defaultPackageHeight ?? 5,
         });
       }
     } catch (err) {
@@ -106,6 +145,63 @@ export default function DeliverySettingsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPickupLocations = async () => {
+    setLoadingLocations(true);
+    try {
+      const res = await api.get('/shiprocket/pickup-locations');
+      const locs = res.data?.data || res.data || [];
+      setPickupLocations(locs);
+      if (locs.length > 0 && !formData.shiprocketPickupLocation) {
+        setFormData((prev) => ({ ...prev, shiprocketPickupLocation: locs[0].pickupLocation }));
+      }
+    } catch (err) {
+      console.warn('Failed to fetch pickup locations:', err);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'shiprocket') {
+      fetchPickupLocations();
+    }
+  }, [activeTab]);
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    setTestResult(null);
+    try {
+      const res = await api.post('/shiprocket/test-connection', {
+        email: formData.shiprocketEmail,
+        password: formData.shiprocketPassword,
+      });
+      const data = res.data?.data || res.data;
+      setTestResult({
+        success: true,
+        message: res.data?.message || 'Connection successful! Verified Shiprocket credentials.',
+        userData: data?.userData,
+      });
+      fetchPickupLocations();
+    } catch (err) {
+      setTestResult({
+        success: false,
+        message: err.response?.data?.message || 'Connection failed. Please check your credentials.',
+      });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  const copyWebhookUrl = () => {
+    const backendOrigin = window.location.origin.includes('localhost')
+      ? 'http://localhost:5000'
+      : window.location.origin;
+    const url = `${backendOrigin}/api/v1/shiprocket/webhook`;
+    navigator.clipboard.writeText(url);
+    setWebhookCopied(true);
+    setTimeout(() => setWebhookCopied(false), 2500);
   };
 
   const handleChange = (field, value) => {
@@ -168,6 +264,17 @@ export default function DeliverySettingsPage() {
         defaultCountryOfOrigin: String(formData.defaultCountryOfOrigin).trim(),
         defaultStylingTip: String(formData.defaultStylingTip).trim(),
         defaultWhatsOnPrint: String(formData.defaultWhatsOnPrint).trim(),
+        shiprocketEnabled: Boolean(formData.shiprocketEnabled),
+        shiprocketEmail: String(formData.shiprocketEmail).trim(),
+        shiprocketPassword: String(formData.shiprocketPassword).trim(),
+        shiprocketPickupLocation: String(formData.shiprocketPickupLocation).trim(),
+        shiprocketSenderPincode: String(formData.shiprocketSenderPincode).trim(),
+        shiprocketAutoCreateOrder: Boolean(formData.shiprocketAutoCreateOrder),
+        shiprocketAutoGenerateAwb: Boolean(formData.shiprocketAutoGenerateAwb),
+        defaultPackageWeight: Number(formData.defaultPackageWeight) || 0.5,
+        defaultPackageLength: Number(formData.defaultPackageLength) || 25,
+        defaultPackageBreadth: Number(formData.defaultPackageBreadth) || 20,
+        defaultPackageHeight: Number(formData.defaultPackageHeight) || 5,
       };
 
       const res = await api.put('/settings/delivery', payload);
@@ -281,6 +388,21 @@ export default function DeliverySettingsPage() {
           }`}
         >
           <FileText className="h-4 w-4" /> Description & Details Defaults
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('shiprocket')}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            activeTab === 'shiprocket'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Box className="h-4 w-4" /> Shiprocket Logistics
+          {formData.shiprocketEnabled && (
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500" title="Active"></span>
+          )}
         </button>
 
         <button
@@ -830,6 +952,367 @@ export default function DeliverySettingsPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: SHIPROCKET LOGISTICS */}
+      {activeTab === 'shiprocket' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Master Enable Banner */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold shadow-xs">
+                <Box className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-sm font-bold text-slate-900">Shiprocket Automated Logistics</h3>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
+                      formData.shiprocketEnabled
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {formData.shiprocketEnabled ? 'Enabled & Active' : 'Disabled'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Connect your Shiprocket account to enable live courier rates, 1-click AWB generation, doorstep courier pickups, shipping label printing, and real-time tracking checkpoints.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.shiprocketEnabled}
+                  onChange={(e) => handleChange('shiprocketEnabled', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Card 1: API Credentials */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2 uppercase tracking-wider">
+                  <Key className="h-4 w-4 text-indigo-600" /> Account Credentials
+                </h4>
+                <a
+                  href="https://app.shiprocket.in"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                >
+                  <span>Shiprocket Portal</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Shiprocket Account Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.shiprocketEmail}
+                  onChange={(e) => handleChange('shiprocketEmail', e.target.value)}
+                  placeholder="e.g. logistics@ama-yaar.com"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Shiprocket Account Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.shiprocketPassword}
+                    onChange={(e) => handleChange('shiprocketPassword', e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Authentication tokens are automatically refreshed and safely cached in memory.
+                </p>
+              </div>
+
+              {/* Test Connection Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={testingConnection || !formData.shiprocketEmail || !formData.shiprocketPassword}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  {testingConnection ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Verifying Credentials...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-3.5 w-3.5 text-amber-400" /> Test Shiprocket Connection
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Test Result Display */}
+              {testResult && (
+                <div
+                  className={`p-3 rounded-lg border text-xs flex items-start gap-2.5 animate-in fade-in ${
+                    testResult.success
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : 'bg-rose-50 border-rose-200 text-rose-800'
+                  }`}
+                >
+                  {testResult.success ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-0.5">
+                    <p className="font-bold">{testResult.message}</p>
+                    {testResult.userData && (
+                      <p className="text-[11px] opacity-80">
+                        Company ID: {testResult.userData.companyId || 'N/A'} • User: {testResult.userData.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Card 2: Pickup & Origin Details */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2 uppercase tracking-wider">
+                  <MapPin className="h-4 w-4 text-indigo-600" /> Warehouse & Pickup Hub
+                </h4>
+                <button
+                  type="button"
+                  onClick={fetchPickupLocations}
+                  disabled={loadingLocations}
+                  className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw className={`h-3 w-3 ${loadingLocations ? 'animate-spin' : ''}`} />
+                  <span>Refresh Locations</span>
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Primary Pickup Location Nickname
+                </label>
+                {pickupLocations.length > 0 ? (
+                  <select
+                    value={formData.shiprocketPickupLocation}
+                    onChange={(e) => handleChange('shiprocketPickupLocation', e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden bg-white"
+                  >
+                    {pickupLocations.map((loc) => (
+                      <option key={loc.id || loc.pickupLocation} value={loc.pickupLocation}>
+                        {loc.pickupLocation} ({loc.city}, {loc.pincode})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={formData.shiprocketPickupLocation}
+                    onChange={(e) => handleChange('shiprocketPickupLocation', e.target.value)}
+                    placeholder="Primary"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden"
+                  />
+                )}
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Must match the exact pickup location name registered in your Shiprocket Company settings.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Warehouse Sender PIN Code
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={formData.shiprocketSenderPincode}
+                  onChange={(e) => handleChange('shiprocketSenderPincode', e.target.value)}
+                  placeholder="110001"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Origin pincode used to calculate live courier serviceability and freight estimates for buyers.
+                </p>
+              </div>
+
+              {/* Automation Rules */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block">Auto-Push Placed Orders</span>
+                    <span className="text-[10px] text-slate-500">
+                      Automatically transmit new orders to Shiprocket upon customer order placement.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.shiprocketAutoCreateOrder}
+                    onChange={(e) => handleChange('shiprocketAutoCreateOrder', e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block">Auto-Assign Courier & AWB</span>
+                    <span className="text-[10px] text-slate-500">
+                      Instantly select the fastest courier partner and generate tracking AWB immediately.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.shiprocketAutoGenerateAwb}
+                    onChange={(e) => handleChange('shiprocketAutoGenerateAwb', e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Card 3: Standard Package Dimensions & Weight */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+              <div className="pb-3 border-b border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2 uppercase tracking-wider">
+                  <Box className="h-4 w-4 text-indigo-600" /> Default Package Specifications
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Standard parcel dimensions used for deadweight & volumetric freight calculation.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Default Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="0.05"
+                    value={formData.defaultPackageWeight}
+                    onChange={(e) => handleChange('defaultPackageWeight', e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Length (cm)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.defaultPackageLength}
+                    onChange={(e) => handleChange('defaultPackageLength', e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Breadth (cm)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.defaultPackageBreadth}
+                    onChange={(e) => handleChange('defaultPackageBreadth', e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Height (cm)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.defaultPackageHeight}
+                    onChange={(e) => handleChange('defaultPackageHeight', e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Webhook Integration for Live Status Updates */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+              <div className="pb-3 border-b border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2 uppercase tracking-wider">
+                  <Link2 className="h-4 w-4 text-indigo-600" /> Webhook Synchronization URL
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Shiprocket will post live checkpoint events (in transit, out for delivery, delivered, RTO) to this endpoint.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Your Webhook Callback URL
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${
+                      typeof window !== 'undefined' && window.location.origin.includes('localhost')
+                        ? 'http://localhost:5000'
+                        : typeof window !== 'undefined'
+                        ? window.location.origin
+                        : ''
+                    }/api/v1/shiprocket/webhook`}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 font-mono select-all focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={copyWebhookUrl}
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    {webhookCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    <span>{webhookCopied ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-slate-50 border border-slate-200/80 p-3 text-[11px] text-slate-600 space-y-1">
+                <p className="font-bold text-slate-800">How to register this in Shiprocket:</p>
+                <ol className="list-decimal pl-4 space-y-0.5 text-slate-500">
+                  <li>Go to <strong>Settings &gt; Webhooks</strong> in your Shiprocket panel.</li>
+                  <li>Click <strong>Add Webhook</strong> and paste the URL above.</li>
+                  <li>Select events: <em>Tracking Status</em>, <em>Order Status</em>, and <em>Return Status</em>.</li>
+                  <li>Click <strong>Save Webhook</strong>. Your storefront orders will automatically stay in sync!</li>
+                </ol>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -19,34 +19,62 @@ function slugify(text) {
     .replace(/--+/g, '-');
 }
 
+// In-memory cache for ultra-fast category responses
+let categoryCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function clearCategoryCache() {
+  categoryCache.clear();
+}
+
 async function list(query = {}) {
   try {
     const { parent, tree, activeOnly = 'false' } = query;
+    const cacheKey = JSON.stringify({ parent, tree, activeOnly });
+    const cached = categoryCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
+
     const filter = {};
     if (activeOnly === 'true') filter.isActive = true;
     if (parent !== undefined) {
       filter.parent = parent === 'null' || parent === '' ? null : parent;
     }
 
-    const categories = await Category.find(filter).populate('parent').sort({ name: 1 });
+    const categories = await Category.find(filter).populate('parent').sort({ name: 1 }).lean();
 
-    const categoriesWithCounts = await Promise.all(
-      categories.map(async (cat) => {
-        let count = 0;
-        try {
-          count = await Product.countDocuments({
-            $or: [{ category: cat._id }, { subCategory: cat._id }],
-          });
-        } catch (_) {}
-        const obj = cat.toObject();
-        obj.productCount = count;
-        return obj;
-      })
-    );
+    // Fast 1-shot aggregation to count products by category
+    const countsMap = {};
+    try {
+      const counts = await Product.aggregate([
+        {
+          $facet: {
+            byCat: [{ $match: { category: { $ne: null } } }, { $group: { _id: '$category', count: { $sum: 1 } } }],
+            bySubCat: [{ $match: { subCategory: { $ne: null } } }, { $group: { _id: '$subCategory', count: { $sum: 1 } } }],
+          },
+        },
+      ]);
+      if (counts && counts[0]) {
+        (counts[0].byCat || []).forEach((c) => {
+          if (c._id) countsMap[c._id.toString()] = (countsMap[c._id.toString()] || 0) + c.count;
+        });
+        (counts[0].bySubCat || []).forEach((c) => {
+          if (c._id) countsMap[c._id.toString()] = (countsMap[c._id.toString()] || 0) + c.count;
+        });
+      }
+    } catch (_) {}
 
+    const categoriesWithCounts = categories.map((cat) => ({
+      ...cat,
+      productCount: countsMap[cat._id.toString()] || 0,
+    }));
+
+    let result = categoriesWithCounts;
     if (tree === 'true') {
       const rootCats = categoriesWithCounts.filter((c) => !c.parent);
-      return rootCats.map((root) => ({
+      result = rootCats.map((root) => ({
         ...root,
         subcategories: categoriesWithCounts.filter(
           (c) => c.parent && (c.parent._id || c.parent).toString() === root._id.toString()
@@ -54,7 +82,8 @@ async function list(query = {}) {
       }));
     }
 
-    return categoriesWithCounts;
+    categoryCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   } catch (err) {
     console.warn('[category.service] Query error:', err.message);
     return [];
@@ -80,7 +109,9 @@ async function create(data) {
   if (!data.slug && data.name) {
     data.slug = slugify(data.name);
   }
-  return await Category.create(data);
+  const created = await Category.create(data);
+  clearCategoryCache();
+  return created;
 }
 
 async function update(id, data) {
@@ -92,6 +123,7 @@ async function update(id, data) {
   }
   const doc = await Category.findByIdAndUpdate(id, data, { new: true, runValidators: true });
   if (!doc) throw new ApiError(404, 'Category not found');
+  clearCategoryCache();
   return doc;
 }
 
@@ -101,6 +133,7 @@ async function remove(id) {
   }
   const doc = await Category.findByIdAndDelete(id);
   if (!doc) throw new ApiError(404, 'Category not found');
+  clearCategoryCache();
   return doc;
 }
 

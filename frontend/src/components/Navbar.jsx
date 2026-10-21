@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronDown,
   ArrowRight,
+  Truck,
 } from "lucide-react";
 import { logout, checkAuth } from "../features/auth/authSlice";
 import { fetchCart, openDrawer } from "../features/cart/cartSlice";
@@ -759,10 +760,24 @@ export default function Navbar() {
                         <Link
                           to="/account/profile"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
                         >
                           <User className="h-4 w-4 text-neutral-600" /> My
                           Profile
+                        </Link>
+                        <Link
+                          to="/account/orders"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
+                        >
+                          <Package className="h-4 w-4 text-neutral-600" /> My Orders
+                        </Link>
+                        <Link
+                          to="/track"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition"
+                        >
+                          <Truck className="h-4 w-4 text-amber-600" /> Track Order
                         </Link>
                         <button
                           onClick={() => {
@@ -941,6 +956,13 @@ export default function Navbar() {
                   className="block py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-black hover:text-neutral-500 border-b border-neutral-100 transition"
                 >
                   ACID WASH
+                </Link>
+                <Link
+                  to="/track"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-amber-700 hover:text-black border-b border-neutral-100 transition"
+                >
+                  <Truck className="h-4 w-4 text-amber-600" /> TRACK ORDER
                 </Link>
               </div>
 

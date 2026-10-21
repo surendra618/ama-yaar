@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { X, ArrowUpRight, CheckCircle2, Phone, Mail, Edit2 } from 'lucide-react';
+import { X, CheckCircle2 } from 'lucide-react';
 import { setCredentials } from '../features/auth/authSlice';
 import api from '../lib/axios';
 
-export default function AuthPopupModal({ isOpen, onClose }) {
+export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const dispatch = useDispatch();
 
-  const [step, setStep] = useState('email'); // 'phone' or 'email' or 'otp'
-  const [phone, setPhone] = useState('7809730968');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,10 +17,7 @@ export default function AuthPopupModal({ isOpen, onClose }) {
       setError('');
       setSuccess(false);
       setIsSubmitting(false);
-      // If user hasn't set phone, start with email or phone
-      if (!phone) {
-        setPhone('7809730968');
-      }
+      setEmail('');
     }
   }, [isOpen]);
 
@@ -39,14 +34,12 @@ export default function AuthPopupModal({ isOpen, onClose }) {
     setError('');
 
     try {
-      const cleanPhone = phone ? `+91${phone.replace(/\D/g, '')}` : '+917809730968';
       const cleanName = email.split('@')[0];
 
       let resData = null;
       try {
         const { data } = await api.post('/auth/quick-login', {
           email: email.trim(),
-          phone: cleanPhone,
           name: cleanName,
         });
         resData = data.data;
@@ -57,7 +50,6 @@ export default function AuthPopupModal({ isOpen, onClose }) {
       const userObj = resData?.user || {
         _id: 'user_' + Date.now(),
         name: cleanName,
-        phone: cleanPhone,
         email: email.trim(),
         role: 'user',
       };
@@ -80,6 +72,7 @@ export default function AuthPopupModal({ isOpen, onClose }) {
       setIsSubmitting(false);
 
       setTimeout(() => {
+        if (onSuccess) onSuccess(userObj);
         onClose();
       }, 700);
     } catch (err) {
@@ -88,22 +81,12 @@ export default function AuthPopupModal({ isOpen, onClose }) {
     }
   };
 
-  const handlePhoneSubmit = (e) => {
-    e.preventDefault();
-    if (!phone || phone.replace(/\D/g, '').length < 10) {
-      setError('Please enter a valid 10-digit mobile number');
-      return;
-    }
-    setError('');
-    setStep('email');
-  };
-
   return (
     <div
       onClick={onClose}
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200"
     >
-      {/* Modal Container matching Image 2 Reference */}
+      {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-[820px] overflow-hidden rounded-[26px] bg-black text-white p-6 sm:p-10 border border-neutral-800 shadow-2xl"
@@ -152,7 +135,7 @@ export default function AuthPopupModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: White Card Container (Exact Image 2 Reference) */}
+          {/* RIGHT COLUMN: White Card Container */}
           <div className="rounded-[22px] bg-white p-6 sm:p-8 text-neutral-900 shadow-xl flex flex-col justify-center min-h-[310px]">
             {success ? (
               <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -166,68 +149,11 @@ export default function AuthPopupModal({ isOpen, onClose }) {
                   Your account is linked &amp; deals are unlocked.
                 </p>
               </div>
-            ) : step === 'phone' ? (
-              /* Step to edit/enter mobile number */
-              <div>
-                <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
-                  Enter your mobile number
-                </h3>
-                <p className="text-xs text-neutral-500 mt-1 font-medium">
-                  We will link your exclusive VIP deals to this number.
-                </p>
-
-                {error && (
-                  <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
-                    {error}
-                  </div>
-                )}
-
-                <form onSubmit={handlePhoneSubmit} className="mt-4 space-y-4">
-                  <div className="flex rounded-xl border border-neutral-300 overflow-hidden focus-within:border-black transition">
-                    <span className="bg-neutral-100 px-3.5 py-3 text-xs font-bold text-neutral-700 flex items-center border-r border-neutral-300">
-                      +91
-                    </span>
-                    <input
-                      type="tel"
-                      maxLength={10}
-                      placeholder="Enter mobile number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                      className="w-full px-3.5 py-3 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
-                      autoFocus
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-black py-3.5 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer"
-                  >
-                    Continue
-                  </button>
-                </form>
-              </div>
             ) : (
-              /* Exact Screen as Image 2 Reference: Enter email linked to phone */
               <div>
                 <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
                   Enter your email address
                 </h3>
-
-                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-500 font-medium">
-                  <span>This email will be linked to</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setError('');
-                      setStep('phone');
-                    }}
-                    className="inline-flex items-center gap-0.5 font-bold text-neutral-800 hover:text-black hover:underline cursor-pointer"
-                    title="Change number"
-                  >
-                    <span>+91{phone}</span>
-                    <ArrowUpRight className="h-3 w-3 stroke-[2.5]" />
-                  </button>
-                </div>
 
                 {error && (
                   <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
@@ -252,7 +178,7 @@ export default function AuthPopupModal({ isOpen, onClose }) {
                     disabled={isSubmitting}
                     className="w-full rounded-xl bg-black py-3.5 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50"
                   >
-                    {isSubmitting ? 'Linking...' : 'Submit'}
+                    {isSubmitting ? 'Submitting...' : 'SUBMIT'}
                   </button>
                 </form>
               </div>

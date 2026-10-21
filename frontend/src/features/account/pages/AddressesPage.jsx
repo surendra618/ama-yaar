@@ -8,6 +8,7 @@ import {
   setDefaultAddress,
   deleteAddress,
 } from '../accountSlice';
+import Loader from '../../../components/Loader';
 
 const emptyForm = {
   fullName: '',
@@ -112,11 +113,8 @@ export default function AddressesPage() {
 
       {/* Address Cards / Empty State */}
       {loading && addresses.length === 0 ? (
-        <div className="rounded-xl border border-neutral-200/60 bg-white shadow-sm p-16 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-8 w-8 rounded-full border-2 border-black border-t-transparent animate-spin" />
-          </div>
-          <p className="text-sm text-neutral-400 font-medium">Loading addresses…</p>
+        <div className="rounded-xl border border-neutral-200/60 bg-white shadow-sm p-8 text-center">
+          <Loader size="md" label="Loading addresses..." variant="card" />
         </div>
       ) : addresses.length === 0 ? (
         <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-16 text-center">

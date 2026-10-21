@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Heart, ChevronLeft, ChevronRight, Star, ShoppingBag } from 'lucide-react';
 import { addToCart, openDrawer } from '../features/cart/cartSlice';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 export default function ProductCard({ product }) {
   if (!product) return null;
@@ -19,9 +20,7 @@ export default function ProductCard({ product }) {
 
   const images = rawImages.map((img) => {
     if (!img) return 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80';
-    if (img.startsWith('http') || img.startsWith('data:')) return img;
-    if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
-    return img;
+    return getMediaUrl(img);
   });
 
   const currentImage = images[activeImgIndex % images.length];

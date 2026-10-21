@@ -45,6 +45,21 @@ const settingSchema = new mongoose.Schema(
       type: String,
       default: 'High-density puff and screen print with reinforced twin needle stitching.',
     },
+
+    // 4. Shiprocket Logistics Integration
+    shiprocketEnabled: { type: Boolean, default: false },
+    shiprocketEmail: { type: String, default: '' },
+    shiprocketPassword: { type: String, default: '' },
+    shiprocketToken: { type: String, default: '' },
+    shiprocketPickupLocation: { type: String, default: 'Primary' },
+    shiprocketSenderPincode: { type: String, default: '110001' },
+    shiprocketAutoCreateOrder: { type: Boolean, default: false },
+    shiprocketAutoGenerateAwb: { type: Boolean, default: false },
+    defaultPackageWeight: { type: Number, default: 0.5, min: 0.05 },
+    defaultPackageLength: { type: Number, default: 25, min: 1 },
+    defaultPackageBreadth: { type: Number, default: 20, min: 1 },
+    defaultPackageHeight: { type: Number, default: 5, min: 1 },
+    shiprocketWebhookSecret: { type: String, default: '' },
   },
   { timestamps: true }
 );

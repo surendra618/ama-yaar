@@ -31,4 +31,11 @@ module.exports = {
     email: process.env.ADMIN_SEED_EMAIL || 'admin@ama-yaar.com',
     password: process.env.ADMIN_SEED_PASSWORD || 'Admin@123',
   },
+  shiprocket: {
+    email: process.env.SHIPROCKET_EMAIL || '',
+    password: process.env.SHIPROCKET_PASSWORD || '',
+    pickupLocation: process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary',
+    token: process.env.SHIPROCKET_TOKEN || '',
+    senderPincode: process.env.SHIPROCKET_SENDER_PINCODE || '110001',
+  },
 };

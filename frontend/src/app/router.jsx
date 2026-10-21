@@ -26,6 +26,7 @@ import AboutPage from '../pages/AboutPage';
 import ContactPage from '../pages/ContactPage';
 import CareersPage from '../pages/CareersPage';
 import BlogPage from '../pages/BlogPage';
+import TrackOrderPage from '../features/orders/pages/TrackOrderPage';
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +38,8 @@ export const router = createBrowserRouter([
       { path: '/cart', element: <CartPage /> },
       { path: '/checkout', element: <CheckoutPage /> },
       { path: '/orders/:id', element: <OrderDetailsPage /> },
+      { path: '/track', element: <TrackOrderPage /> },
+      { path: '/track-order', element: <TrackOrderPage /> },
       { path: '/terms', element: <TermsPage /> },
       { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
       { path: '/about', element: <AboutPage /> },

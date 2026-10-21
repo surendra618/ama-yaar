@@ -140,7 +140,7 @@ export default function Footer() {
               <ul className="space-y-2.5 text-xs sm:text-sm text-black/60">
                 <li>
                   <Link
-                    to="/account/orders"
+                    to="/track"
                     className="hover:text-black transition"
                   >
                     Track your order

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../lib/axios';
 import {
   Mail,
   Phone,
@@ -124,17 +125,8 @@ export default function ContactPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/v1/contacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setSubmitted(true);
-      } else {
-        setSubmitted(true);
-      }
+      await api.post('/contacts', formData);
+      setSubmitted(true);
     } catch (err) {
       console.error('API submission error:', err);
       setSubmitted(true);
