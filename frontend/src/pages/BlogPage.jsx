@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../lib/axios';
 import {
   BookOpen,
   Calendar,
@@ -130,10 +131,10 @@ export default function BlogPage() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/v1/blogs')
-      .then((res) => res.json())
-      .then((data) => {
-        const liveBlogs = data?.data?.blogs;
+    api
+      .get('/blogs')
+      .then((res) => {
+        const liveBlogs = res.data?.data?.blogs;
         if (Array.isArray(liveBlogs) && liveBlogs.length > 0) {
           const formatted = liveBlogs.map((b, idx) => ({
             id: b._id || b.id || idx,

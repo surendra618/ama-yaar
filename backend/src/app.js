@@ -53,10 +53,17 @@ app.use(
 );
 app.options('*', cors());
 
-// Ensure Vary: Origin and disable caching on API routes so browser never mixes up CORS headers
+// Ensure Vary: Origin and optimize caching on public API routes
 app.use((req, res, next) => {
   res.setHeader('Vary', 'Origin');
-  if (req.path.startsWith('/api/')) {
+  if (
+    req.method === 'GET' &&
+    (req.path.includes('/categories') ||
+      req.path.includes('/card-sliders') ||
+      req.path.includes('/banners'))
+  ) {
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
+  } else if (req.path.startsWith('/api/')) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');

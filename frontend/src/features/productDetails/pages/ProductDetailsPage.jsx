@@ -34,6 +34,7 @@ import ProductCard from "../../../components/ProductCard";
 import Loader from "../../../components/Loader";
 import AuthPopupModal from "../../../components/AuthPopupModal";
 import api from "../../../lib/axios";
+import { getMediaUrl } from "../../../utils/mediaUrl";
 
 export default function ProductDetailsPage() {
   const { slug } = useParams();
@@ -180,13 +181,7 @@ export default function ProductDetailsPage() {
 
   const rawImages = (product.images || [])
     .filter(Boolean)
-    .map((img) =>
-      img.startsWith("http") || img.startsWith("data:")
-        ? img
-        : img.startsWith("/uploads")
-          ? `http://localhost:5000${img}`
-          : img,
-    );
+    .map((img) => getMediaUrl(img));
   const displayImages =
     rawImages.length === 0
       ? PLACEHOLDER_GALLERY

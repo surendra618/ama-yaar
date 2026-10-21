@@ -114,9 +114,9 @@ export default function CheckoutPage() {
     if (existingToken && (existingToken.startsWith('ay_token_') || existingToken.startsWith('dummy_token_'))) {
       api
         .post('/auth/quick-login', {
-          email: user?.email || 'surendr2026a@gmail.com',
-          phone: user?.phone || '+917809730968',
-          name: user?.name || 'surendr2026a',
+          email: user?.email || '',
+          phone: user?.phone || '',
+          name: user?.name || 'Customer',
         })
         .then((res) => {
           if (res.data?.data?.accessToken) {

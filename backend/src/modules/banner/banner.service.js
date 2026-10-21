@@ -40,9 +40,24 @@ const fallbackBanners = [
   },
 ];
 
+// In-memory cache for ultra-fast banner responses
+let bannerCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function clearBannerCache() {
+  bannerCache.clear();
+}
+
 async function list(query = {}) {
   try {
     const { position, activeOnly = 'false' } = query;
+    const cacheKey = JSON.stringify({ position, activeOnly });
+    const cached = bannerCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
+
     const filter = {};
 
     if (activeOnly === 'true') {
@@ -57,7 +72,11 @@ async function list(query = {}) {
 
     if (position) filter.position = position;
 
-    return await Banner.find(filter).sort({ displayOrder: 1, createdAt: -1 });
+    const items = await Banner.find(filter).sort({ displayOrder: 1, createdAt: -1 }).lean();
+    const result = (!items || items.length === 0) ? fallbackBanners : items;
+
+    bannerCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   } catch (err) {
     console.warn('[banner.service] Database query failed, returning fallback list:', err.message);
     return fallbackBanners;
@@ -76,8 +95,11 @@ async function getById(id) {
 
 async function create(data) {
   try {
-    return await Banner.create(data);
+    const created = await Banner.create(data);
+    clearBannerCache();
+    return created;
   } catch (err) {
+    clearBannerCache();
     return { _id: `banner_${Date.now()}`, ...data };
   }
 }
@@ -86,8 +108,10 @@ async function update(id, data) {
   try {
     const doc = await Banner.findByIdAndUpdate(id, data, { new: true, runValidators: true });
     if (!doc) throw new ApiError(404, 'Banner not found');
+    clearBannerCache();
     return doc;
   } catch (err) {
+    clearBannerCache();
     return { _id: id, ...data };
   }
 }
@@ -96,8 +120,10 @@ async function remove(id) {
   try {
     const doc = await Banner.findByIdAndDelete(id);
     if (!doc) throw new ApiError(404, 'Banner not found');
+    clearBannerCache();
     return doc;
   } catch (err) {
+    clearBannerCache();
     return { _id: id };
   }
 }

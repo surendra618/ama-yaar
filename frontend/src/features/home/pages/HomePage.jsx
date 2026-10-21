@@ -42,6 +42,8 @@ import {
   fetchBanners,
   fetchCardSliders,
 } from "../../products/productsSlice";
+import api from "../../../lib/axios";
+import { getMediaUrl } from "../../../utils/mediaUrl";
 import ProductCard from "../../../components/ProductCard";
 import InstagramBanner from "../../../components/InstagramBanner";
 import EditorialBanner from "../../../components/EditorialBanner";
@@ -834,10 +836,11 @@ export default function HomePage() {
 
   useEffect(() => {
     const loadReels = () => {
-      fetch("http://localhost:5000/api/v1/reels")
-        .then((res) => res.json())
-        .then((resData) => {
-          if (resData.data) {
+      api
+        .get("/reels")
+        .then((res) => {
+          const resData = res.data;
+          if (resData && resData.data) {
             const reelList = Array.isArray(resData.data)
               ? resData.data
               : resData.data.reels || [];
@@ -857,10 +860,8 @@ export default function HomePage() {
     loadReels();
 
     window.addEventListener("focus", loadReels);
-    const interval = setInterval(loadReels, 4000);
     return () => {
       window.removeEventListener("focus", loadReels);
-      clearInterval(interval);
     };
   }, []);
 
@@ -877,21 +878,11 @@ export default function HomePage() {
           discount: r.discount || "50% OFF",
           views: r.views || "15.2K views",
           badge: r.badge || "Top Selling",
-          poster: r.poster?.startsWith("http")
-            ? r.poster
-            : r.poster?.startsWith("/uploads")
-              ? `http://localhost:5000${r.poster}`
-              : r.product?.images?.[0] || r.poster,
-          altPoster: r.altPoster?.startsWith("http")
-            ? r.altPoster
-            : r.altPoster?.startsWith("/uploads")
-              ? `http://localhost:5000${r.altPoster}`
-              : r.product2?.images?.[0] || r.altPoster || "/model04.png",
-          video: r.video?.startsWith("http")
-            ? r.video
-            : r.video?.startsWith("/uploads")
-              ? `http://localhost:5000${r.video}`
-              : r.video,
+          poster: r.poster ? getMediaUrl(r.poster) : r.product?.images?.[0] || r.poster,
+          altPoster: r.altPoster
+            ? getMediaUrl(r.altPoster)
+            : r.product2?.images?.[0] || r.altPoster || "/model04.png",
+          video: r.video ? getMediaUrl(r.video) : r.video,
         }))
       : REEL_ITEMS;
 
@@ -906,11 +897,7 @@ export default function HomePage() {
   const displaySlides =
     activeBanners.length > 0
       ? activeBanners.map((b) => ({
-          bgImage: b.image?.startsWith("http")
-            ? b.image
-            : b.image?.startsWith("/")
-              ? `http://localhost:5000${b.image}`
-              : `http://localhost:5000/${b.image}`,
+          bgImage: b.image ? getMediaUrl(b.image) : HERO_SLIDES[0].bgImage,
           eyebrow: b.badge || "Featured Collection 2026",
           title1: b.title || "GEAR UP",
           title2: "",
@@ -1009,11 +996,7 @@ export default function HomePage() {
       .sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0))
       .map((c, idx) => {
         const catImg = c.image
-          ? c.image.startsWith("http") || c.image.startsWith("data:")
-            ? c.image
-            : c.image.startsWith("/uploads")
-              ? `http://localhost:5000${c.image}`
-              : c.image
+          ? getMediaUrl(c.image)
           : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
         return {
           name: c.name,
@@ -1046,7 +1029,7 @@ export default function HomePage() {
   const displayCardSliders = (cardSliders && cardSliders.length > 0)
     ? cardSliders.map((c, idx) => {
         const cardImg = c.image
-          ? (c.image.startsWith('http') || c.image.startsWith('data:') ? c.image : c.image.startsWith('/uploads') ? `http://localhost:5000${c.image}` : c.image)
+          ? getMediaUrl(c.image)
           : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
         return {
           id: c._id || idx,
@@ -1214,7 +1197,7 @@ export default function HomePage() {
             }}
             className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-hide pb-6 pt-2 snap-x snap-mandatory scroll-smooth"
           >
-            {displayCardSliders.map((item) => (
+            {displayCardSliders.map((item, idx) => (
               <motion.div
                 key={item.id || item.name}
                 variants={categoryCardVariants}
@@ -1228,6 +1211,9 @@ export default function HomePage() {
                   <img
                     src={item.image}
                     alt={item.name}
+                    loading={idx < 5 ? "eager" : "lazy"}
+                    decoding="async"
+                    fetchPriority={idx < 3 ? "high" : "auto"}
                     className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
