@@ -411,7 +411,7 @@ async function createShiprocketOrder(orderId, options = {}) {
   }
 
   const config = await getShiprocketConfig();
-  const pickupLocation = options.pickupLocation || config.pickupLocation || 'Primary';
+  const pickupLocation = options.pickupLocation || (config.pickupLocation && config.pickupLocation !== 'Primary' ? config.pickupLocation : 'Home');
 
   // Format order date YYYY-MM-DD HH:mm
   const d = new Date(order.createdAt || Date.now());
@@ -476,7 +476,7 @@ async function createShiprocketOrder(orderId, options = {}) {
     shipping_charges: Number(order.deliveryCharge || 0),
     giftwrap_charges: 0,
     transaction_charges: 0,
-    total_discount: Number((order.productDiscount || 0) + (order.couponDiscount || 0)),
+    total_discount: Number(order.couponDiscount || 0),
     sub_total: Number(order.subtotal || order.total),
     length,
     breadth,
@@ -487,6 +487,11 @@ async function createShiprocketOrder(orderId, options = {}) {
   try {
     const res = await makeShiprocketRequest('POST', '/orders/create/adhoc', payload);
     const data = res.data;
+
+    if (!data.order_id) {
+      const msg = data.message || (typeof data.data === 'string' ? data.data : 'Shiprocket rejected order creation');
+      throw new ApiError(400, `Shiprocket Error: ${msg}`);
+    }
 
     order.shiprocket = {
       orderId: data.order_id,
