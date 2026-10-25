@@ -404,10 +404,25 @@ export default function DeliverySettingsPage() {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          <Box className="h-4 w-4" /> Shiprocket Logistics
+          <Box className="h-4 w-4" /> Shiprocket
           {formData.shiprocketEnabled && (
             <span className="flex h-2 w-2 rounded-full bg-emerald-500" title="Active"></span>
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('logixwave')}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            activeTab === 'logixwave'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Zap className="h-4 w-4 text-amber-500" /> LogixWave OS
+          <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded-full uppercase">
+            Own Platform
+          </span>
         </button>
 
         <button
@@ -1346,6 +1361,142 @@ export default function DeliverySettingsPage() {
                   <li>Select events: <em>Tracking Status</em>, <em>Order Status</em>, and <em>Return Status</em>.</li>
                   <li>Click <strong>Save Webhook</strong>. Your storefront orders will automatically stay in sync!</li>
                 </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: LOGIXWAVE OS (OWN AGGREGATOR) */}
+      {activeTab === 'logixwave' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Hero Banner */}
+          <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-6 text-white shadow-xl relative overflow-hidden">
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-base">
+                    ▲
+                  </span>
+                  <h3 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
+                    LOGIXWAVE OS
+                    <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded uppercase">
+                      Self-Hosted Aggregator
+                    </span>
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                  Your independent, standalone B2B logistics platform. Compare multi-courier shipping rates (Delhivery, Blue Dart, DTDC, Shadowfax), auto-assign AWBs, print 4×6 inch thermal labels, and generate signed handover manifests without third-party commissions.
+                </p>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold border border-emerald-500/30">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    API Active: http://localhost:5050
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-semibold border border-indigo-500/30">
+                    <span className="h-2 w-2 rounded-full bg-indigo-400"></span>
+                    Portal: http://localhost:5180
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 text-[11px] font-mono border border-slate-700">
+                    Storage: D:\logistics-platform
+                  </span>
+                </div>
+              </div>
+
+              <div className="shrink-0 flex flex-col gap-2.5">
+                <a
+                  href="http://localhost:5180"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition transform hover:-translate-y-0.5"
+                >
+                  <span>Launch LogixWave OS</span>
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+                <a
+                  href="http://localhost:5180/track-shipment"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition"
+                >
+                  <span>Universal Package Tracker</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Metrics & Capabilities */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-indigo-600">
+                <Box className="h-5 w-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">Multi-Courier</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900">Comparative Rate Engine</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Automatically calculates volumetric weight (L×B×H/5000), maps source/destination pincodes across Zones A–E, and recommends cheapest or fastest carrier.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-indigo-600">
+                <FileText className="h-5 w-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">Ready to Ship</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900">Labels & Handover Sheets</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Generates crisp 4×6 inch thermal shipping labels with Code-128 barcodes and printable A4 batch handover manifests with manager & courier signature blocks.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-indigo-600">
+                <ShieldCheck className="h-5 w-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 px-2 py-0.5 rounded">Wallet & KYC</span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-900">Prepaid Wallet & COD Ledger</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Automated freight deductions upon AWB generation, real-time balance checks, GSTIN/PAN KYC validation, and COD remittance tracking.
+              </p>
+            </div>
+          </div>
+
+          {/* Integration Credentials Card */}
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Key className="h-4 w-4 text-indigo-600" /> Default Merchant Demo Access
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Pre-configured demo merchant account for logging in to LogixWave OS
+                </p>
+              </div>
+              <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded font-semibold">
+                Pre-funded: ₹2,500
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Merchant Email</span>
+                <p className="font-mono text-xs font-bold text-slate-900 select-all">demo@logixwave.com</p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Merchant Password</span>
+                <p className="font-mono text-xs font-bold text-slate-900 select-all">Password@123</p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Primary Pickup Warehouse</span>
+                <p className="font-mono text-xs font-bold text-slate-900 select-all">Primary (226010, Lucknow)</p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">REST API Base Endpoint</span>
+                <p className="font-mono text-xs font-bold text-slate-900 select-all">http://localhost:5050/api/v1</p>
               </div>
             </div>
           </div>
