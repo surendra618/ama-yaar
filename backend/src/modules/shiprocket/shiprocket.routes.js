@@ -29,5 +29,7 @@ router.get('/orders/:orderId/label', controller.generateLabel);
 router.get('/orders/:orderId/invoice', controller.generateInvoice);
 router.get('/orders/:orderId/manifest', controller.generateManifest);
 router.post('/orders/:orderId/cancel', controller.cancelOrder);
+router.post('/orders/:orderId/clear-error', controller.clearOrderError);
+router.post('/orders/:orderId/manual-ship', controller.manualShip);
 
 module.exports = router;

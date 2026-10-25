@@ -89,6 +89,7 @@ async function updateDeliverySettings(data = {}) {
   if (data.shiprocketEnabled !== undefined) update.shiprocketEnabled = Boolean(data.shiprocketEnabled);
   if (data.shiprocketEmail !== undefined) update.shiprocketEmail = String(data.shiprocketEmail).trim();
   if (data.shiprocketPassword !== undefined) update.shiprocketPassword = String(data.shiprocketPassword).trim();
+  if (data.shiprocketToken !== undefined) update.shiprocketToken = String(data.shiprocketToken).trim();
   if (data.shiprocketPickupLocation !== undefined) update.shiprocketPickupLocation = String(data.shiprocketPickupLocation).trim();
   if (data.shiprocketSenderPincode !== undefined) update.shiprocketSenderPincode = String(data.shiprocketSenderPincode).trim();
   if (data.shiprocketAutoCreateOrder !== undefined) update.shiprocketAutoCreateOrder = Boolean(data.shiprocketAutoCreateOrder);

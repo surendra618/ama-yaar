@@ -182,6 +182,26 @@ async function handleWebhook(req, res, next) {
   }
 }
 
+async function clearOrderError(req, res, next) {
+  try {
+    const { orderId } = req.params;
+    const result = await service.clearOrderError(orderId);
+    res.json(new ApiResponse(200, result, result.message));
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function manualShip(req, res, next) {
+  try {
+    const { orderId } = req.params;
+    const result = await service.manualShip(orderId, req.body);
+    res.json(new ApiResponse(200, result, result.message));
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getConfig,
   testConnection,
@@ -197,4 +217,6 @@ module.exports = {
   trackAwb,
   cancelOrder,
   handleWebhook,
+  clearOrderError,
+  manualShip,
 };

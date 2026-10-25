@@ -109,7 +109,13 @@ async function getToken(forceRefresh = false) {
     if (msg.includes('blocked') || msg.includes('too many failed')) {
       throw new ApiError(
         403,
-        'Shiprocket Auth Error: User blocked due to failed attempts. Create a fresh API user (e.g. api@amayaar.in) in Shiprocket -> Settings -> API -> Create API User, or wait 15 mins.'
+        'Shiprocket Auth Error: User blocked due to failed attempts. Create a fresh API user in Shiprocket -> Settings -> API -> Create API User, or wait 15 mins.'
+      );
+    }
+    if (msg.includes('Invalid email and password')) {
+      throw new ApiError(
+        401,
+        'Shiprocket Auth Error: Invalid email and password combination. Please check your credentials in Admin Settings > Delivery & Logistics. Note: Shiprocket requires an API User created in your Shiprocket Dashboard (Settings > API > Create API User) or a direct API Token.'
       );
     }
     throw new ApiError(err.response?.status || 500, `Shiprocket Auth Error: ${msg}`);
@@ -154,15 +160,47 @@ async function makeShiprocketRequest(method, endpoint, data = null, params = nul
 async function testConnection(credentials = {}) {
   let email = credentials.email;
   let password = credentials.password;
+  let token = credentials.token;
 
-  if (!email || !password) {
+  if (!email && !password && !token) {
     const config = await getShiprocketConfig();
     email = config.email;
     password = config.password;
+    token = config.token;
+  }
+
+  // If a direct token is provided, verify it directly
+  if (token) {
+    try {
+      const res = await axios.get(`${SHIPROCKET_BASE_URL}/settings/company`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: 10000,
+      });
+
+      cachedToken = token;
+      tokenExpiresAt = Date.now() + 9 * 24 * 60 * 60 * 1000;
+
+      return {
+        success: true,
+        message: 'Successfully connected to Shiprocket via API Token!',
+        userData: {
+          email: res.data?.data?.email || 'Shiprocket API User',
+          companyId: res.data?.data?.id || 'N/A',
+        },
+      };
+    } catch (err) {
+      throw new ApiError(
+        400,
+        'Invalid Shiprocket API Token. Please check that you copied the complete token from Shiprocket.'
+      );
+    }
   }
 
   if (!email || !password) {
-    throw new ApiError(400, 'Please provide both Shiprocket Email and Password to test connection');
+    throw new ApiError(400, 'Please provide Shiprocket Email & Password (or an API Token) to test connection');
   }
 
   try {
@@ -173,7 +211,6 @@ async function testConnection(credentials = {}) {
     );
 
     if (res.data?.token) {
-      // Invalidate cache if credentials tested were different
       cachedToken = res.data.token;
       tokenExpiresAt = Date.now() + 9 * 24 * 60 * 60 * 1000;
 
@@ -193,6 +230,12 @@ async function testConnection(credentials = {}) {
     throw new ApiError(400, res.data?.message || 'Shiprocket connection failed');
   } catch (err) {
     const msg = err.response?.data?.message || err.message || 'Shiprocket connection error';
+    if (msg.includes('Invalid email and password')) {
+      throw new ApiError(
+        400,
+        'Shiprocket Connection Failed: Invalid email and password combination. Note: In Shiprocket, external API authentication requires an API User created under Shiprocket Dashboard > Settings > API > Create API User (or paste an API Token directly).'
+      );
+    }
     throw new ApiError(err.response?.status || 400, `Shiprocket Connection Failed: ${msg}`);
   }
 }
@@ -1067,6 +1110,55 @@ async function handleWebhook(payload) {
   return { success: true, orderNumber: order.orderNumber, status: order.status };
 }
 
+/**
+ * Clear last Shiprocket error on an order
+ */
+async function clearOrderError(orderId) {
+  const order = await Order.findById(orderId);
+  if (!order) throw new ApiError(404, 'Order not found');
+
+  if (order.shiprocket) {
+    order.shiprocket.errorMessage = null;
+    await order.save();
+  }
+
+  return { success: true, message: 'Shiprocket error cleared', order };
+}
+
+/**
+ * Manually fulfill/ship order with custom courier details (fallback if Shiprocket is unavailable)
+ */
+async function manualShip(orderId, options = {}) {
+  const order = await Order.findById(orderId);
+  if (!order) throw new ApiError(404, 'Order not found');
+
+  const courierName = options.courierName?.trim() || 'Custom / Local Courier';
+  const trackingNumber = options.trackingNumber?.trim() || order.trackingNumber || '';
+
+  order.status = 'shipped';
+  if (trackingNumber) {
+    order.trackingNumber = trackingNumber;
+  }
+
+  order.shiprocket = {
+    ...order.shiprocket,
+    status: 'SHIPPED_MANUALLY',
+    courierName,
+    awbCode: trackingNumber,
+    errorMessage: null,
+    lastSyncedAt: new Date(),
+  };
+
+  order.statusHistory.push({
+    status: 'shipped',
+    note: `Order marked as shipped manually via ${courierName}${trackingNumber ? ` (Tracking/AWB: ${trackingNumber})` : ''}`,
+    at: new Date(),
+  });
+
+  await order.save();
+  return { success: true, message: 'Order marked as shipped manually', order };
+}
+
 module.exports = {
   getShiprocketConfig,
   getToken,
@@ -1083,4 +1175,6 @@ module.exports = {
   trackAwbCode,
   cancelShiprocketOrder,
   handleWebhook,
+  clearOrderError,
+  manualShip,
 };

@@ -24,6 +24,7 @@ import {
   Navigation,
   X,
   Zap,
+  Lock,
 } from 'lucide-react';
 import api from '../../../lib/axios';
 import { fetchOrderById, updateOrderStatus, clearCurrentOrder } from '../ordersSlice';
@@ -63,6 +64,12 @@ export default function OrderDetailsPage() {
   const [loadingTracking, setLoadingTracking] = useState(false);
   const [awbCopied, setAwbCopied] = useState(false);
 
+  // Manual shipping fallback states
+  const [manualShipOpen, setManualShipOpen] = useState(false);
+  const [manualCourier, setManualCourier] = useState('');
+  const [manualTracking, setManualTracking] = useState('');
+  const [manualShippingLoading, setManualShippingLoading] = useState(false);
+
   useEffect(() => {
     dispatch(fetchOrderById(id));
     return () => dispatch(clearCurrentOrder());
@@ -96,6 +103,36 @@ export default function OrderDetailsPage() {
       navigator.clipboard.writeText(order.shiprocket?.awbCode || order.trackingNumber);
       setAwbCopied(true);
       setTimeout(() => setAwbCopied(false), 2000);
+    }
+  };
+
+  const handleClearSrError = async () => {
+    try {
+      await api.post(`/shiprocket/orders/${id}/clear-error`);
+      setSrError(null);
+      dispatch(fetchOrderById(id));
+    } catch (err) {
+      setSrError(err.response?.data?.message || 'Failed to clear error');
+    }
+  };
+
+  const handleManualShip = async (e) => {
+    if (e) e.preventDefault();
+    setManualShippingLoading(true);
+    setSrError(null);
+    try {
+      const res = await api.post(`/shiprocket/orders/${id}/manual-ship`, {
+        courierName: manualCourier,
+        trackingNumber: manualTracking,
+      });
+      setSrSuccess(res.data?.message || 'Order marked as shipped manually');
+      setManualShipOpen(false);
+      dispatch(fetchOrderById(id));
+      setTimeout(() => setSrSuccess(null), 4000);
+    } catch (err) {
+      setSrError(err.response?.data?.message || 'Failed to mark as shipped');
+    } finally {
+      setManualShippingLoading(false);
     }
   };
 
@@ -391,10 +428,49 @@ export default function OrderDetailsPage() {
             <span className="font-semibold">{srSuccess}</span>
           </div>
         )}
-        {srError && (
-          <div className="flex items-center gap-2 rounded-md bg-rose-50 border border-rose-200 p-3 text-xs text-rose-800 animate-in fade-in">
-            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-            <span>{srError}</span>
+
+        {/* Active Shiprocket Error / Warning Banner */}
+        {(srError || order.shiprocket?.errorMessage) && (
+          <div className="rounded-md bg-rose-50 border border-rose-200 p-4 text-xs text-rose-900 animate-in fade-in space-y-2.5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-rose-900 text-xs">
+                    Shiprocket Error: {srError || order.shiprocket?.errorMessage}
+                  </p>
+                  {(srError || order.shiprocket?.errorMessage)?.toLowerCase().includes('email and password') && (
+                    <p className="text-[11px] text-rose-700 mt-1 leading-relaxed">
+                      Shiprocket API authentication failed. Shiprocket requires an <strong>API User</strong> created in your Shiprocket Dashboard (<span className="font-mono">Settings &gt; API &gt; Configure &gt; Create API User</span>) or a direct <strong>API Token</strong>. Regular website email/password credentials do not work directly.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClearSrError}
+                className="text-[11px] font-semibold text-rose-700 hover:text-rose-900 hover:underline shrink-0 flex items-center gap-1 cursor-pointer"
+                title="Dismiss and clear this error"
+              >
+                <X className="h-3.5 w-3.5" /> Clear Error
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-rose-200/60">
+              <button
+                type="button"
+                onClick={() => navigate('/settings/delivery')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-rose-900 text-white font-semibold text-[11px] hover:bg-rose-800 transition cursor-pointer"
+              >
+                Configure Shiprocket Credentials &rarr;
+              </button>
+              <button
+                type="button"
+                onClick={() => setManualShipOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white border border-rose-300 text-rose-900 font-semibold text-[11px] hover:bg-rose-50 transition cursor-pointer"
+              >
+                <Truck className="h-3 w-3 text-rose-700" /> Ship Manually Instead
+              </button>
+            </div>
           </div>
         )}
 
@@ -427,37 +503,131 @@ export default function OrderDetailsPage() {
 
         {/* Content based on whether order is already pushed to Shiprocket */}
         {!order.shiprocket?.orderId ? (
-          <div className="rounded-md bg-slate-50 border border-slate-200/80 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Truck className="h-4 w-4 text-indigo-600" /> Ready for Automated Courier Booking
-              </p>
-              <p className="text-xs text-slate-500 leading-relaxed max-w-xl">
-                Push this order directly to Shiprocket to auto-calculate cheapest & fastest courier options (Delhivery, Blue Dart, DTDC), generate AWB label, and schedule warehouse pickup.
-              </p>
-              {order.shiprocket?.errorMessage && (
-                <p className="text-[11px] text-rose-600 font-medium pt-1">
-                  Last attempt note: {order.shiprocket.errorMessage}
+          <div className="space-y-3">
+            <div className="rounded-md bg-slate-50 border border-slate-200/80 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Truck className="h-4 w-4 text-indigo-600" /> Ready for Automated Courier Booking
                 </p>
-              )}
+                <p className="text-xs text-slate-500 leading-relaxed max-w-xl">
+                  Push this order directly to Shiprocket to auto-calculate cheapest & fastest courier options (Delhivery, Blue Dart, DTDC), generate AWB label, and schedule warehouse pickup.
+                </p>
+                {order.shiprocket?.errorMessage && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <p className="text-[11px] text-rose-600 font-medium">
+                      Last attempt note: {order.shiprocket.errorMessage}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleClearSrError}
+                      className="text-[10px] text-slate-500 underline hover:text-slate-700 cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setManualShipOpen(!manualShipOpen)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  <Truck className="h-3.5 w-3.5 text-slate-500" />
+                  {manualShipOpen ? 'Cancel Manual' : 'Ship Manually'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateShiprocketOrder}
+                  disabled={srLoading === 'create'}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-5 py-2.5 text-xs font-extrabold text-amber-400 hover:bg-slate-800 transition shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {srLoading === 'create' ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Pushing to Shiprocket...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 text-amber-400" /> Ship with Shiprocket
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleCreateShiprocketOrder}
-              disabled={srLoading === 'create'}
-              className="shrink-0 inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-5 py-2.5 text-xs font-extrabold text-amber-400 hover:bg-slate-800 transition shadow-sm disabled:opacity-50 cursor-pointer"
-            >
-              {srLoading === 'create' ? (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Pushing to Shiprocket...
-                </>
-              ) : (
-                <>
-                  <Zap className="h-4 w-4 text-amber-400" /> Ship with Shiprocket
-                </>
-              )}
-            </button>
+            {/* Manual Ship Accordion/Form */}
+            {manualShipOpen && (
+              <form
+                onSubmit={handleManualShip}
+                className="rounded-md border border-indigo-200 bg-indigo-50/40 p-4 space-y-3 animate-in fade-in"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-900">
+                    <Truck className="h-4 w-4 text-indigo-600" />
+                    <span>Fulfill Order with Custom Courier</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Bypasses Shiprocket API and updates order status to Shipped
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Courier / Delivery Partner
+                    </label>
+                    <input
+                      type="text"
+                      value={manualCourier}
+                      onChange={(e) => setManualCourier(e.target.value)}
+                      placeholder="e.g. Blue Dart, Delhivery, DTDC, India Post, Local"
+                      required
+                      className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Tracking / AWB Number
+                    </label>
+                    <input
+                      type="text"
+                      value={manualTracking}
+                      onChange={(e) => setManualTracking(e.target.value)}
+                      placeholder="e.g. 1234567890"
+                      required
+                      className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-indigo-100">
+                  <button
+                    type="button"
+                    onClick={() => setManualShipOpen(false)}
+                    className="px-3 py-1.5 rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={manualShippingLoading || !manualCourier || !manualTracking}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700 transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {manualShippingLoading ? (
+                      <>
+                        <RefreshCw className="h-3 w-3 animate-spin" /> Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-3.5 w-3.5" /> Confirm Manual Shipment
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
