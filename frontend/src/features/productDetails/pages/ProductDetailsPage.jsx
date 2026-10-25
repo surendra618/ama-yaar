@@ -182,10 +182,29 @@ export default function ProductDetailsPage() {
   const rawImages = (product.images || [])
     .filter(Boolean)
     .map((img) => getMediaUrl(img));
-  const displayImages =
-    rawImages.length === 0
-      ? PLACEHOLDER_GALLERY
-      : Array.from({ length: 4 }, (_, i) => rawImages[i % rawImages.length]);
+  const displayImages = rawImages.length > 0 ? rawImages : PLACEHOLDER_GALLERY;
+  const safeImageIndex = selectedImage < displayImages.length ? selectedImage : 0;
+
+  const [touchStartX, setTouchStartX] = useState(null);
+
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      setTouchStartX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX === null || displayImages.length <= 1) return;
+    if (e.changedTouches && e.changedTouches[0]) {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchStartX - touchEndX;
+      if (Math.abs(diff) > 40) {
+        if (diff > 0) handleNextImage();
+        else handlePrevImage();
+      }
+    }
+    setTouchStartX(null);
+  };
 
   const availableSizes =
     product.variants?.length > 0 && product.variants.some((v) => v.size)
@@ -256,17 +275,43 @@ export default function ProductDetailsPage() {
     setNewComment("");
   };
 
-  const handlePrevImage = () => {
+  const handlePrevImage = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (displayImages.length <= 1) return;
+    setIsHoveringZoom(false);
     setSelectedImage((prev) =>
-      prev === 0 ? displayImages.length - 1 : prev - 1,
+      prev <= 0 ? displayImages.length - 1 : prev - 1,
     );
   };
 
-  const handleNextImage = () => {
+  const handleNextImage = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (displayImages.length <= 1) return;
+    setIsHoveringZoom(false);
     setSelectedImage((prev) =>
-      prev === displayImages.length - 1 ? 0 : prev + 1,
+      prev >= displayImages.length - 1 ? 0 : prev + 1,
     );
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (displayImages.length <= 1) return;
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [displayImages.length]);
 
   return (
     <div className="min-h-screen bg-white py-1 sm:py-2 text-neutral-900 font-sans">
@@ -328,13 +373,15 @@ export default function ProductDetailsPage() {
           {/* CENTER COLUMN: Large Focused Product Image (Centered, High Visibility, No Padding Restriction) */}
           <div className="lg:col-span-6 flex flex-col items-center justify-center order-1 lg:order-2">
             <div
-              className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group cursor-crosshair"
+              className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group cursor-crosshair select-none"
               onMouseEnter={() => setIsHoveringZoom(true)}
               onMouseLeave={() => setIsHoveringZoom(false)}
               onMouseMove={handleMouseMove}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
               <img
-                src={displayImages[selectedImage] || displayImages[0]}
+                src={displayImages[safeImageIndex] || displayImages[0]}
                 alt={product.name || "Product Showcase"}
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
@@ -347,44 +394,80 @@ export default function ProductDetailsPage() {
                 }`}
               />
 
-              {/* Left Arrow Button (hidden while zooming for unobstructed view) */}
-              {!isHoveringZoom && displayImages.length > 1 && (
+              {/* Left Arrow Button (Always clickable when multiple images exist) */}
+              {displayImages.length > 1 && (
                 <button
                   type="button"
                   onClick={handlePrevImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white/95 hover:bg-black/70 transition cursor-pointer backdrop-blur-xs shadow-sm"
+                  onMouseEnter={(e) => {
+                    e.stopPropagation();
+                    setIsHoveringZoom(false);
+                  }}
+                  onMouseMove={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/95 hover:bg-black hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer backdrop-blur-md shadow-md focus:outline-none"
                   aria-label="Previous image"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
               )}
 
-              {/* Right Arrow Button (hidden while zooming for unobstructed view) */}
-              {!isHoveringZoom && displayImages.length > 1 && (
+              {/* Right Arrow Button (Always clickable when multiple images exist) */}
+              {displayImages.length > 1 && (
                 <button
                   type="button"
                   onClick={handleNextImage}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white/95 hover:bg-black/70 transition cursor-pointer backdrop-blur-xs shadow-sm"
+                  onMouseEnter={(e) => {
+                    e.stopPropagation();
+                    setIsHoveringZoom(false);
+                  }}
+                  onMouseMove={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/95 hover:bg-black hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer backdrop-blur-md shadow-md focus:outline-none"
                   aria-label="Next image"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
               )}
 
+              {/* Slide Dots Indicator */}
+              {displayImages.length > 1 && !isHoveringZoom && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full pointer-events-auto">
+                  {displayImages.map((_, dotIdx) => (
+                    <button
+                      key={dotIdx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(dotIdx);
+                      }}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        safeImageIndex === dotIdx
+                          ? "w-4 bg-white"
+                          : "w-1.5 bg-white/50 hover:bg-white/80"
+                      }`}
+                      aria-label={`Go to slide ${dotIdx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+
               {/* Discount pill matching user screenshot */}
               {!isHoveringZoom && product.discount > 0 && (
-                <span className="absolute top-3 left-3 rounded-xs bg-black px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
+                <span className="absolute top-3 left-3 z-10 rounded-xs bg-black px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
                   {product.discount}% OFF
                 </span>
               )}
 
               {/* Zoom pill indicator */}
               {isHoveringZoom ? (
-                <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
+                <span className="absolute bottom-3 right-3 z-20 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
                   2.5x Zoom
                 </span>
               ) : (
-                <span className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-xs text-white/90 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                <span className="absolute bottom-3 left-3 z-10 bg-black/40 backdrop-blur-xs text-white/90 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">
                   <Search className="h-2.5 w-2.5" /> Hover to zoom
                 </span>
               )}
@@ -399,8 +482,8 @@ export default function ProductDetailsPage() {
                     type="button"
                     onClick={() => setSelectedImage(idx)}
                     className={`h-14 w-11 sm:h-16 sm:w-13 overflow-hidden rounded-sm border transition cursor-pointer ${
-                      selectedImage === idx
-                        ? "border-neutral-800 opacity-100"
+                      safeImageIndex === idx
+                        ? "border-neutral-900 ring-1 ring-neutral-900 opacity-100"
                         : "border-neutral-200 opacity-60 hover:opacity-100"
                     }`}
                   >
@@ -699,6 +782,28 @@ export default function ProductDetailsPage() {
                         "Ultra-warm insulated winter puffer jacket with high stand collar, detachable hood, thermal fleece lining, and water-repellent shell."}
                     </p>
 
+                    {/* Key Features / Highlights */}
+                    {((product.keyFeatures && product.keyFeatures.length > 0) || (product.highlights && product.highlights.length > 0)) && (
+                      <div className="pt-2 border-t border-neutral-100">
+                        <p className="font-bold text-neutral-900 mb-1.5">Key Features:</p>
+                        <ul className="space-y-1 text-neutral-600">
+                          {(product.keyFeatures?.length ? product.keyFeatures : product.highlights).map((feat, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 text-xs">
+                              <span className="text-neutral-900 font-bold">•</span>
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {product.detailedDescription && (
+                      <div className="pt-2 border-t border-neutral-100">
+                        <p className="font-bold text-neutral-900 mb-0.5">Detailed Description:</p>
+                        <p className="text-neutral-600 whitespace-pre-line">{product.detailedDescription}</p>
+                      </div>
+                    )}
+
                     <div>
                       <p className="font-bold text-neutral-900 mb-0.5">Whats on Print:</p>
                       <p className="text-neutral-600 whitespace-pre-line">
@@ -753,6 +858,12 @@ export default function ProductDetailsPage() {
                           "Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low."}
                       </p>
                     </div>
+                    {product.specifications?.map((spec, sIdx) => (
+                      <div key={sIdx} className="flex justify-between py-1 border-b border-neutral-100">
+                        <span className="font-semibold text-neutral-500">{spec.name}</span>
+                        <span className="font-medium text-neutral-900">{spec.value}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -761,7 +872,7 @@ export default function ProductDetailsPage() {
                     <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-between">
                       <span className="font-bold text-neutral-900 flex items-center gap-1 text-[11px]">
                         <RotateCcw className="h-3.5 w-3.5 text-neutral-800" />
-                        <span>{policySettings?.exchangeDays || 7} Days Doorstep Exchange & Return</span>
+                        <span>{product.exchangeDays || policySettings?.exchangeDays || 7} Days Doorstep Exchange & Return</span>
                       </span>
                       <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
                         {policySettings?.exchangeCharge > 0
@@ -786,7 +897,8 @@ export default function ProductDetailsPage() {
                     <div>
                       <p className="font-bold text-neutral-900 mb-0.5">Exchange Policy:</p>
                       <p className="text-[11px] text-neutral-600">
-                        {policySettings?.exchangePolicyText ||
+                        {product.exchangePolicy ||
+                          policySettings?.exchangePolicyText ||
                           "Hassle-free 7-day doorstep exchange & return. Items must be in original condition, unworn, unwashed with original brand tags attached."}
                       </p>
                     </div>

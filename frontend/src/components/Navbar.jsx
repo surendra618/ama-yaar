@@ -629,9 +629,9 @@ export default function Navbar() {
       >
         {/* Main Nav Bar with container padding */}
         <nav className="relative">
-          <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 flex items-center justify-between py-2.5 sm:py-3.5">
+          <div className="relative mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 flex items-center justify-between py-2.5 sm:py-3.5">
             {/* Left: Hamburger menu toggle */}
-            <div className="flex items-center">
+            <div className="flex items-center z-20">
               <button
                 onClick={() => setMobileMenuOpen((v) => !v)}
                 className="rounded-full p-2 transition cursor-pointer text-white hover:bg-white/10 drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)]"
@@ -645,20 +645,22 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Center: Brand Logo - Always the second logo in natural black with full details */}
-            <Link
-              to="/"
-              className="flex items-center leading-none group transition-transform duration-200 hover:scale-[1.02]"
-            >
-              <img
-                src="/logo.png"
-                alt="AMA YAAR"
-                className="h-9 sm:h-11 w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
-              />
-            </Link>
+            {/* Center: Brand Logo - Always perfectly centered across phone and desktop viewports */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto z-10 flex items-center justify-center">
+              <Link
+                to="/"
+                className="flex items-center leading-none group transition-transform duration-200 hover:scale-[1.02]"
+              >
+                <img
+                  src="/logo.png"
+                  alt="AMA YAAR"
+                  className="h-9 sm:h-11 w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
+                />
+              </Link>
+            </div>
 
             {/* Right: Search, Notifications, User, Cart */}
-            <div className="flex items-center gap-2.5 sm:gap-3.5 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)]">
+            <div className="flex items-center gap-2.5 sm:gap-3.5 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)] z-20">
               {/* Search Toggle Button */}
               <button
                 onClick={() => setSearchOpen((v) => !v)}
