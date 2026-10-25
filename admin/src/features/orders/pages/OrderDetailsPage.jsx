@@ -152,6 +152,66 @@ export default function OrderDetailsPage() {
     }
   };
 
+  const handleShipWithLogixWave = async () => {
+    setSrLoading('logixwave');
+    setSrError(null);
+    setSrSuccess(null);
+    try {
+      const lxwPayload = {
+        orderNumber: order.orderNumber || order._id,
+        buyer: {
+          name: order.shippingAddress?.fullName || 'Customer',
+          phone: order.shippingAddress?.phone || '9876543210',
+          email: order.user?.email || '',
+          addressLine1: order.shippingAddress?.addressLine1 || 'Delivery Address',
+          addressLine2: order.shippingAddress?.addressLine2 || '',
+          city: order.shippingAddress?.city || 'Delhi',
+          state: order.shippingAddress?.state || 'Delhi',
+          pincode: order.shippingAddress?.postalCode || order.shippingAddress?.pincode || '110001',
+        },
+        packageDetails: {
+          deadWeight: 0.5,
+          length: 25,
+          breadth: 20,
+          height: 5,
+        },
+        items: (order.orderItems || []).map((item) => ({
+          name: item.name || 'Apparel Item',
+          sku: item.sku || 'SKU-AY',
+          units: item.quantity || 1,
+          sellingPrice: item.price || 0,
+        })),
+        payment: {
+          mode: order.paymentMethod === 'COD' ? 'COD' : 'PREPAID',
+          collectableAmount: order.paymentMethod === 'COD' ? order.totalAmount || 0 : 0,
+          subtotal: order.totalAmount || 0,
+        },
+      };
+
+      const res = await fetch('http://localhost:5050/api/v1/shipments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-client-id': 'lxw_c7771291ef778d1a',
+          'x-api-key': 'sec_d6ec97a6110463fd0d1c3ecb5e712fc0035392b5bfe63158',
+        },
+        body: JSON.stringify(lxwPayload),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSrSuccess(`Order transferred to LogixWave OS! Opening shipment console...`);
+        window.open('http://localhost:5180/shipments', '_blank');
+      } else {
+        setSrError(data.message || 'LogixWave API returned an error');
+      }
+    } catch (err) {
+      setSrError('Failed to connect to LogixWave OS API server at http://localhost:5050.');
+    } finally {
+      setSrLoading(null);
+    }
+  };
+
   const handleAssignAwb = async () => {
     setSrLoading('awb');
     setSrError(null);
@@ -539,9 +599,25 @@ export default function OrderDetailsPage() {
                 </button>
                 <button
                   type="button"
+                  onClick={handleShipWithLogixWave}
+                  disabled={srLoading === 'logixwave'}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-indigo-700 transition shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {srLoading === 'logixwave' ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Pushing to LogixWave...
+                    </>
+                  ) : (
+                    <>
+                      <Box className="h-4 w-4 text-white" /> Ship with LogixWave OS
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
                   onClick={handleCreateShiprocketOrder}
                   disabled={srLoading === 'create'}
-                  className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-5 py-2.5 text-xs font-extrabold text-amber-400 hover:bg-slate-800 transition shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-xs font-extrabold text-amber-400 hover:bg-slate-800 transition shadow-sm disabled:opacity-50 cursor-pointer"
                 >
                   {srLoading === 'create' ? (
                     <>
