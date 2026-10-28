@@ -116,6 +116,16 @@ export default function ProductDetailsPage() {
   const [isHoveringZoom, setIsHoveringZoom] = useState(false);
 
   const handleMouseMove = (e) => {
+    // If the mouse is directly over navigation buttons or indicator dots, do not zoom
+    if (e.target && e.target.closest && e.target.closest('button')) {
+      if (isHoveringZoom) setIsHoveringZoom(false);
+      return;
+    }
+
+    if (!isHoveringZoom) {
+      setIsHoveringZoom(true);
+    }
+
     const { left, top, width, height } =
       e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(100, ((e.clientX - left) / width) * 100));
@@ -144,6 +154,7 @@ export default function ProductDetailsPage() {
     }
     if (displayImages.length <= 1) return;
     setIsHoveringZoom(false);
+    setZoomPos({ x: 50, y: 50 });
     setSelectedImage((prev) =>
       prev <= 0 ? displayImages.length - 1 : prev - 1,
     );
@@ -156,6 +167,7 @@ export default function ProductDetailsPage() {
     }
     if (displayImages.length <= 1) return;
     setIsHoveringZoom(false);
+    setZoomPos({ x: 50, y: 50 });
     setSelectedImage((prev) =>
       prev >= displayImages.length - 1 ? 0 : prev + 1,
     );
@@ -380,17 +392,17 @@ export default function ProductDetailsPage() {
               onTouchEnd={handleTouchEnd}
             >
               <img
+                key={safeImageIndex}
                 src={displayImages[safeImageIndex] || displayImages[0]}
                 alt={product.name || "Product Showcase"}
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                   transform: isHoveringZoom ? "scale(2.5)" : "scale(1)",
+                  transition: isHoveringZoom
+                    ? "transform 200ms ease-out, transform-origin 75ms ease-out"
+                    : "transform 200ms ease-out",
                 }}
-                className={`h-full w-full object-cover object-top select-none pointer-events-none will-change-transform ${
-                  isHoveringZoom
-                    ? "transition-[transform-origin] duration-75 ease-out"
-                    : "transition-transform duration-200 ease-out"
-                }`}
+                className="h-full w-full object-cover object-top select-none pointer-events-none will-change-transform"
               />
 
               {/* Left Arrow Button (Always clickable when multiple images exist) */}
@@ -402,8 +414,9 @@ export default function ProductDetailsPage() {
                     e.stopPropagation();
                     setIsHoveringZoom(false);
                   }}
-                  onMouseMove={(e) => {
+                  onMouseLeave={(e) => {
                     e.stopPropagation();
+                    setIsHoveringZoom(true);
                   }}
                   className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/95 hover:bg-black hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer backdrop-blur-md shadow-md focus:outline-none"
                   aria-label="Previous image"
@@ -421,8 +434,9 @@ export default function ProductDetailsPage() {
                     e.stopPropagation();
                     setIsHoveringZoom(false);
                   }}
-                  onMouseMove={(e) => {
+                  onMouseLeave={(e) => {
                     e.stopPropagation();
+                    setIsHoveringZoom(true);
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/95 hover:bg-black hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer backdrop-blur-md shadow-md focus:outline-none"
                   aria-label="Next image"

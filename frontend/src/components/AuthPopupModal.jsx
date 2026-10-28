@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { X, CheckCircle2, Phone, User, KeyRound, Sparkles, ArrowLeft, RefreshCw } from 'lucide-react';
+import {
+  X,
+  CheckCircle2,
+  Phone,
+  User,
+  KeyRound,
+  Sparkles,
+  ArrowLeft,
+  RefreshCw,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { setCredentials } from '../features/auth/authSlice';
 import CaptchaBox from './CaptchaBox';
 import api from '../lib/axios';
@@ -14,6 +27,10 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   // Form states
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isExistingUser, setIsExistingUser] = useState(false);
   const [otp, setOtp] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [isAutoFilled, setIsAutoFilled] = useState(false);
@@ -35,6 +52,10 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       setStep('phone');
       setPhone('');
       setName('');
+      setEmail('');
+      setPassword('');
+      setShowPassword(false);
+      setIsExistingUser(false);
       setOtp('');
       setGeneratedOtp('');
       setIsAutoFilled(false);
@@ -77,14 +98,19 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     setIsSubmitting(true);
 
     try {
-      // Generate random 4-digit OTP
-      const randomOtp = Math.floor(1000 + Math.random() * 9000).toString();
-
+      let serverData = null;
       try {
-        await api.post('/auth/send-otp', { phone: cleanPhone });
+        const { data } = await api.post('/auth/send-otp', { phone: cleanPhone });
+        serverData = data?.data;
       } catch (apiErr) {
         console.warn('Backend send-otp failed, fallback to local simulator:', apiErr);
       }
+
+      const randomOtp = serverData?.otp || Math.floor(1000 + Math.random() * 9000).toString();
+      const existing = !!serverData?.isExisting;
+      setIsExistingUser(existing);
+      if (serverData?.name) setName(serverData.name);
+      if (serverData?.email) setEmail(serverData.email);
 
       setGeneratedOtp(randomOtp);
       setStep('otp');
@@ -123,7 +149,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // Handle Step 2: Verify OTP & Sign In
+  // Handle Step 2: Verify OTP & Sign In / Register
   const handleVerifyAndSignIn = async (e) => {
     e.preventDefault();
     setError('');
@@ -141,9 +167,22 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     }
 
     const cleanName = name.trim();
-    if (!cleanName) {
-      setError('Please enter your full name to complete sign in');
-      return;
+    const cleanEmail = email.trim().toLowerCase();
+
+    // On registration (new user), name, email and password are required
+    if (!isExistingUser) {
+      if (!cleanName) {
+        setError('Please enter your full name');
+        return;
+      }
+      if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+        setError('Please enter a valid email address');
+        return;
+      }
+      if (!password || password.length < 6) {
+        setError('Password must be at least 6 characters');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -156,7 +195,9 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         const { data } = await api.post('/auth/verify-otp', {
           phone: cleanPhone,
           otp: cleanOtp,
-          name: cleanName,
+          name: cleanName || undefined,
+          email: cleanEmail || undefined,
+          password: password || undefined,
         });
         resData = data.data;
       } catch (verifyErr) {
@@ -164,7 +205,9 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         try {
           const { data } = await api.post('/auth/quick-login', {
             phone: cleanPhone,
-            name: cleanName,
+            name: cleanName || undefined,
+            email: cleanEmail || undefined,
+            password: password || undefined,
           });
           resData = data.data;
         } catch (quickErr) {
@@ -174,9 +217,9 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
 
       const userObj = resData?.user || {
         _id: 'user_' + Date.now(),
-        name: cleanName,
+        name: cleanName || 'Customer',
         phone: cleanPhone,
-        email: `${cleanPhone}@mobile.ama-yaar.com`,
+        email: cleanEmail || `${cleanPhone}@mobile.ama-yaar.com`,
         role: 'customer',
       };
 
@@ -216,7 +259,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[840px] overflow-hidden rounded-[26px] bg-black text-white p-6 sm:p-10 border border-neutral-800 shadow-2xl"
+        className="relative w-full max-w-[840px] max-h-[92vh] overflow-y-auto rounded-[26px] bg-black text-white p-6 sm:p-10 border border-neutral-800 shadow-2xl"
       >
         {/* Close Button on Top Right */}
         <button
@@ -243,17 +286,25 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
             {/* Welcome Tagline */}
             <div className="mt-8 sm:mt-12">
               <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.28em] text-neutral-400 block mb-2">
-                {step === 'phone' ? 'WELCOME,' : 'ALMOST THERE,'}
+                {step === 'phone'
+                  ? 'WELCOME,'
+                  : isExistingUser
+                  ? 'WELCOME BACK,'
+                  : 'CREATE ACCOUNT,'}
               </span>
               <h2 className="text-2xl sm:text-3xl lg:text-[32px] font-black tracking-tight text-white leading-[1.18]">
                 {step === 'phone'
                   ? 'Sign in or Register in seconds!'
-                  : 'Verify OTP & Complete Sign In'}
+                  : isExistingUser
+                  ? 'Verify OTP & Sign In'
+                  : 'Complete Registration'}
               </h2>
               <p className="mt-3 text-xs text-neutral-400 leading-relaxed font-normal hidden sm:block">
                 {step === 'phone'
                   ? 'Enter your mobile number, solve the quick captcha verification, and get instant access with auto-filled OTP.'
-                  : `We sent a one-time password to +91 ${phone.slice(0, 5)} ${phone.slice(5)}. Enter your full name to proceed.`}
+                  : isExistingUser
+                  ? 'We auto-filled the OTP code sent to your phone. Click verify to jump back in!'
+                  : 'Provide your name, email, and password to complete registration.'}
               </p>
             </div>
 
@@ -370,10 +421,12 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
 
                 <div className="mb-3">
                   <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
-                    Verify &amp; Sign In
+                    {isExistingUser ? 'Verify & Sign In' : 'Create Account'}
                   </h3>
                   <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                    We sent a 4-digit code to your phone
+                    {isExistingUser
+                      ? 'We sent a 4-digit code to your phone'
+                      : 'Provide your email & password to enable email sign-in'}
                   </p>
                 </div>
                 {error && (
@@ -382,7 +435,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   </div>
                 )}
 
-                <form onSubmit={handleVerifyAndSignIn} className="space-y-3.5">
+                <form onSubmit={handleVerifyAndSignIn} className="space-y-3">
                   {/* OTP Input with Auto-Fill */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
@@ -396,7 +449,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                         placeholder="••••"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-3 text-base font-black tracking-[0.4em] text-neutral-900 placeholder:text-neutral-300 focus:border-black focus:ring-1 focus:ring-black transition"
+                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2.5 text-base font-black tracking-[0.4em] text-neutral-900 placeholder:text-neutral-300 focus:border-black focus:ring-1 focus:ring-black transition"
                         required
                         autoFocus
                       />
@@ -406,7 +459,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Full Name Input */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Full Name
+                      Full Name {!isExistingUser && <span className="text-rose-500">*</span>}
                     </label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
@@ -415,14 +468,62 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                         placeholder="Enter your full name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
-                        required
+                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
+                        required={!isExistingUser}
                       />
                     </div>
                   </div>
 
+                  {/* Email Input (Required when registering!) */}
+                  {!isExistingUser && (
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
+                        Email Address <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                        <input
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Password Input (Required when registering so user can log in with Email + Password!) */}
+                  {!isExistingUser && (
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
+                        Password (Min 6 chars) <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Create account password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 pl-10 pr-10 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
+                          required
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition cursor-pointer"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Resend Link */}
-                  <div className="flex items-center justify-between text-[11px] pt-1">
+                  <div className="flex items-center justify-between text-[11px] pt-0.5">
                     <span className="text-neutral-500">Didn't receive code?</span>
                     {resendCooldown > 0 ? (
                       <span className="text-neutral-400 font-bold">
@@ -443,10 +544,18 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting || otp.length < 4 || !name.trim()}
-                    className="w-full rounded-xl bg-black py-3.5 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={
+                      isSubmitting ||
+                      otp.length < 4 ||
+                      (!isExistingUser && (!name.trim() || !email.trim() || password.length < 6))
+                    }
+                    className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? 'Verifying...' : 'VERIFY & SIGN IN'}
+                    {isSubmitting
+                      ? 'Processing...'
+                      : isExistingUser
+                      ? 'VERIFY & SIGN IN'
+                      : 'VERIFY & CREATE ACCOUNT'}
                   </button>
                 </form>
               </div>

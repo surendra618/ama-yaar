@@ -37,6 +37,10 @@ export default function LoginPage() {
   const [otpStep, setOtpStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showOtpPassword, setShowOtpPassword] = useState(false);
+  const [isExistingUser, setIsExistingUser] = useState(false);
   const [otp, setOtp] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [isAutoFilled, setIsAutoFilled] = useState(false);
@@ -108,12 +112,19 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const randomOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      let serverData = null;
       try {
-        await api.post('/auth/send-otp', { phone: cleanPhone });
+        const { data } = await api.post('/auth/send-otp', { phone: cleanPhone });
+        serverData = data?.data;
       } catch (err) {
         console.warn('Backend send-otp fallback:', err);
       }
+
+      const randomOtp = serverData?.otp || Math.floor(1000 + Math.random() * 9000).toString();
+      const existing = !!serverData?.isExisting;
+      setIsExistingUser(existing);
+      if (serverData?.name) setName(serverData.name);
+      if (serverData?.email) setEmail(serverData.email);
 
       setGeneratedOtp(randomOtp);
       setOtpStep('otp');
@@ -153,7 +164,7 @@ export default function LoginPage() {
     }
   };
 
-  // STEP 2: Verify OTP + Full Name -> Sign In
+  // STEP 2: Verify OTP + Name + Email + Password -> Sign In / Register
   const handleVerifyOtpAndSignIn = async (e) => {
     e.preventDefault();
     setCustomError('');
@@ -170,9 +181,21 @@ export default function LoginPage() {
     }
 
     const cleanName = name.trim();
-    if (!cleanName) {
-      setCustomError('Please enter your full name');
-      return;
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!isExistingUser) {
+      if (!cleanName) {
+        setCustomError('Please enter your full name');
+        return;
+      }
+      if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+        setCustomError('Please enter a valid email address');
+        return;
+      }
+      if (!password || password.length < 6) {
+        setCustomError('Password must be at least 6 characters');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -185,14 +208,18 @@ export default function LoginPage() {
         const { data } = await api.post('/auth/verify-otp', {
           phone: cleanPhone,
           otp: cleanOtp,
-          name: cleanName,
+          name: cleanName || undefined,
+          email: cleanEmail || undefined,
+          password: password || undefined,
         });
         resData = data.data;
       } catch (verifyErr) {
         try {
           const { data } = await api.post('/auth/quick-login', {
             phone: cleanPhone,
-            name: cleanName,
+            name: cleanName || undefined,
+            email: cleanEmail || undefined,
+            password: password || undefined,
           });
           resData = data.data;
         } catch (_) {}
@@ -200,9 +227,9 @@ export default function LoginPage() {
 
       const userObj = resData?.user || {
         _id: 'user_' + Date.now(),
-        name: cleanName,
+        name: cleanName || 'Customer',
         phone: cleanPhone,
-        email: `${cleanPhone}@mobile.ama-yaar.com`,
+        email: cleanEmail || `${cleanPhone}@mobile.ama-yaar.com`,
         role: 'customer',
       };
 
@@ -359,7 +386,7 @@ export default function LoginPage() {
             </button>
           </form>
         ) : (
-          /* MOBILE OTP STEP 2: AUTO-FILLED OTP + FULL NAME */
+          /* MOBILE OTP STEP 2: AUTO-FILLED OTP + DETAILS */
           <form onSubmit={handleVerifyOtpAndSignIn} className="af-form">
             <div className="flex items-center justify-between mb-1">
               <button
@@ -377,6 +404,18 @@ export default function LoginPage() {
                 +91 {phone}
               </span>
             </div>
+
+            <div className="mb-2">
+              <div className="text-xs font-black uppercase text-neutral-800 tracking-wider">
+                {isExistingUser ? 'Welcome Back!' : 'Complete Registration'}
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-0.5">
+                {isExistingUser
+                  ? 'Verify the auto-filled code to sign in'
+                  : 'Enter your email & password to enable Email + Password sign in'}
+              </p>
+            </div>
+
             {/* OTP Input */}
             <div className="af-field af-field--focus">
               <label className="af-label">ENTER 4-DIGIT OTP</label>
@@ -397,12 +436,12 @@ export default function LoginPage() {
 
             {/* Full Name */}
             <div className={`af-field ${focused === 'name' ? 'af-field--focus' : ''}`}>
-              <label className="af-label">FULL NAME</label>
+              <label className="af-label">FULL NAME {!isExistingUser && <span className="text-rose-500">*</span>}</label>
               <div className="af-input-box">
                 <User size={16} className="af-icon" />
                 <input
                   type="text"
-                  required
+                  required={!isExistingUser}
                   placeholder="Enter your full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -412,6 +451,55 @@ export default function LoginPage() {
                 />
               </div>
             </div>
+
+            {/* Email Address (Required for New Users) */}
+            {!isExistingUser && (
+              <div className={`af-field ${focused === 'email_reg' ? 'af-field--focus' : ''}`}>
+                <label className="af-label">EMAIL ADDRESS <span className="text-rose-500">*</span></label>
+                <div className="af-input-box">
+                  <Mail size={16} className="af-icon" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onFocus={() => setFocused('email_reg')}
+                    onBlur={() => setFocused('')}
+                    className="af-input"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Password (Required for New Users so they can log in via Email + Password) */}
+            {!isExistingUser && (
+              <div className={`af-field ${focused === 'pass_reg' ? 'af-field--focus' : ''}`}>
+                <label className="af-label">CREATE PASSWORD (MIN 6 CHARS) <span className="text-rose-500">*</span></label>
+                <div className="af-input-box">
+                  <Lock size={16} className="af-icon" />
+                  <input
+                    type={showOtpPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setFocused('pass_reg')}
+                    onBlur={() => setFocused('')}
+                    className="af-input af-input--pass"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOtpPassword((v) => !v)}
+                    className="af-eye"
+                    tabIndex={-1}
+                  >
+                    {showOtpPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Resend Link */}
             <div className="flex items-center justify-between text-xs py-1">
@@ -434,14 +522,18 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting || otp.length < 4 || !name.trim()}
+              disabled={
+                isSubmitting ||
+                otp.length < 4 ||
+                (!isExistingUser && (!name.trim() || !email.trim() || password.length < 6))
+              }
               className="af-btn cursor-pointer"
             >
               {isSubmitting ? (
                 <span className="af-spinner" />
               ) : (
                 <>
-                  Verify &amp; Sign In
+                  {isExistingUser ? 'Verify & Sign In' : 'Verify & Create Account'}
                   <ArrowRight size={17} className="af-btn-arrow" />
                 </>
               )}
@@ -452,15 +544,15 @@ export default function LoginPage() {
         /* EMAIL & PASSWORD LOGIN */
         <form onSubmit={handlePasswordSubmit} className="af-form">
           <div className={`af-field ${focused === 'email' ? 'af-field--focus' : ''}`}>
-            <label className="af-label">EMAIL ADDRESS</label>
+            <label className="af-label">EMAIL OR MOBILE NUMBER</label>
             <div className="af-input-box">
               <Mail size={16} className="af-icon" />
               <input
-                type="email"
+                type="text"
                 name="email"
                 required
-                autoComplete="email"
-                placeholder="you@example.com"
+                autoComplete="username"
+                placeholder="you@example.com or 9876543210"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 onFocus={() => setFocused('email')}

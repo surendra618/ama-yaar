@@ -172,6 +172,9 @@ export default function RegisterPage() {
       );
 
       if (registerUser.fulfilled.match(result)) {
+        if (result.payload?.user && result.payload?.accessToken) {
+          dispatch(setCredentials(result.payload));
+        }
         setShowSuccessModal(true);
         setTimeout(() => {
           navigate('/', { replace: true });
