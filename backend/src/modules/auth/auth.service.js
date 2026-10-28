@@ -192,9 +192,9 @@ async function quickLogin({ email, phone, name }) {
   if (!user) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(`quick_${Date.now()}_pwd`, salt);
-    const userName = name || (cleanEmail ? cleanEmail.split('@')[0] : 'Guest User');
+    user.name = name || (cleanEmail ? cleanEmail.split('@')[0] : 'Guest User');
     user = await User.create({
-      name: userName,
+      name: user.name,
       email: identifierEmail,
       phone: cleanPhone || '',
       password: hashedPassword,
@@ -202,6 +202,9 @@ async function quickLogin({ email, phone, name }) {
     });
     await Cart.create({ user: user._id, items: [] }).catch(() => {});
     await Wishlist.create({ user: user._id, products: [] }).catch(() => {});
+  } else if (name && (!user.name || user.name.startsWith('Guest') || user.name.startsWith('User '))) {
+    user.name = name;
+    await user.save();
   }
 
   const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name };
@@ -214,10 +217,56 @@ async function quickLogin({ email, phone, name }) {
   return { user: sanitizedUser, accessToken, refreshToken };
 }
 
+const otpStore = new Map();
+
+async function sendOtp({ phone }) {
+  if (!phone) throw new ApiError(400, 'Mobile number is required');
+  const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+  if (cleanPhone.length < 10) {
+    throw new ApiError(400, 'Please enter a valid 10-digit mobile number');
+  }
+
+  // Generate random 4-digit OTP
+  const otp = Math.floor(1000 + Math.random() * 9000).toString();
+  otpStore.set(cleanPhone, {
+    otp,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  });
+
+  return {
+    phone: cleanPhone,
+    otp,
+    message: 'OTP sent successfully',
+  };
+}
+
+async function verifyOtp({ phone, otp, name }) {
+  if (!phone || !otp) {
+    throw new ApiError(400, 'Mobile number and OTP are required');
+  }
+  const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+  const record = otpStore.get(cleanPhone);
+
+  if (!record || record.otp !== otp.toString().trim()) {
+    throw new ApiError(400, 'Invalid or expired OTP');
+  }
+
+  if (Date.now() > record.expiresAt) {
+    otpStore.delete(cleanPhone);
+    throw new ApiError(400, 'OTP has expired. Please request a new one.');
+  }
+
+  otpStore.delete(cleanPhone);
+
+  return await quickLogin({ phone: cleanPhone, name });
+}
+
 module.exports = {
   register,
   login,
   quickLogin,
+  sendOtp,
+  verifyOtp,
   refreshToken,
   logout,
   forgotPassword,
