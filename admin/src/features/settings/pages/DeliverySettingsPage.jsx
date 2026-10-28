@@ -362,11 +362,10 @@ export default function DeliverySettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('delivery')}
-          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-            activeTab === 'delivery'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${activeTab === 'delivery'
+            ? 'border-indigo-600 text-indigo-600'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <Truck className="h-4 w-4" /> Delivery Charges
         </button>
@@ -374,11 +373,10 @@ export default function DeliverySettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('exchange')}
-          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-            activeTab === 'exchange'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${activeTab === 'exchange'
+            ? 'border-indigo-600 text-indigo-600'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <RotateCcw className="h-4 w-4" /> Exchange Policy & Charges
         </button>
@@ -386,11 +384,10 @@ export default function DeliverySettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('details')}
-          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-            activeTab === 'details'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${activeTab === 'details'
+            ? 'border-indigo-600 text-indigo-600'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <FileText className="h-4 w-4" /> Description & Details Defaults
         </button>
@@ -398,11 +395,10 @@ export default function DeliverySettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('shiprocket')}
-          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-            activeTab === 'shiprocket'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${activeTab === 'shiprocket'
+            ? 'border-indigo-600 text-indigo-600'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <Box className="h-4 w-4" /> Shiprocket
           {formData.shiprocketEnabled && (
@@ -413,11 +409,10 @@ export default function DeliverySettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('logixwave')}
-          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-            activeTab === 'logixwave'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${activeTab === 'logixwave'
+            ? 'border-indigo-600 text-indigo-600'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <Zap className="h-4 w-4 text-amber-500" /> LogixWave OS
           <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded-full uppercase">
@@ -428,11 +423,10 @@ export default function DeliverySettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('preview')}
-          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-            activeTab === 'preview'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${activeTab === 'preview'
+            ? 'border-indigo-600 text-indigo-600'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <Eye className="h-4 w-4" /> Storefront Live Preview
         </button>
@@ -866,9 +860,8 @@ export default function DeliverySettingsPage() {
             <button
               type="button"
               onClick={() => setPreviewTab('description')}
-              className={`pb-2.5 px-4 transition cursor-pointer relative ${
-                previewTab === 'description' ? 'text-black font-bold' : 'hover:text-black'
-              }`}
+              className={`pb-2.5 px-4 transition cursor-pointer relative ${previewTab === 'description' ? 'text-black font-bold' : 'hover:text-black'
+                }`}
             >
               Description
               {previewTab === 'description' && (
@@ -879,9 +872,8 @@ export default function DeliverySettingsPage() {
             <button
               type="button"
               onClick={() => setPreviewTab('details')}
-              className={`pb-2.5 px-4 transition cursor-pointer relative ${
-                previewTab === 'details' ? 'text-black font-bold' : 'hover:text-black'
-              }`}
+              className={`pb-2.5 px-4 transition cursor-pointer relative ${previewTab === 'details' ? 'text-black font-bold' : 'hover:text-black'
+                }`}
             >
               Details
               {previewTab === 'details' && (
@@ -892,9 +884,8 @@ export default function DeliverySettingsPage() {
             <button
               type="button"
               onClick={() => setPreviewTab('exchange')}
-              className={`pb-2.5 px-4 transition cursor-pointer relative ${
-                previewTab === 'exchange' ? 'text-black font-bold' : 'hover:text-black'
-              }`}
+              className={`pb-2.5 px-4 transition cursor-pointer relative ${previewTab === 'exchange' ? 'text-black font-bold' : 'hover:text-black'
+                }`}
             >
               Exchange Policy
               {previewTab === 'exchange' && (
@@ -989,11 +980,10 @@ export default function DeliverySettingsPage() {
                 <div className="flex items-center gap-2.5">
                   <h3 className="text-sm font-bold text-slate-900">Shiprocket Automated Logistics</h3>
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
-                      formData.shiprocketEnabled
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${formData.shiprocketEnabled
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-slate-100 text-slate-600'
+                      }`}
                   >
                     {formData.shiprocketEnabled ? 'Enabled & Active' : 'Disabled'}
                   </span>
@@ -1126,11 +1116,10 @@ export default function DeliverySettingsPage() {
               {/* Test Result Display */}
               {testResult && (
                 <div
-                  className={`p-3 rounded-lg border text-xs flex items-start gap-2.5 animate-in fade-in ${
-                    testResult.success
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                      : 'bg-rose-50 border-rose-200 text-rose-800'
-                  }`}
+                  className={`p-3 rounded-lg border text-xs flex items-start gap-2.5 animate-in fade-in ${testResult.success
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border-rose-200 text-rose-800'
+                    }`}
                 >
                   {testResult.success ? (
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -1333,13 +1322,12 @@ export default function DeliverySettingsPage() {
                   <input
                     type="text"
                     readOnly
-                    value={`${
-                      typeof window !== 'undefined' && window.location.origin.includes('localhost')
-                        ? 'http://localhost:5000'
-                        : typeof window !== 'undefined'
+                    value={`${typeof window !== 'undefined' && window.location.origin.includes('localhost')
+                      ? 'http://localhost:5000'
+                      : typeof window !== 'undefined'
                         ? window.location.origin
                         : ''
-                    }/api/v1/shiprocket/webhook`}
+                      }/api/v1/shiprocket/webhook`}
                     className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 font-mono select-all focus:outline-hidden"
                   />
                   <button

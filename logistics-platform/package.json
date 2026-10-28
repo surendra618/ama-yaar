@@ -1,0 +1,11 @@
+{
+  "name": "logixwave-logistics-platform",
+  "version": "1.0.0",
+  "description": "Multi-Courier Logistics Aggregator Platform (Shiprocket Alternative)",
+  "scripts": {
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "seed": "npm run seed --prefix backend",
+    "build": "npm run build --prefix frontend"
+  }
+}

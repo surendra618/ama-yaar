@@ -36,6 +36,13 @@ import AuthPopupModal from "../../../components/AuthPopupModal";
 import api from "../../../lib/axios";
 import { getMediaUrl } from "../../../utils/mediaUrl";
 
+const PLACEHOLDER_GALLERY = [
+  "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
+  "https://images.unsplash.com/photo-1554568218-0f1715e72254?w=800&q=80",
+  "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80",
+  "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80",
+];
+
 export default function ProductDetailsPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -122,6 +129,70 @@ export default function ProductDetailsPage() {
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(null);
+
+  const rawImages = (product?.images || [])
+    .filter(Boolean)
+    .map((img) => getMediaUrl(img));
+  const displayImages = rawImages.length > 0 ? rawImages : PLACEHOLDER_GALLERY;
+  const safeImageIndex = selectedImage < displayImages.length ? selectedImage : 0;
+
+  const handlePrevImage = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (displayImages.length <= 1) return;
+    setIsHoveringZoom(false);
+    setSelectedImage((prev) =>
+      prev <= 0 ? displayImages.length - 1 : prev - 1,
+    );
+  };
+
+  const handleNextImage = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (displayImages.length <= 1) return;
+    setIsHoveringZoom(false);
+    setSelectedImage((prev) =>
+      prev >= displayImages.length - 1 ? 0 : prev + 1,
+    );
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      setTouchStartX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX === null || displayImages.length <= 1) return;
+    if (e.changedTouches && e.changedTouches[0]) {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchStartX - touchEndX;
+      if (Math.abs(diff) > 40) {
+        if (diff > 0) handleNextImage();
+        else handlePrevImage();
+      }
+    }
+    setTouchStartX(null);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (displayImages.length <= 1) return;
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [displayImages.length]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -171,40 +242,6 @@ export default function ProductDetailsPage() {
       (item._id || item) === product._id ||
       (item.slug && item.slug === product.slug),
   );
-
-  const PLACEHOLDER_GALLERY = [
-    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
-    "https://images.unsplash.com/photo-1554568218-0f1715e72254?w=800&q=80",
-    "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80",
-    "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80",
-  ];
-
-  const rawImages = (product.images || [])
-    .filter(Boolean)
-    .map((img) => getMediaUrl(img));
-  const displayImages = rawImages.length > 0 ? rawImages : PLACEHOLDER_GALLERY;
-  const safeImageIndex = selectedImage < displayImages.length ? selectedImage : 0;
-
-  const [touchStartX, setTouchStartX] = useState(null);
-
-  const handleTouchStart = (e) => {
-    if (e.touches && e.touches[0]) {
-      setTouchStartX(e.touches[0].clientX);
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    if (touchStartX === null || displayImages.length <= 1) return;
-    if (e.changedTouches && e.changedTouches[0]) {
-      const touchEndX = e.changedTouches[0].clientX;
-      const diff = touchStartX - touchEndX;
-      if (Math.abs(diff) > 40) {
-        if (diff > 0) handleNextImage();
-        else handlePrevImage();
-      }
-    }
-    setTouchStartX(null);
-  };
 
   const availableSizes =
     product.variants?.length > 0 && product.variants.some((v) => v.size)
@@ -274,44 +311,6 @@ export default function ProductDetailsPage() {
     setReviewModalOpen(false);
     setNewComment("");
   };
-
-  const handlePrevImage = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (displayImages.length <= 1) return;
-    setIsHoveringZoom(false);
-    setSelectedImage((prev) =>
-      prev <= 0 ? displayImages.length - 1 : prev - 1,
-    );
-  };
-
-  const handleNextImage = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (displayImages.length <= 1) return;
-    setIsHoveringZoom(false);
-    setSelectedImage((prev) =>
-      prev >= displayImages.length - 1 ? 0 : prev + 1,
-    );
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (displayImages.length <= 1) return;
-      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-      if (e.key === 'ArrowLeft') {
-        handlePrevImage();
-      } else if (e.key === 'ArrowRight') {
-        handleNextImage();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [displayImages.length]);
 
   return (
     <div className="min-h-screen bg-white py-1 sm:py-2 text-neutral-900 font-sans">
