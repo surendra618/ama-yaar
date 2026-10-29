@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Bell, Check, Trash2, Clock, CheckCheck, Package, Tag, ShieldAlert } from 'lucide-react';
 import { fetchNotifications, markNotificationRead } from '../notificationsSlice';
 import api from '../../../lib/axios';
+import Loader from '../../../components/Loader';
 
 export default function NotificationsPage() {
   const dispatch = useDispatch();
@@ -75,11 +76,8 @@ export default function NotificationsPage() {
 
       {/* Loading state */}
       {loading && notifications.length === 0 && (
-        <div className="rounded-2xl border border-neutral-200/80 bg-white p-16 text-center shadow-xs">
-          <div className="flex justify-center mb-4">
-            <div className="h-8 w-8 rounded-full border-2 border-black border-t-transparent animate-spin" />
-          </div>
-          <p className="text-xs text-neutral-500 font-medium">Fetching notifications…</p>
+        <div className="rounded-2xl border border-neutral-200/80 bg-white p-8 text-center shadow-xs">
+          <Loader size="md" label="Fetching notifications..." variant="card" />
         </div>
       )}
 

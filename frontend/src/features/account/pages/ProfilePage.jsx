@@ -158,16 +158,16 @@ export default function ProfilePage() {
 
         {/* User Info Bar with Overlapping Avatar */}
         <div className="px-6 pb-6 pt-0 relative">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {/* Avatar & User Details */}
-            <div className="flex items-end gap-4">
+            <div className="flex items-center gap-4">
               <div
-                className="relative z-20 flex h-24 w-24 items-center justify-center rounded-full bg-white text-3xl font-black text-black shadow-xl border-4 border-white ring-1 ring-neutral-200/80 shrink-0"
+                className="relative z-20 flex h-24 w-24 items-center justify-center rounded-full bg-white text-3xl font-black text-black shadow-xl border-4 border-white ring-1 ring-neutral-200/80 shrink-0 -mt-12"
                 style={{ letterSpacing: '0.04em' }}
               >
                 {initials}
               </div>
-              <div className="pb-1">
+              <div className="pt-3 sm:pt-4 pb-1">
                 <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight uppercase">
                   {user?.name || 'Customer'}
                 </h2>
@@ -176,17 +176,19 @@ export default function ProfilePage() {
             </div>
 
             {/* Edit Button */}
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className={`inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-xs font-black uppercase tracking-wider transition ${
-                isEditing
-                  ? 'bg-neutral-100 text-neutral-800 hover:bg-neutral-200'
-                  : 'bg-black text-white hover:bg-neutral-800 shadow-sm'
-              }`}
-            >
-              <Edit3 className="h-3.5 w-3.5" />
-              {isEditing ? 'Cancel Edit' : 'Edit Profile'}
-            </button>
+            <div className="sm:pt-3">
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-xs font-black uppercase tracking-wider transition ${
+                  isEditing
+                    ? 'bg-neutral-100 text-neutral-800 hover:bg-neutral-200'
+                    : 'bg-black text-white hover:bg-neutral-800 shadow-sm'
+                }`}
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                {isEditing ? 'Cancel Edit' : 'Edit Profile'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

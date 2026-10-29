@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, Box } from 'lucide-react';
 import { fetchOrders } from '../ordersSlice';
 import DataTable from '../../../components/DataTable';
 import Pagination from '../../../components/Pagination';
@@ -36,7 +36,14 @@ export default function OrdersListPage() {
       render: (o) => (
         <div>
           <p className="text-sm font-bold text-slate-900">{o.orderNumber || `#${o._id.slice(-6)}`}</p>
-          <p className="text-xs font-medium text-slate-400">{new Date(o.createdAt).toLocaleDateString()}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="text-xs font-medium text-slate-400">{new Date(o.createdAt).toLocaleDateString()}</span>
+            {o.shiprocket?.awbCode && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-indigo-50 border border-indigo-200 text-[10px] font-mono font-bold text-indigo-700" title={`Courier: ${o.shiprocket.courierName || 'Shiprocket'}`}>
+                <Box className="h-2.5 w-2.5 text-indigo-600" /> {o.shiprocket.awbCode}
+              </span>
+            )}
+          </div>
         </div>
       ),
     },

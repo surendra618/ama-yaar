@@ -59,12 +59,20 @@ async function register({ name, email, password, phone, role = 'customer' }) {
 
 async function login({ email, password, role }) {
   if (!email || !password) {
-    throw new ApiError(400, 'Email and password are required');
+    throw new ApiError(400, 'Email/Mobile and password are required');
   }
 
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  const cleanInput = email.trim().toLowerCase();
+  const cleanPhone = cleanInput.replace(/\D/g, '').slice(-10);
+
+  const queryOr = [{ email: cleanInput }];
+  if (cleanPhone.length === 10) {
+    queryOr.push({ phone: cleanPhone });
+  }
+
+  const user = await User.findOne({ $or: queryOr }).select('+password');
   if (!user) {
-    throw new ApiError(401, 'Invalid email or password');
+    throw new ApiError(401, 'Invalid email/mobile or password');
   }
 
   if (user.status === 'blocked') {
@@ -175,10 +183,10 @@ async function getMe(userId) {
   return user;
 }
 
-async function quickLogin({ email, phone, name }) {
+async function quickLogin({ email, phone, name, password }) {
   const cleanEmail = email ? email.trim().toLowerCase() : null;
-  const cleanPhone = phone ? phone.trim() : null;
-  const identifierEmail = cleanEmail || (cleanPhone ? `${cleanPhone.replace(/\D/g, '')}@guest.ama-yaar.com` : `guest_${Date.now()}@ama-yaar.com`);
+  const cleanPhone = phone ? phone.trim().replace(/\D/g, '').slice(-10) : null;
+  const identifierEmail = cleanEmail || (cleanPhone ? `${cleanPhone}@guest.ama-yaar.com` : `guest_${Date.now()}@ama-yaar.com`);
 
   const queryOr = [];
   if (cleanEmail) queryOr.push({ email: cleanEmail });
@@ -191,10 +199,10 @@ async function quickLogin({ email, phone, name }) {
 
   if (!user) {
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(`quick_${Date.now()}_pwd`, salt);
-    const userName = name || (cleanEmail ? cleanEmail.split('@')[0] : 'Guest User');
+    const pwdToHash = password && password.length >= 6 ? password : `quick_${Date.now()}_pwd`;
+    const hashedPassword = await bcrypt.hash(pwdToHash, salt);
     user = await User.create({
-      name: userName,
+      name: name || (cleanEmail ? cleanEmail.split('@')[0] : 'Customer'),
       email: identifierEmail,
       phone: cleanPhone || '',
       password: hashedPassword,
@@ -202,6 +210,28 @@ async function quickLogin({ email, phone, name }) {
     });
     await Cart.create({ user: user._id, items: [] }).catch(() => {});
     await Wishlist.create({ user: user._id, products: [] }).catch(() => {});
+  } else {
+    let updated = false;
+    if (name && (!user.name || user.name.startsWith('Guest') || user.name.startsWith('User '))) {
+      user.name = name;
+      updated = true;
+    }
+    if (cleanEmail && (!user.email || user.email.includes('@guest.') || user.email.includes('@mobile.'))) {
+      user.email = cleanEmail;
+      updated = true;
+    }
+    if (cleanPhone && !user.phone) {
+      user.phone = cleanPhone;
+      updated = true;
+    }
+    if (password && password.length >= 6) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+      updated = true;
+    }
+    if (updated) {
+      await user.save();
+    }
   }
 
   const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name };
@@ -214,10 +244,63 @@ async function quickLogin({ email, phone, name }) {
   return { user: sanitizedUser, accessToken, refreshToken };
 }
 
+const otpStore = new Map();
+
+async function sendOtp({ phone }) {
+  if (!phone) throw new ApiError(400, 'Mobile number is required');
+  const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+  if (cleanPhone.length < 10) {
+    throw new ApiError(400, 'Please enter a valid 10-digit mobile number');
+  }
+
+  // Check if user already exists
+  const existingUser = await User.findOne({ phone: cleanPhone });
+  const isExisting = !!existingUser;
+
+  // Generate random 4-digit OTP
+  const otp = Math.floor(1000 + Math.random() * 9000).toString();
+  otpStore.set(cleanPhone, {
+    otp,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  });
+
+  return {
+    phone: cleanPhone,
+    otp,
+    isExisting,
+    name: existingUser?.name || '',
+    email: existingUser && !existingUser.email.includes('@guest.') && !existingUser.email.includes('@mobile.') ? existingUser.email : '',
+    message: 'OTP sent successfully',
+  };
+}
+
+async function verifyOtp({ phone, otp, name, email, password }) {
+  if (!phone || !otp) {
+    throw new ApiError(400, 'Mobile number and OTP are required');
+  }
+  const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+  const record = otpStore.get(cleanPhone);
+
+  if (!record || record.otp !== otp.toString().trim()) {
+    throw new ApiError(400, 'Invalid or expired OTP');
+  }
+
+  if (Date.now() > record.expiresAt) {
+    otpStore.delete(cleanPhone);
+    throw new ApiError(400, 'OTP has expired. Please request a new one.');
+  }
+
+  otpStore.delete(cleanPhone);
+
+  return await quickLogin({ phone: cleanPhone, name, email, password });
+}
+
 module.exports = {
   register,
   login,
   quickLogin,
+  sendOtp,
+  verifyOtp,
   refreshToken,
   logout,
   forgotPassword,

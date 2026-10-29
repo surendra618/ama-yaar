@@ -54,20 +54,34 @@ const fallbackCardSliders = [
   },
 ];
 
+// In-memory cache for ultra-fast card slider responses
+let cardSliderCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function clearCardSliderCache() {
+  cardSliderCache.clear();
+}
+
 async function list(query = {}) {
   try {
     const { activeOnly = 'false' } = query;
-    const filter = {};
+    const cacheKey = JSON.stringify({ activeOnly });
+    const cached = cardSliderCache.get(cacheKey);
 
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
+
+    const filter = {};
     if (activeOnly === 'true') {
       filter.isActive = true;
     }
 
-    const items = await CardSlider.find(filter).sort({ displayOrder: 1, createdAt: -1 });
-    if (!items || items.length === 0) {
-      return fallbackCardSliders;
-    }
-    return items;
+    const items = await CardSlider.find(filter).sort({ displayOrder: 1, createdAt: -1 }).lean();
+    const result = (!items || items.length === 0) ? fallbackCardSliders : items;
+
+    cardSliderCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   } catch (err) {
     console.warn('[cardSlider.service] Database query failed, returning fallback list:', err.message);
     return fallbackCardSliders;
@@ -86,8 +100,11 @@ async function getById(id) {
 
 async function create(data) {
   try {
-    return await CardSlider.create(data);
+    const created = await CardSlider.create(data);
+    clearCardSliderCache();
+    return created;
   } catch (err) {
+    clearCardSliderCache();
     return { _id: `cardslider_${Date.now()}`, ...data };
   }
 }
@@ -96,8 +113,10 @@ async function update(id, data) {
   try {
     const doc = await CardSlider.findByIdAndUpdate(id, data, { new: true, runValidators: true });
     if (!doc) throw new ApiError(404, 'Card Slider item not found');
+    clearCardSliderCache();
     return doc;
   } catch (err) {
+    clearCardSliderCache();
     return { _id: id, ...data };
   }
 }
@@ -106,8 +125,10 @@ async function remove(id) {
   try {
     const doc = await CardSlider.findByIdAndDelete(id);
     if (!doc) throw new ApiError(404, 'Card Slider item not found');
+    clearCardSliderCache();
     return doc;
   } catch (err) {
+    clearCardSliderCache();
     return { _id: id };
   }
 }

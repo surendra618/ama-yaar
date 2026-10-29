@@ -270,6 +270,11 @@ async function create(data) {
   if (!data.subCategory || data.subCategory === '') {
     data.subCategory = null;
   }
+  if (data.keyFeatures && (!data.highlights || !data.highlights.length)) {
+    data.highlights = data.keyFeatures;
+  } else if (data.highlights && (!data.keyFeatures || !data.keyFeatures.length)) {
+    data.keyFeatures = data.highlights;
+  }
   try {
     return await Product.create(data);
   } catch (err) {
@@ -286,6 +291,11 @@ async function update(id, data) {
   }
   if (data.subCategory !== undefined && (!data.subCategory || data.subCategory === '')) {
     data.subCategory = null;
+  }
+  if (data.keyFeatures && (!data.highlights || !data.highlights.length)) {
+    data.highlights = data.keyFeatures;
+  } else if (data.highlights && (!data.keyFeatures || !data.keyFeatures.length)) {
+    data.keyFeatures = data.highlights;
   }
   try {
     const doc = await Product.findByIdAndUpdate(id, data, { new: true, runValidators: true });

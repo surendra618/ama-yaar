@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tag, Ticket, Copy, Check, Sparkles, Percent, Clock, AlertCircle } from 'lucide-react';
 import api from '../../../lib/axios';
+import Loader from '../../../components/Loader';
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState([]);
@@ -54,11 +55,8 @@ export default function CouponsPage() {
 
       {/* Loading State */}
       {loading && (
-        <div className="rounded-2xl border border-neutral-200/80 bg-white p-16 text-center shadow-xs">
-          <div className="flex justify-center mb-4">
-            <div className="h-8 w-8 rounded-full border-2 border-black border-t-transparent animate-spin" />
-          </div>
-          <p className="text-xs text-neutral-500 font-medium">Checking available discount vouchers…</p>
+        <div className="rounded-2xl border border-neutral-200/80 bg-white p-8 text-center shadow-xs">
+          <Loader size="md" label="Checking available discount vouchers..." variant="card" />
         </div>
       )}
 

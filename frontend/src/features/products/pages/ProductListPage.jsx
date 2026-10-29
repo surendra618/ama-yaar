@@ -26,7 +26,6 @@ export default function ProductListPage() {
   // Extract query params
   const search = searchParams.get('search') || '';
   const category = searchParams.get('category') || '';
-  const brand = searchParams.get('brand') || '';
   const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
   const minRating = searchParams.get('minRating') || '';
@@ -63,21 +62,8 @@ export default function ProductListPage() {
     setPriceRange({ min: '', max: '' });
   };
 
-  const selectedBrands = brand ? brand.split(',') : [];
-
-  const toggleBrand = (b) => {
-    let next;
-    if (selectedBrands.includes(b)) {
-      next = selectedBrands.filter((x) => x !== b);
-    } else {
-      next = [...selectedBrands, b];
-    }
-    updateFilter('brand', next.length > 0 ? next.join(',') : '');
-  };
-
   const activeFilterCount = [
     category,
-    brand,
     minPrice,
     maxPrice,
     minRating,
@@ -215,12 +201,6 @@ export default function ProductListPage() {
                   <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
                     Category: {category}
                     <button onClick={() => updateFilter('category', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
-                  </span>
-                )}
-                {brand && (
-                  <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
-                    Brand: {brand}
-                    <button onClick={() => updateFilter('brand', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
                   </span>
                 )}
                 {minPrice && (
@@ -466,25 +446,6 @@ export default function ProductListPage() {
                 </button>
               </div>
 
-              {/* Brand Filter */}
-              {filterOptions.brands?.length > 0 && (
-                <div className="pt-5">
-                  <h4 className="font-black text-black uppercase tracking-wider mb-2.5">Brand</h4>
-                  <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
-                    {filterOptions.brands.map((b) => (
-                      <label key={b} className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-neutral-700 hover:text-black">
-                        <input
-                          type="checkbox"
-                          checked={selectedBrands.includes(b)}
-                          onChange={() => toggleBrand(b)}
-                          className="border-neutral-300 text-black focus:ring-black h-4 w-4"
-                        />
-                        <span className="truncate">{b}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Customer Rating Filter */}
               <div className="pt-5">

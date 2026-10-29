@@ -28,10 +28,20 @@ import {
   submitProductReview,
   clearProductDetails,
 } from "../productDetailsSlice";
-import { addToCart, openDrawer } from "../../cart/cartSlice";
+import { addToCart, openDrawer, closeDrawer } from "../../cart/cartSlice";
 import { toggleWishlist } from "../../wishlist/wishlistSlice";
 import ProductCard from "../../../components/ProductCard";
+import Loader from "../../../components/Loader";
+import AuthPopupModal from "../../../components/AuthPopupModal";
 import api from "../../../lib/axios";
+import { getMediaUrl } from "../../../utils/mediaUrl";
+
+const PLACEHOLDER_GALLERY = [
+  "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
+  "https://images.unsplash.com/photo-1554568218-0f1715e72254?w=800&q=80",
+  "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80",
+  "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80",
+];
 
 export default function ProductDetailsPage() {
   const { slug } = useParams();
@@ -51,7 +61,7 @@ export default function ProductDetailsPage() {
       .catch(() => {});
   }, []);
 
-  const { product, related, reviews, reviewStats, loading } = useSelector(
+  const { product, related, reviews, reviewStats, loading, error } = useSelector(
     (state) => state.productDetails,
   );
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -65,8 +75,39 @@ export default function ProductDetailsPage() {
   const [added, setAdded] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
-  const [pincode, setPincode] = useState("");
-  const [pincodeChecked, setPincodeChecked] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authSuccessCallback, setAuthSuccessCallback] = useState(null);
+  const [pincode, setPincode] = useState(() => localStorage.getItem("ay_delivery_pincode") || "");
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeResult, setPincodeResult] = useState(null);
+  const [pincodeError, setPincodeError] = useState("");
+
+  const handleCheckPincode = async (e) => {
+    if (e) e.preventDefault();
+    if (!/^[1-9][0-9]{5}$/.test(pincode.trim())) {
+      setPincodeError("Please enter a valid 6-digit Indian PIN code");
+      return;
+    }
+    setPincodeLoading(true);
+    setPincodeError("");
+    try {
+      const res = await api.get(`/shiprocket/serviceability?pincode=${pincode.trim()}`);
+      const data = res.data?.data || res.data;
+      setPincodeResult(data);
+      localStorage.setItem("ay_delivery_pincode", pincode.trim());
+    } catch (err) {
+      setPincodeError(err.response?.data?.message || "Serviceability check failed. Please try again.");
+    } finally {
+      setPincodeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const savedPin = localStorage.getItem("ay_delivery_pincode");
+    if (savedPin && savedPin.length === 6 && !pincodeResult) {
+      handleCheckPincode();
+    }
+  }, []);
 
   const [activeTab, setActiveTab] = useState("description");
 
@@ -75,6 +116,16 @@ export default function ProductDetailsPage() {
   const [isHoveringZoom, setIsHoveringZoom] = useState(false);
 
   const handleMouseMove = (e) => {
+    // If the mouse is directly over navigation buttons or indicator dots, do not zoom
+    if (e.target && e.target.closest && e.target.closest('button')) {
+      if (isHoveringZoom) setIsHoveringZoom(false);
+      return;
+    }
+
+    if (!isHoveringZoom) {
+      setIsHoveringZoom(true);
+    }
+
     const { left, top, width, height } =
       e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(100, ((e.clientX - left) / width) * 100));
@@ -88,6 +139,72 @@ export default function ProductDetailsPage() {
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(null);
+
+  const rawImages = (product?.images || [])
+    .filter(Boolean)
+    .map((img) => getMediaUrl(img));
+  const displayImages = rawImages.length > 0 ? rawImages : PLACEHOLDER_GALLERY;
+  const safeImageIndex = selectedImage < displayImages.length ? selectedImage : 0;
+
+  const handlePrevImage = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (displayImages.length <= 1) return;
+    setIsHoveringZoom(false);
+    setZoomPos({ x: 50, y: 50 });
+    setSelectedImage((prev) =>
+      prev <= 0 ? displayImages.length - 1 : prev - 1,
+    );
+  };
+
+  const handleNextImage = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (displayImages.length <= 1) return;
+    setIsHoveringZoom(false);
+    setZoomPos({ x: 50, y: 50 });
+    setSelectedImage((prev) =>
+      prev >= displayImages.length - 1 ? 0 : prev + 1,
+    );
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      setTouchStartX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX === null || displayImages.length <= 1) return;
+    if (e.changedTouches && e.changedTouches[0]) {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchStartX - touchEndX;
+      if (Math.abs(diff) > 40) {
+        if (diff > 0) handleNextImage();
+        else handlePrevImage();
+      }
+    }
+    setTouchStartX(null);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (displayImages.length <= 1) return;
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [displayImages.length]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -106,10 +223,28 @@ export default function ProductDetailsPage() {
     }
   }, [dispatch, product?._id]);
 
-  if (loading || !product) {
+  if (loading) {
+    return <Loader size="lg" label="Loading fit details..." minHeight="min-h-[70vh]" />;
+  }
+
+  if (!product) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-black border-t-transparent"></div>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-neutral-50/50 py-16 px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-neutral-200/80 p-8 text-center shadow-xs">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 mb-4">
+            <ShoppingBag className="h-8 w-8 stroke-[1.5]" />
+          </div>
+          <h2 className="text-xl font-black uppercase tracking-tight text-black">Fit Not Found</h2>
+          <p className="text-xs text-neutral-500 font-medium mt-1.5 mb-6 leading-relaxed">
+            {error || "The product you're looking for doesn't exist, is temporarily unavailable, or has been discontinued."}
+          </p>
+          <Link
+            to="/products"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-6 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition shadow-sm w-full cursor-pointer"
+          >
+            Explore All Fits &rarr;
+          </Link>
+        </div>
       </div>
     );
   }
@@ -119,27 +254,6 @@ export default function ProductDetailsPage() {
       (item._id || item) === product._id ||
       (item.slug && item.slug === product.slug),
   );
-
-  const PLACEHOLDER_GALLERY = [
-    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
-    "https://images.unsplash.com/photo-1554568218-0f1715e72254?w=800&q=80",
-    "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80",
-    "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80",
-  ];
-
-  const rawImages = (product.images || [])
-    .filter(Boolean)
-    .map((img) =>
-      img.startsWith("http") || img.startsWith("data:")
-        ? img
-        : img.startsWith("/uploads")
-          ? `http://localhost:5000${img}`
-          : img,
-    );
-  const displayImages =
-    rawImages.length === 0
-      ? PLACEHOLDER_GALLERY
-      : Array.from({ length: 4 }, (_, i) => rawImages[i % rawImages.length]);
 
   const availableSizes =
     product.variants?.length > 0 && product.variants.some((v) => v.size)
@@ -178,8 +292,10 @@ export default function ProductDetailsPage() {
           variant: { size: sizeToUse, color: selectedColor },
         }),
       );
+      dispatch(closeDrawer());
       if (!isAuthenticated) {
-        navigate(`/login?redirect=${encodeURIComponent('/checkout')}`);
+        setAuthSuccessCallback(() => () => navigate('/checkout'));
+        setAuthModalOpen(true);
       } else {
         navigate('/checkout');
       }
@@ -191,7 +307,8 @@ export default function ProductDetailsPage() {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      navigate("/login");
+      setAuthSuccessCallback(() => () => setReviewModalOpen(true));
+      setAuthModalOpen(true);
       return;
     }
     setSubmittingReview(true);
@@ -205,18 +322,6 @@ export default function ProductDetailsPage() {
     setSubmittingReview(false);
     setReviewModalOpen(false);
     setNewComment("");
-  };
-
-  const handlePrevImage = () => {
-    setSelectedImage((prev) =>
-      prev === 0 ? displayImages.length - 1 : prev - 1,
-    );
-  };
-
-  const handleNextImage = () => {
-    setSelectedImage((prev) =>
-      prev === displayImages.length - 1 ? 0 : prev + 1,
-    );
   };
 
   return (
@@ -279,63 +384,103 @@ export default function ProductDetailsPage() {
           {/* CENTER COLUMN: Large Focused Product Image (Centered, High Visibility, No Padding Restriction) */}
           <div className="lg:col-span-6 flex flex-col items-center justify-center order-1 lg:order-2">
             <div
-              className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group cursor-crosshair"
+              className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group cursor-crosshair select-none"
               onMouseEnter={() => setIsHoveringZoom(true)}
               onMouseLeave={() => setIsHoveringZoom(false)}
               onMouseMove={handleMouseMove}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
               <img
-                src={displayImages[selectedImage] || displayImages[0]}
+                key={safeImageIndex}
+                src={displayImages[safeImageIndex] || displayImages[0]}
                 alt={product.name || "Product Showcase"}
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                   transform: isHoveringZoom ? "scale(2.5)" : "scale(1)",
+                  transition: isHoveringZoom
+                    ? "transform 200ms ease-out, transform-origin 75ms ease-out"
+                    : "transform 200ms ease-out",
                 }}
-                className={`h-full w-full object-cover object-top select-none pointer-events-none will-change-transform ${
-                  isHoveringZoom
-                    ? "transition-[transform-origin] duration-75 ease-out"
-                    : "transition-transform duration-200 ease-out"
-                }`}
+                className="h-full w-full object-cover object-top select-none pointer-events-none will-change-transform"
               />
 
-              {/* Left Arrow Button (hidden while zooming for unobstructed view) */}
-              {!isHoveringZoom && displayImages.length > 1 && (
+              {/* Left Arrow Button (Always clickable when multiple images exist) */}
+              {displayImages.length > 1 && (
                 <button
                   type="button"
                   onClick={handlePrevImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white/95 hover:bg-black/70 transition cursor-pointer backdrop-blur-xs shadow-sm"
+                  onMouseEnter={(e) => {
+                    e.stopPropagation();
+                    setIsHoveringZoom(false);
+                  }}
+                  onMouseLeave={(e) => {
+                    e.stopPropagation();
+                    setIsHoveringZoom(true);
+                  }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/95 hover:bg-black hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer backdrop-blur-md shadow-md focus:outline-none"
                   aria-label="Previous image"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
               )}
 
-              {/* Right Arrow Button (hidden while zooming for unobstructed view) */}
-              {!isHoveringZoom && displayImages.length > 1 && (
+              {/* Right Arrow Button (Always clickable when multiple images exist) */}
+              {displayImages.length > 1 && (
                 <button
                   type="button"
                   onClick={handleNextImage}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white/95 hover:bg-black/70 transition cursor-pointer backdrop-blur-xs shadow-sm"
+                  onMouseEnter={(e) => {
+                    e.stopPropagation();
+                    setIsHoveringZoom(false);
+                  }}
+                  onMouseLeave={(e) => {
+                    e.stopPropagation();
+                    setIsHoveringZoom(true);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/95 hover:bg-black hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer backdrop-blur-md shadow-md focus:outline-none"
                   aria-label="Next image"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
               )}
 
+              {/* Slide Dots Indicator */}
+              {displayImages.length > 1 && !isHoveringZoom && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full pointer-events-auto">
+                  {displayImages.map((_, dotIdx) => (
+                    <button
+                      key={dotIdx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(dotIdx);
+                      }}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        safeImageIndex === dotIdx
+                          ? "w-4 bg-white"
+                          : "w-1.5 bg-white/50 hover:bg-white/80"
+                      }`}
+                      aria-label={`Go to slide ${dotIdx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+
               {/* Discount pill matching user screenshot */}
               {!isHoveringZoom && product.discount > 0 && (
-                <span className="absolute top-3 left-3 rounded-xs bg-black px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
+                <span className="absolute top-3 left-3 z-10 rounded-xs bg-black px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
                   {product.discount}% OFF
                 </span>
               )}
 
               {/* Zoom pill indicator */}
               {isHoveringZoom ? (
-                <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
+                <span className="absolute bottom-3 right-3 z-20 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
                   2.5x Zoom
                 </span>
               ) : (
-                <span className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-xs text-white/90 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                <span className="absolute bottom-3 left-3 z-10 bg-black/40 backdrop-blur-xs text-white/90 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">
                   <Search className="h-2.5 w-2.5" /> Hover to zoom
                 </span>
               )}
@@ -350,8 +495,8 @@ export default function ProductDetailsPage() {
                     type="button"
                     onClick={() => setSelectedImage(idx)}
                     className={`h-14 w-11 sm:h-16 sm:w-13 overflow-hidden rounded-sm border transition cursor-pointer ${
-                      selectedImage === idx
-                        ? "border-neutral-800 opacity-100"
+                      safeImageIndex === idx
+                        ? "border-neutral-900 ring-1 ring-neutral-900 opacity-100"
                         : "border-neutral-200 opacity-60 hover:opacity-100"
                     }`}
                   >
@@ -461,7 +606,11 @@ export default function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (!isAuthenticated) return navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
+                    if (!isAuthenticated) {
+                      setAuthSuccessCallback(() => () => dispatch(toggleWishlist(product._id)));
+                      setAuthModalOpen(true);
+                      return;
+                    }
                     dispatch(toggleWishlist(product._id));
                   }}
                   className={`flex items-center gap-1.5 transition cursor-pointer ${
@@ -508,6 +657,76 @@ export default function ProductDetailsPage() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Delivery & Shiprocket Serviceability Checker */}
+            <div className="pt-3 border-t border-neutral-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Truck className="h-3.5 w-3.5 text-neutral-700" /> Delivery Options
+                </span>
+                {pincodeResult?.isServiceable && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                    <Check className="h-3 w-3 text-emerald-600" /> Serviceable
+                  </span>
+                )}
+              </div>
+
+              <form onSubmit={handleCheckPincode} className="relative flex items-center">
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={pincode}
+                  onChange={(e) => {
+                    setPincode(e.target.value.replace(/\D/g, ''));
+                    setPincodeError('');
+                  }}
+                  placeholder="Enter 6-digit delivery PIN code"
+                  className="w-full h-9 rounded-sm border border-neutral-200 pl-3 pr-20 text-xs font-medium text-black placeholder:text-neutral-400 focus:border-black focus:outline-hidden"
+                />
+                <button
+                  type="submit"
+                  disabled={pincodeLoading || pincode.length !== 6}
+                  className="absolute right-1 top-1 bottom-1 px-3 bg-black hover:bg-neutral-800 text-white text-[11px] font-bold uppercase tracking-wider rounded-xs transition disabled:opacity-40 cursor-pointer flex items-center justify-center"
+                >
+                  {pincodeLoading ? 'Checking…' : 'Check'}
+                </button>
+              </form>
+
+              {pincodeError && (
+                <p className="text-[11px] text-rose-600 font-medium">{pincodeError}</p>
+              )}
+
+              {pincodeResult && (
+                <div className="rounded-lg bg-neutral-50/80 border border-neutral-200 p-3 space-y-2 text-xs animate-in fade-in">
+                  <div className="flex items-center justify-between font-semibold text-neutral-900">
+                    <span className="flex items-center gap-1.5 text-emerald-700">
+                      <Truck className="h-4 w-4 text-emerald-600" />
+                      <span>Expected by <strong>{pincodeResult.estimatedDeliveryDate || '3-4 Days'}</strong></span>
+                    </span>
+                    <span className="text-[11px] text-neutral-500">
+                      {pincodeResult.estimatedDays} Days Delivery
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-200/60 text-[11px] text-neutral-600 font-medium">
+                    <div className="flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>{pincodeResult.codAvailable ? 'Cash on Delivery Available' : 'Prepaid Orders Only'}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>{policySettings?.freeDeliveryThreshold ? `Free shipping above ₹${policySettings.freeDeliveryThreshold}` : 'Free Standard Shipping'}</span>
+                    </div>
+                  </div>
+
+                  {pincodeResult.fastestCourier && (
+                    <p className="text-[10px] text-neutral-400 font-medium">
+                      Fulfilled via Shiprocket Express ({pincodeResult.fastestCourier.name || 'Express Courier'})
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Sizing Chart Bar matching user screenshot */}
@@ -576,6 +795,28 @@ export default function ProductDetailsPage() {
                         "Ultra-warm insulated winter puffer jacket with high stand collar, detachable hood, thermal fleece lining, and water-repellent shell."}
                     </p>
 
+                    {/* Key Features / Highlights */}
+                    {((product.keyFeatures && product.keyFeatures.length > 0) || (product.highlights && product.highlights.length > 0)) && (
+                      <div className="pt-2 border-t border-neutral-100">
+                        <p className="font-bold text-neutral-900 mb-1.5">Key Features:</p>
+                        <ul className="space-y-1 text-neutral-600">
+                          {(product.keyFeatures?.length ? product.keyFeatures : product.highlights).map((feat, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 text-xs">
+                              <span className="text-neutral-900 font-bold">•</span>
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {product.detailedDescription && (
+                      <div className="pt-2 border-t border-neutral-100">
+                        <p className="font-bold text-neutral-900 mb-0.5">Detailed Description:</p>
+                        <p className="text-neutral-600 whitespace-pre-line">{product.detailedDescription}</p>
+                      </div>
+                    )}
+
                     <div>
                       <p className="font-bold text-neutral-900 mb-0.5">Whats on Print:</p>
                       <p className="text-neutral-600 whitespace-pre-line">
@@ -630,6 +871,12 @@ export default function ProductDetailsPage() {
                           "Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low."}
                       </p>
                     </div>
+                    {product.specifications?.map((spec, sIdx) => (
+                      <div key={sIdx} className="flex justify-between py-1 border-b border-neutral-100">
+                        <span className="font-semibold text-neutral-500">{spec.name}</span>
+                        <span className="font-medium text-neutral-900">{spec.value}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -638,7 +885,7 @@ export default function ProductDetailsPage() {
                     <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-between">
                       <span className="font-bold text-neutral-900 flex items-center gap-1 text-[11px]">
                         <RotateCcw className="h-3.5 w-3.5 text-neutral-800" />
-                        <span>{policySettings?.exchangeDays || 7} Days Doorstep Exchange & Return</span>
+                        <span>{product.exchangeDays || policySettings?.exchangeDays || 7} Days Doorstep Exchange & Return</span>
                       </span>
                       <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
                         {policySettings?.exchangeCharge > 0
@@ -663,7 +910,8 @@ export default function ProductDetailsPage() {
                     <div>
                       <p className="font-bold text-neutral-900 mb-0.5">Exchange Policy:</p>
                       <p className="text-[11px] text-neutral-600">
-                        {policySettings?.exchangePolicyText ||
+                        {product.exchangePolicy ||
+                          policySettings?.exchangePolicyText ||
                           "Hassle-free 7-day doorstep exchange & return. Items must be in original condition, unworn, unwashed with original brand tags attached."}
                       </p>
                     </div>
@@ -976,6 +1224,24 @@ export default function ProductDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Email Login Popup Modal */}
+      <AuthPopupModal
+        isOpen={authModalOpen}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setAuthSuccessCallback(null);
+        }}
+        onSuccess={(user) => {
+          setAuthModalOpen(false);
+          if (authSuccessCallback) {
+            authSuccessCallback(user);
+            setAuthSuccessCallback(null);
+          } else {
+            navigate('/checkout');
+          }
+        }}
+      />
     </div>
   );
 }

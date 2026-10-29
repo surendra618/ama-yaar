@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronDown,
   ArrowRight,
+  Truck,
 } from "lucide-react";
 import { logout, checkAuth } from "../features/auth/authSlice";
 import { fetchCart, openDrawer } from "../features/cart/cartSlice";
@@ -628,9 +629,9 @@ export default function Navbar() {
       >
         {/* Main Nav Bar with container padding */}
         <nav className="relative">
-          <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 flex items-center justify-between py-2.5 sm:py-3.5">
+          <div className="relative mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 flex items-center justify-between py-2.5 sm:py-3.5">
             {/* Left: Hamburger menu toggle */}
-            <div className="flex items-center">
+            <div className="flex items-center z-20">
               <button
                 onClick={() => setMobileMenuOpen((v) => !v)}
                 className="rounded-full p-2 transition cursor-pointer text-white hover:bg-white/10 drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)]"
@@ -644,20 +645,22 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Center: Brand Logo - Always the second logo in natural black with full details */}
-            <Link
-              to="/"
-              className="flex items-center leading-none group transition-transform duration-200 hover:scale-[1.02]"
-            >
-              <img
-                src="/logo.png"
-                alt="AMA YAAR"
-                className="h-9 sm:h-11 w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
-              />
-            </Link>
+            {/* Center: Brand Logo - Always perfectly centered across phone and desktop viewports */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto z-10 flex items-center justify-center">
+              <Link
+                to="/"
+                className="flex items-center leading-none group transition-transform duration-200 hover:scale-[1.02]"
+              >
+                <img
+                  src="/logo.png"
+                  alt="AMA YAAR"
+                  className="h-7 sm:h-11 max-w-[125px] sm:max-w-none w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
+                />
+              </Link>
+            </div>
 
             {/* Right: Search, Notifications, User, Cart */}
-            <div className="flex items-center gap-2.5 sm:gap-3.5 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)]">
+            <div className="flex items-center gap-2 sm:gap-3.5 ml-2 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)] z-20">
               {/* Search Toggle Button */}
               <button
                 onClick={() => setSearchOpen((v) => !v)}
@@ -759,10 +762,24 @@ export default function Navbar() {
                         <Link
                           to="/account/profile"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
                         >
                           <User className="h-4 w-4 text-neutral-600" /> My
                           Profile
+                        </Link>
+                        <Link
+                          to="/account/orders"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
+                        >
+                          <Package className="h-4 w-4 text-neutral-600" /> My Orders
+                        </Link>
+                        <Link
+                          to="/track"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition"
+                        >
+                          <Truck className="h-4 w-4 text-amber-600" /> Track Order
                         </Link>
                         <button
                           onClick={() => {
@@ -870,7 +887,7 @@ export default function Navbar() {
               <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100 bg-white sticky top-0 z-20">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)}>
                   <img
-                    src="/logo.png"
+                    src="/logo-black.png"
                     alt="AMA YAAR"
                     className="h-9 w-auto object-contain"
                   />
@@ -941,6 +958,13 @@ export default function Navbar() {
                   className="block py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-black hover:text-neutral-500 border-b border-neutral-100 transition"
                 >
                   ACID WASH
+                </Link>
+                <Link
+                  to="/track"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-amber-700 hover:text-black border-b border-neutral-100 transition"
+                >
+                  <Truck className="h-4 w-4 text-amber-600" /> TRACK ORDER
                 </Link>
               </div>
 

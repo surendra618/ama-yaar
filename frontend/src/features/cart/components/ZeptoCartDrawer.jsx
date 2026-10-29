@@ -27,6 +27,7 @@ import {
   fetchCart,
 } from '../cartSlice';
 import { fetchAddresses } from '../../account/accountSlice';
+import AuthPopupModal from '../../../components/AuthPopupModal';
 
 export default function ZeptoCartDrawer() {
   const dispatch = useDispatch();
@@ -47,6 +48,7 @@ export default function ZeptoCartDrawer() {
   const [couponCodeInput, setCouponCodeInput] = useState('');
   const [showBillDetails, setShowBillDetails] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
 
   useEffect(() => {
@@ -104,6 +106,10 @@ export default function ZeptoCartDrawer() {
   };
 
   const handleProceedToCheckout = () => {
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
+      return;
+    }
     dispatch(closeDrawer());
     navigate('/checkout');
   };
@@ -535,6 +541,17 @@ export default function ZeptoCartDrawer() {
           </div>
         </div>
       )}
+
+      {/* Email Login Popup Modal */}
+      <AuthPopupModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => {
+          setAuthModalOpen(false);
+          dispatch(closeDrawer());
+          navigate('/checkout');
+        }}
+      />
     </div>
   );
 }

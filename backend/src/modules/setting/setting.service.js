@@ -85,6 +85,21 @@ async function updateDeliverySettings(data = {}) {
   if (data.defaultStylingTip !== undefined) update.defaultStylingTip = String(data.defaultStylingTip).trim();
   if (data.defaultWhatsOnPrint !== undefined) update.defaultWhatsOnPrint = String(data.defaultWhatsOnPrint).trim();
 
+  // 4. Shiprocket Logistics Integration
+  if (data.shiprocketEnabled !== undefined) update.shiprocketEnabled = Boolean(data.shiprocketEnabled);
+  if (data.shiprocketEmail !== undefined) update.shiprocketEmail = String(data.shiprocketEmail).trim();
+  if (data.shiprocketPassword !== undefined) update.shiprocketPassword = String(data.shiprocketPassword).trim();
+  if (data.shiprocketToken !== undefined) update.shiprocketToken = String(data.shiprocketToken).trim();
+  if (data.shiprocketPickupLocation !== undefined) update.shiprocketPickupLocation = String(data.shiprocketPickupLocation).trim();
+  if (data.shiprocketSenderPincode !== undefined) update.shiprocketSenderPincode = String(data.shiprocketSenderPincode).trim();
+  if (data.shiprocketAutoCreateOrder !== undefined) update.shiprocketAutoCreateOrder = Boolean(data.shiprocketAutoCreateOrder);
+  if (data.shiprocketAutoGenerateAwb !== undefined) update.shiprocketAutoGenerateAwb = Boolean(data.shiprocketAutoGenerateAwb);
+  if (data.defaultPackageWeight !== undefined) update.defaultPackageWeight = Math.max(0.05, Number(data.defaultPackageWeight));
+  if (data.defaultPackageLength !== undefined) update.defaultPackageLength = Math.max(1, Number(data.defaultPackageLength));
+  if (data.defaultPackageBreadth !== undefined) update.defaultPackageBreadth = Math.max(1, Number(data.defaultPackageBreadth));
+  if (data.defaultPackageHeight !== undefined) update.defaultPackageHeight = Math.max(1, Number(data.defaultPackageHeight));
+  if (data.shiprocketWebhookSecret !== undefined) update.shiprocketWebhookSecret = String(data.shiprocketWebhookSecret).trim();
+
   const doc = await Setting.findOneAndUpdate(
     { key: 'delivery' },
     { $set: update },

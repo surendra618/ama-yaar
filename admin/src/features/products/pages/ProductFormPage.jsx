@@ -1,7 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { ArrowLeft, Save, X, Plus, Upload, Image as ImageIcon, Link as LinkIcon, Sparkles, Check, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Save,
+  X,
+  Plus,
+  Upload,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  Sparkles,
+  Check,
+  Trash2,
+  ListChecks,
+  Layers,
+  ShieldCheck,
+  FileText,
+  RotateCcw,
+  Eye,
+  Tag,
+} from 'lucide-react';
 import {
   fetchCategoriesForSelect,
   fetchProductById,
@@ -13,9 +31,20 @@ import api from '../../../lib/axios';
 
 const emptyForm = {
   name: '',
-  brand: '',
+  brand: 'AMA-YAAR',
   category: '',
   description: '',
+  detailedDescription: '',
+  keyFeatures: [],
+  fabric: '',
+  gsm: '',
+  fit: '',
+  countryOfOrigin: 'India',
+  washCare: '',
+  whatsOnPrint: '',
+  stylingTip: '',
+  exchangePolicy: '',
+  exchangeDays: 7,
   price: '',
   mrp: '',
   stock: '',
@@ -23,6 +52,17 @@ const emptyForm = {
   isFeatured: false,
   isActive: true,
 };
+
+const FEATURE_SUGGESTIONS = [
+  '100% Super Combed Terry Cotton',
+  'Heavyweight 380 GSM Fabric',
+  'Oversized Streetwear Silhouette',
+  'Dropped Shoulder Loose Fit',
+  'High-Density Screen & Puff Print',
+  'Pre-Shrunk Bio-Washed Finish',
+  'Reinforced Twin-Needle Stitching',
+  'Ribbed Lycra Collar & Hem',
+];
 
 export default function ProductFormPage() {
   const { id } = useParams();
@@ -33,8 +73,11 @@ export default function ProductFormPage() {
 
   const [form, setForm] = useState(emptyForm);
   const [urlInput, setUrlInput] = useState('');
+  const [featureInput, setFeatureInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [previewTab, setPreviewTab] = useState('card'); // 'card' | 'details'
+  const [storefrontActiveTab, setStorefrontActiveTab] = useState('description'); // 'description' | 'details' | 'exchange'
 
   useEffect(() => {
     dispatch(fetchCategoriesForSelect());
@@ -46,9 +89,25 @@ export default function ProductFormPage() {
     if (isEdit && current) {
       setForm({
         name: current.name || '',
-        brand: current.brand || '',
+        brand: current.brand || 'AMA-YAAR',
         category: current.category?._id || current.category || '',
         description: current.description || '',
+        detailedDescription: current.detailedDescription || '',
+        keyFeatures:
+          Array.isArray(current.keyFeatures) && current.keyFeatures.length
+            ? current.keyFeatures
+            : Array.isArray(current.highlights) && current.highlights.length
+            ? current.highlights
+            : [],
+        fabric: current.fabric || '',
+        gsm: current.gsm || '',
+        fit: current.fit || '',
+        countryOfOrigin: current.countryOfOrigin || 'India',
+        washCare: current.washCare || '',
+        whatsOnPrint: current.whatsOnPrint || '',
+        stylingTip: current.stylingTip || '',
+        exchangePolicy: current.exchangePolicy || '',
+        exchangeDays: current.exchangeDays ?? 7,
         price: current.price ?? '',
         mrp: current.mrp ?? '',
         stock: current.stock ?? '',
@@ -106,6 +165,22 @@ export default function ProductFormPage() {
     setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
   };
 
+  // Key Features handler
+  const handleAddFeature = (text) => {
+    const feat = (text || featureInput).trim();
+    if (!feat) return;
+    if (form.keyFeatures.includes(feat)) {
+      setFeatureInput('');
+      return;
+    }
+    setForm((f) => ({ ...f, keyFeatures: [...f.keyFeatures, feat] }));
+    setFeatureInput('');
+  };
+
+  const handleRemoveFeature = (idx) => {
+    setForm((f) => ({ ...f, keyFeatures: f.keyFeatures.filter((_, i) => i !== idx) }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.images.length) {
@@ -113,12 +188,17 @@ export default function ProductFormPage() {
       return;
     }
 
+    const cleanFeatures = form.keyFeatures.filter((f) => f && f.trim());
+
     const payload = {
       ...form,
       category: form.category || null,
       price: Number(form.price),
       mrp: Number(form.mrp),
       stock: Number(form.stock),
+      exchangeDays: form.exchangeDays ? Number(form.exchangeDays) : 7,
+      keyFeatures: cleanFeatures,
+      highlights: cleanFeatures,
       images: form.images.filter(Boolean),
     };
 
@@ -139,10 +219,11 @@ export default function ProductFormPage() {
     : null;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5 pb-12">
+    <div className="mx-auto max-w-6xl space-y-5 pb-16">
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={() => navigate('/products')}
           className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition"
         >
@@ -150,7 +231,13 @@ export default function ProductFormPage() {
         </button>
 
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${form.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${
+              form.isActive
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-slate-100 text-slate-600 border border-slate-200'
+            }`}
+          >
             <span className={`h-1.5 w-1.5 rounded-full ${form.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
             {form.isActive ? 'Active Status' : 'Draft / Hidden'}
           </span>
@@ -163,7 +250,9 @@ export default function ProductFormPage() {
           <Sparkles className="h-4 w-4 text-amber-500" />
         </h1>
         <p className="mt-0.5 text-xs text-slate-500 font-normal">
-          {isEdit ? 'Update product info, pricing, images, and inventory stock' : 'Fill in the details to publish a new product on your store'}
+          {isEdit
+            ? 'Update product title, description, key features, specifications, and exchange policy'
+            : 'Fill in all details to publish a complete product catalog entry'}
         </p>
       </div>
 
@@ -176,133 +265,422 @@ export default function ProductFormPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
         {/* FORM LEFT COLUMN */}
-        <form onSubmit={handleSubmit} className="space-y-4 lg:col-span-7 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          {/* Product Name */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Product Title / Name <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              required
-              value={form.name}
-              onChange={handleChange}
-              placeholder="e.g. Oversized Heavyweight Cotton T-Shirt"
-              className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-5 lg:col-span-7">
+          {/* SECTION 1: BASIC INFO & TITLE */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+              <FileText className="h-4 w-4 text-slate-700" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">1. Product Title & Info</h2>
+            </div>
 
-          {/* Brand & Category */}
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            {/* Product Title / Name */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Brand Name</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Product Title / Name <span className="text-rose-500">*</span>
+              </label>
               <input
                 type="text"
-                name="brand"
-                value={form.brand}
+                name="name"
+                required
+                value={form.name}
                 onChange={handleChange}
-                placeholder="e.g. AMA-YAAR"
-                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                placeholder="e.g. Oversized Heavyweight Cotton T-Shirt"
+                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
               />
             </div>
 
+            {/* Brand & Category */}
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Brand Name</label>
+                <input
+                  type="text"
+                  name="brand"
+                  value={form.brand}
+                  onChange={handleChange}
+                  placeholder="e.g. AMA-YAAR"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Category <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                </label>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                >
+                  <option value="">None / No Category (Optional)</option>
+                  {categories.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Pricing & Stock */}
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3 pt-1">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Selling Price (₹) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  required
+                  min="0"
+                  value={form.price}
+                  onChange={handleChange}
+                  placeholder="499"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  MRP (₹) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="mrp"
+                  required
+                  min="0"
+                  value={form.mrp}
+                  onChange={handleChange}
+                  placeholder="999"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
+                />
+                {discountPercent > 0 && (
+                  <span className="text-[10px] font-bold text-emerald-600 mt-0.5 block">
+                    {discountPercent}% OFF
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Stock Quantity <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="stock"
+                  required
+                  min="0"
+                  value={form.stock}
+                  onChange={handleChange}
+                  placeholder="50"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2: PRODUCT DESCRIPTION */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+              <FileText className="h-4 w-4 text-slate-700" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">2. Product Description</h2>
+            </div>
+
+            {/* Main Description */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Category <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                Main Description <span className="text-slate-400 font-normal text-[11px]">(Storefront Overview)</span>
               </label>
-              <select
-                name="category"
-                value={form.category}
+              <textarea
+                name="description"
+                rows={3}
+                value={form.description}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                placeholder="Write a concise product summary, highlight its standout appeal, streetwear cut..."
+                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
+              />
+            </div>
+
+            {/* Detailed Description */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Detailed Description / Story <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+              </label>
+              <textarea
+                name="detailedDescription"
+                rows={3}
+                value={form.detailedDescription}
+                onChange={handleChange}
+                placeholder="Elaborate on product design philosophy, inspiration, craftsmanship, fit notes..."
+                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
+              />
+            </div>
+
+            {/* What's on Print & Styling Tip */}
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 pt-1">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  What's on Print <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  name="whatsOnPrint"
+                  value={form.whatsOnPrint}
+                  onChange={handleChange}
+                  placeholder="e.g. High-density puff and screen print"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Styling Tip <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  name="stylingTip"
+                  value={form.stylingTip}
+                  onChange={handleChange}
+                  placeholder="e.g. Pair with raw black relaxed denim & sneakers"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 3: KEY FEATURES */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-slate-700" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">3. Key Features</h2>
+              </div>
+              <span className="text-[11px] font-bold text-slate-500">
+                {form.keyFeatures.length} {form.keyFeatures.length === 1 ? 'feature' : 'features'} added
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Add bullet points that highlight the core selling points of this product on the product details page.
+            </p>
+
+            {/* Feature Input Row */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={featureInput}
+                onChange={(e) => setFeatureInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddFeature();
+                  }
+                }}
+                placeholder="e.g. 100% Breathable Heavyweight Cotton (Press Enter or click Add)"
+                className="flex-1 rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddFeature()}
+                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-black transition"
               >
-                <option value="">None / No Category (Optional)</option>
-                {categories.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                <Plus className="h-3.5 w-3.5" /> Add
+              </button>
+            </div>
+
+            {/* Quick Suggestions */}
+            <div>
+              <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1.5">
+                Quick Suggestions:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {FEATURE_SUGGESTIONS.map((sug, i) => {
+                  const isAdded = form.keyFeatures.includes(sug);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={isAdded}
+                      onClick={() => handleAddFeature(sug)}
+                      className={`text-[11px] rounded-md px-2.5 py-1 border transition flex items-center gap-1 ${
+                        isAdded
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default'
+                          : 'bg-white text-slate-700 border-slate-300 hover:border-black hover:bg-slate-50'
+                      }`}
+                    >
+                      <Plus className="h-3 w-3" /> {sug}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Active Features List */}
+            {form.keyFeatures.length > 0 ? (
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <span className="text-[11px] font-bold text-slate-700 block">Current Key Features:</span>
+                <div className="space-y-1.5">
+                  {form.keyFeatures.map((feat, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-black shrink-0" />
+                        <span className="font-medium">{feat}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFeature(idx)}
+                        className="text-slate-400 hover:text-rose-600 p-1 transition"
+                        title="Remove feature"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/50 p-3 text-center text-xs text-slate-400 font-medium">
+                No key features added yet. Type above or click a suggestion to add.
+              </div>
+            )}
+          </div>
+
+          {/* SECTION 4: PRODUCT DETAILS & SPECIFICATIONS */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+              <Layers className="h-4 w-4 text-slate-700" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                4. Product Details & Fabric Specs
+              </h2>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              These specifications populate the "Details" tab on the product details storefront page.
+            </p>
+
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Fabric Composition</label>
+                <input
+                  type="text"
+                  name="fabric"
+                  value={form.fabric}
+                  onChange={handleChange}
+                  placeholder="e.g. 100% Super Combed Terry Cotton"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Fabric Weight / GSM</label>
+                <input
+                  type="text"
+                  name="gsm"
+                  value={form.gsm}
+                  onChange={handleChange}
+                  placeholder="e.g. 380 GSM Heavyweight Fabric"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Fit & Silhouette</label>
+                <input
+                  type="text"
+                  name="fit"
+                  value={form.fit}
+                  onChange={handleChange}
+                  placeholder="e.g. Oversized Streetwear Fit, Dropped Shoulder"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Country of Origin</label>
+                <input
+                  type="text"
+                  name="countryOfOrigin"
+                  value={form.countryOfOrigin}
+                  onChange={handleChange}
+                  placeholder="e.g. India"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Wash & Care Instructions</label>
+              <textarea
+                name="washCare"
+                rows={2}
+                value={form.washCare}
+                onChange={handleChange}
+                placeholder="e.g. Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low."
+                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 focus:border-black focus:outline-none"
+              />
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Product Description</label>
-            <textarea
-              name="description"
-              rows={3}
-              value={form.description}
-              onChange={handleChange}
-              placeholder="Write a detailed product description, fabric type, fit details..."
-              className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
-            />
-          </div>
-
-          {/* Pricing & Stock */}
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Selling Price (₹) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="price"
-                required
-                min="0"
-                value={form.price}
-                onChange={handleChange}
-                placeholder="499"
-                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
-              />
+          {/* SECTION 5: EXCHANGE POLICY */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+              <RotateCcw className="h-4 w-4 text-slate-700" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">5. Exchange Policy</h2>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                MRP (₹) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="mrp"
-                required
-                min="0"
-                value={form.mrp}
-                onChange={handleChange}
-                placeholder="999"
-                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
-              />
-              {discountPercent > 0 && (
-                <span className="text-[10px] font-bold text-emerald-600 mt-0.5 block">
-                  {discountPercent}% OFF
-                </span>
-              )}
-            </div>
+            <p className="text-xs text-slate-500">
+              Set product-specific return or doorstep exchange rules. Leave empty to use global store settings.
+            </p>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Stock Quantity <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="stock"
-                required
-                min="0"
-                value={form.stock}
-                onChange={handleChange}
-                placeholder="50"
-                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
-              />
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Exchange Window (Days)</label>
+                <input
+                  type="number"
+                  name="exchangeDays"
+                  min="0"
+                  max="90"
+                  value={form.exchangeDays}
+                  onChange={handleChange}
+                  placeholder="7"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">e.g. 7 days doorstep pickup</span>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Product Specific Exchange Policy Notes <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  name="exchangePolicy"
+                  rows={2}
+                  value={form.exchangePolicy}
+                  onChange={handleChange}
+                  placeholder="e.g. Hassle-free 7-day doorstep exchange & return. Items must be in original condition with tags attached."
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Product Images Upload (Option A: Select Files, Option B: Add URL) */}
-          <div className="space-y-3 pt-2">
-            <label className="block text-xs font-bold text-slate-700">
-              Product Images <span className="text-rose-500">*</span>
-            </label>
+          {/* SECTION 6: PRODUCT IMAGES */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-slate-700" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">6. Product Images</h2>
+              </div>
+              <span className="text-[11px] font-bold text-rose-500">* At least 1 image required</span>
+            </div>
 
             {/* Option A: Direct File Upload */}
             <div className="space-y-1">
@@ -367,9 +745,15 @@ export default function ProductFormPage() {
                 <span className="text-[11px] font-bold text-slate-600">Selected Product Images ({form.images.length}):</span>
                 <div className="grid grid-cols-4 gap-2.5">
                   {form.images.map((imgUrl, idx) => {
-                    const fullSrc = imgUrl.startsWith('http') || imgUrl.startsWith('data:') ? imgUrl : `http://localhost:5000${imgUrl}`;
+                    const fullSrc =
+                      imgUrl.startsWith('http') || imgUrl.startsWith('data:')
+                        ? imgUrl
+                        : `http://localhost:5000${imgUrl}`;
                     return (
-                      <div key={idx} className="group relative aspect-square rounded-md overflow-hidden border border-slate-300 bg-slate-100 shadow-xs">
+                      <div
+                        key={idx}
+                        className="group relative aspect-square rounded-md overflow-hidden border border-slate-300 bg-slate-100 shadow-xs"
+                      >
                         <img src={fullSrc} alt={`Product ${idx + 1}`} className="h-full w-full object-cover" />
                         {idx === 0 && (
                           <span className="absolute top-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[8px] font-bold text-white uppercase">
@@ -392,9 +776,9 @@ export default function ProductFormPage() {
             )}
           </div>
 
-          {/* Checkboxes */}
-          <div className="flex flex-wrap gap-4 border-t border-slate-200 pt-3">
-            <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 cursor-pointer hover:bg-slate-100/60 transition">
+          {/* SECTION 7: VISIBILITY CHECKBOXES */}
+          <div className="flex flex-wrap gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
+            <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 cursor-pointer hover:bg-slate-100/60 transition flex-1">
               <input
                 type="checkbox"
                 name="isFeatured"
@@ -404,11 +788,11 @@ export default function ProductFormPage() {
               />
               <div>
                 <span className="block text-xs font-bold text-slate-900">Featured Product</span>
-                <span className="block text-[10px] text-slate-500">Show on homepage featured section</span>
+                <span className="block text-[10px] text-slate-500">Show on homepage featured collection</span>
               </div>
             </label>
 
-            <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 cursor-pointer hover:bg-slate-100/60 transition">
+            <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 cursor-pointer hover:bg-slate-100/60 transition flex-1">
               <input
                 type="checkbox"
                 name="isActive"
@@ -423,8 +807,8 @@ export default function ProductFormPage() {
             </label>
           </div>
 
-          {/* Submit Actions */}
-          <div className="flex items-center justify-end gap-2.5 border-t border-slate-200 pt-4">
+          {/* Form Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"
               onClick={() => navigate('/products')}
@@ -435,71 +819,245 @@ export default function ProductFormPage() {
             <button
               type="submit"
               disabled={saving || uploading}
-              className="inline-flex items-center gap-1.5 rounded-md bg-black px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-neutral-800 active:scale-95 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md bg-black px-6 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-neutral-800 active:scale-95 disabled:opacity-60 cursor-pointer"
             >
               <Save className="h-3.5 w-3.5" /> {saving ? 'Saving...' : isEdit ? 'Update Product' : 'Create Product'}
             </button>
           </div>
         </form>
 
-        {/* LIVE STOREFRONT CARD PREVIEW RIGHT COLUMN */}
+        {/* RIGHT PREVIEW COLUMN */}
         <div className="lg:col-span-5 space-y-4">
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3 sticky top-6">
+            {/* Preview Mode Switcher */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-              <span className="text-xs font-bold text-slate-600">Product Card Preview</span>
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-md">
+                <button
+                  type="button"
+                  onClick={() => setPreviewTab('card')}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+                    previewTab === 'card' ? 'bg-white text-black shadow-xs' : 'text-slate-600 hover:text-black'
+                  }`}
+                >
+                  Card Preview
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewTab('details')}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+                    previewTab === 'details' ? 'bg-white text-black shadow-xs' : 'text-slate-600 hover:text-black'
+                  }`}
+                >
+                  Storefront Tabs Preview
+                </button>
+              </div>
               <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-black">
                 <Check className="h-3 w-3" /> Realtime
               </span>
             </div>
 
-            {/* Product Card Visual */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden shadow-xs">
-              <div className="relative aspect-[4/3] bg-slate-900">
-                {mainImage ? (
-                  <img src={mainImage} alt="Preview" className="h-full w-full object-cover object-top" />
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
-                    <ImageIcon className="h-8 w-8 mb-1 opacity-40" />
-                    <span className="text-xs font-medium">Product image preview</span>
-                  </div>
-                )}
-                {form.isFeatured && (
-                  <span className="absolute top-2 left-2 bg-amber-500 px-2 py-0.5 text-[9px] font-extrabold uppercase text-white rounded">
-                    Featured
-                  </span>
-                )}
-                {discountPercent > 0 && (
-                  <span className="absolute top-2 right-2 bg-rose-600 px-2 py-0.5 text-[9px] font-extrabold text-white rounded">
-                    {discountPercent}% OFF
-                  </span>
-                )}
-              </div>
-
-              <div className="p-3.5 space-y-1.5 bg-white">
-                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-                  {form.brand || 'BRAND'}
-                </p>
-                <h4 className="text-xs font-bold text-slate-900 truncate">
-                  {form.name || 'Product Title'}
-                </h4>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-extrabold text-slate-900">
-                    ₹{form.price ? Number(form.price).toLocaleString('en-IN') : '0'}
-                  </span>
-                  {form.mrp && Number(form.mrp) > Number(form.price) && (
-                    <span className="text-xs text-slate-400 line-through font-medium">
-                      ₹{Number(form.mrp).toLocaleString('en-IN')}
+            {/* PREVIEW VIEW 1: PRODUCT CARD */}
+            {previewTab === 'card' && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden shadow-xs">
+                <div className="relative aspect-[4/3] bg-slate-900">
+                  {mainImage ? (
+                    <img src={mainImage} alt="Preview" className="h-full w-full object-cover object-top" />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+                      <ImageIcon className="h-8 w-8 mb-1 opacity-40" />
+                      <span className="text-xs font-medium">Product image preview</span>
+                    </div>
+                  )}
+                  {form.isFeatured && (
+                    <span className="absolute top-2 left-2 bg-amber-500 px-2 py-0.5 text-[9px] font-extrabold uppercase text-white rounded">
+                      Featured
+                    </span>
+                  )}
+                  {discountPercent > 0 && (
+                    <span className="absolute top-2 right-2 bg-rose-600 px-2 py-0.5 text-[9px] font-extrabold text-white rounded">
+                      {discountPercent}% OFF
                     </span>
                   )}
                 </div>
-                <div className="pt-1 flex items-center justify-between text-[10px] text-slate-500 font-medium border-t border-slate-100 mt-2">
-                  <span>Stock: <strong className="text-slate-800">{form.stock || 0} units</strong></span>
-                  <span className={form.isActive ? 'text-emerald-600 font-bold' : 'text-slate-400'}>
-                    {form.isActive ? 'In Stock' : 'Draft'}
-                  </span>
+
+                <div className="p-3.5 space-y-1.5 bg-white">
+                  <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                    {form.brand || 'BRAND'}
+                  </p>
+                  <h4 className="text-xs font-bold text-slate-900 truncate">
+                    {form.name || 'Product Title'}
+                  </h4>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-extrabold text-slate-900">
+                      ₹{form.price ? Number(form.price).toLocaleString('en-IN') : '0'}
+                    </span>
+                    {form.mrp && Number(form.mrp) > Number(form.price) && (
+                      <span className="text-xs text-slate-400 line-through font-medium">
+                        ₹{Number(form.mrp).toLocaleString('en-IN')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="pt-1 flex items-center justify-between text-[10px] text-slate-500 font-medium border-t border-slate-100 mt-2">
+                    <span>
+                      Stock: <strong className="text-slate-800">{form.stock || 0} units</strong>
+                    </span>
+                    <span className={form.isActive ? 'text-emerald-600 font-bold' : 'text-slate-400'}>
+                      {form.isActive ? 'In Stock' : 'Draft'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* PREVIEW VIEW 2: STOREFRONT TABS PREVIEW */}
+            {previewTab === 'details' && (
+              <div className="rounded-lg border border-slate-200 bg-white p-3.5 space-y-3">
+                <div className="flex items-center justify-between border-b border-neutral-200 text-xs font-medium text-neutral-500 pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setStorefrontActiveTab('description')}
+                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${
+                      storefrontActiveTab === 'description' ? 'text-black' : 'text-neutral-400 hover:text-black'
+                    }`}
+                  >
+                    Description
+                    {storefrontActiveTab === 'description' && (
+                      <div className="absolute bottom-[-5px] left-0 right-0 h-[2px] bg-black" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStorefrontActiveTab('details')}
+                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${
+                      storefrontActiveTab === 'details' ? 'text-black' : 'text-neutral-400 hover:text-black'
+                    }`}
+                  >
+                    Details
+                    {storefrontActiveTab === 'details' && (
+                      <div className="absolute bottom-[-5px] left-0 right-0 h-[2px] bg-black" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStorefrontActiveTab('exchange')}
+                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${
+                      storefrontActiveTab === 'exchange' ? 'text-black' : 'text-neutral-400 hover:text-black'
+                    }`}
+                  >
+                    Exchange Policy
+                    {storefrontActiveTab === 'exchange' && (
+                      <div className="absolute bottom-[-5px] left-0 right-0 h-[2px] bg-black" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Tab 1 Content: Description + Key Features */}
+                {storefrontActiveTab === 'description' && (
+                  <div className="space-y-3 text-[11px] text-neutral-700 leading-relaxed">
+                    <p className="text-neutral-600">
+                      {form.description || 'Product description will appear here as entered in the form.'}
+                    </p>
+
+                    {form.keyFeatures.length > 0 && (
+                      <div className="pt-2 border-t border-neutral-100">
+                        <p className="font-bold text-neutral-900 mb-1">Key Features:</p>
+                        <ul className="space-y-1 text-neutral-600">
+                          {form.keyFeatures.map((feat, i) => (
+                            <li key={i} className="flex items-start gap-1.5 text-[11px]">
+                              <span className="text-black font-bold">•</span>
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {form.detailedDescription && (
+                      <div className="pt-2 border-t border-neutral-100">
+                        <p className="font-bold text-neutral-900 mb-0.5">Detailed Description:</p>
+                        <p className="text-neutral-600 whitespace-pre-line">{form.detailedDescription}</p>
+                      </div>
+                    )}
+
+                    {form.whatsOnPrint && (
+                      <div>
+                        <p className="font-bold text-neutral-900 mb-0.5">Whats on Print:</p>
+                        <p className="text-neutral-600">{form.whatsOnPrint}</p>
+                      </div>
+                    )}
+
+                    {form.stylingTip && (
+                      <div>
+                        <p className="font-bold text-neutral-900 mb-0.5">Styling Tip:</p>
+                        <p className="text-neutral-600">{form.stylingTip}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 2 Content: Details */}
+                {storefrontActiveTab === 'details' && (
+                  <div className="space-y-1.5 text-[11px] text-neutral-700 leading-relaxed">
+                    <div className="flex justify-between py-1 border-b border-neutral-100">
+                      <span className="font-semibold text-neutral-500">Fabric</span>
+                      <span className="font-medium text-neutral-900">
+                        {form.fabric || '100% Super Combed Terry Cotton (Default)'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-neutral-100">
+                      <span className="font-semibold text-neutral-500">Fabric Weight</span>
+                      <span className="font-medium text-neutral-900">
+                        {form.gsm || '380 GSM Heavyweight Fabric (Default)'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-neutral-100">
+                      <span className="font-semibold text-neutral-500">Fit</span>
+                      <span className="font-medium text-neutral-900">
+                        {form.fit || 'Oversized Streetwear Fit, Dropped Shoulder (Default)'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-neutral-100">
+                      <span className="font-semibold text-neutral-500">Country of Origin</span>
+                      <span className="font-medium text-neutral-900">
+                        {form.countryOfOrigin || 'India'}
+                      </span>
+                    </div>
+                    <div className="py-1">
+                      <span className="font-semibold text-neutral-500 block mb-0.5">Care Instructions</span>
+                      <p className="text-neutral-600 text-[10px] leading-normal">
+                        {form.washCare ||
+                          'Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 3 Content: Exchange Policy */}
+                {storefrontActiveTab === 'exchange' && (
+                  <div className="space-y-2 text-[11px] text-neutral-700 leading-relaxed">
+                    <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                      <span className="font-bold text-neutral-900 flex items-center gap-1 text-[11px]">
+                        <RotateCcw className="h-3.5 w-3.5 text-neutral-800" />
+                        <span>{form.exchangeDays || 7} Days Doorstep Exchange & Return</span>
+                      </span>
+                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                        FREE EXCHANGE
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="font-bold text-neutral-900 mb-0.5">Exchange Policy:</p>
+                      <p className="text-[10px] text-neutral-600">
+                        {form.exchangePolicy ||
+                          'Hassle-free doorstep exchange & return. Items must be in original condition, unworn, unwashed with original brand tags attached.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

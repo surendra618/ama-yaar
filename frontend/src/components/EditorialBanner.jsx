@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import api from '../lib/axios';
+import { getMediaUrl } from '../utils/mediaUrl';
 
 const LOOKS = [
   {
@@ -93,10 +95,11 @@ export default function EditorialBanner() {
   const cardRef = useRef(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/v1/editorial-looks')
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData.data && resData.data.length > 0) {
+    api
+      .get('/editorial-looks')
+      .then((res) => {
+        const resData = res.data;
+        if (resData && resData.data && resData.data.length > 0) {
           const parsed = resData.data.map((item, idx) => ({
             id: item._id || idx,
             title: item.title,
@@ -109,11 +112,7 @@ export default function EditorialBanner() {
             fit: item.fit || 'OVERSIZED',
             category1: item.category1 || 'STREETWEAR TOP',
             category2: item.category2 || 'UTILITY BOTTOM',
-            image: item.image?.startsWith('http')
-              ? item.image
-              : item.image?.startsWith('/uploads')
-                ? `http://localhost:5000${item.image}`
-                : item.image,
+            image: item.image ? getMediaUrl(item.image) : item.image,
             fallback: item.fallback || '/boyse.png',
             isCutout: item.isCutout !== undefined ? Boolean(item.isCutout) : true,
           }));
