@@ -35,7 +35,7 @@ export default function Footer() {
           <div className="md:col-span-4 lg:col-span-4">
             <Link to="/" className="inline-block leading-none group">
               <img
-                src="/logo.png"
+                src="/logo-black.png"
                 alt="AMA YAAR"
                 className="h-16 sm:h-20 w-auto object-contain transition-opacity group-hover:opacity-90"
               />

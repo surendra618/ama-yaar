@@ -887,7 +887,7 @@ export default function Navbar() {
               <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100 bg-white sticky top-0 z-20">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)}>
                   <img
-                    src="/logo.png"
+                    src="/logo-black.png"
                     alt="AMA YAAR"
                     className="h-9 w-auto object-contain"
                   />

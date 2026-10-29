@@ -111,7 +111,7 @@ export default function Preloader({ onComplete }) {
         >
           <div className="relative flex h-18 sm:h-22 md:h-26 w-auto items-center justify-center p-1">
             <img
-              src="/logo.png"
+              src="/logo-black.png"
               alt="AMA YAAR"
               className="h-full w-auto max-w-[160px] sm:max-w-[190px] md:max-w-[220px] object-contain"
             />

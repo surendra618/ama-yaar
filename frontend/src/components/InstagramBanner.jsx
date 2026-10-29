@@ -25,9 +25,7 @@ export default function InstagramBanner() {
           <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
             <a href="https://instagram.com" target="_blank" rel="noreferrer" className="group flex flex-col items-center">
               <img
-                src="/logo.png"
-                alt="AMA YAAR"
-                className="h-28 sm:h-36 w-auto object-contain transition-transform group-hover:scale-105 filter invert"
+                src="/logo-white.png" alt="AMA YAAR" className="h-28 sm:h-36 w-auto object-contain transition-transform group-hover:scale-105"
               />
             </a>
             <div className="mt-2 flex items-center justify-center gap-2">
@@ -106,7 +104,7 @@ export default function InstagramBanner() {
               <div className="mt-3 flex items-center justify-between gap-2">
                 {/* Avatar with brand red border ring */}
                 <div className="relative flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-black p-0.5 ring-2 ring-[#e11d48]">
-                  <img src="/logo.png" alt="Ama Yaar" className="h-9 w-9 object-contain filter invert" />
+                  <img src="/logo-white.png" alt="Ama Yaar" className="h-9 w-9 object-contain" />
                 </div>
 
                 {/* Stats */}
@@ -181,3 +179,4 @@ export default function InstagramBanner() {
     </section>
   );
 }
+
