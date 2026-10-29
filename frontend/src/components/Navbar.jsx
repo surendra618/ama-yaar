@@ -654,13 +654,13 @@ export default function Navbar() {
                 <img
                   src="/logo.png"
                   alt="AMA YAAR"
-                  className="h-9 sm:h-11 w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
+                  className="h-7 sm:h-11 max-w-[125px] sm:max-w-none w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
                 />
               </Link>
             </div>
 
             {/* Right: Search, Notifications, User, Cart */}
-            <div className="flex items-center gap-2.5 sm:gap-3.5 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)] z-20">
+            <div className="flex items-center gap-2 sm:gap-3.5 ml-2 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)] z-20">
               {/* Search Toggle Button */}
               <button
                 onClick={() => setSearchOpen((v) => !v)}
