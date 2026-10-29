@@ -22,6 +22,7 @@ const reelRoutes = require('../modules/reel');
 const editorialLookRoutes = require('../modules/editorialLook');
 const blogRoutes = require('../modules/blog');
 const { contactRoutes } = require('../modules/contact');
+const { newsletterRoutes } = require('../modules/newsletter');
 const settingRoutes = require('../modules/setting');
 const shiprocketRoutes = require('../modules/shiprocket');
 
@@ -45,6 +46,7 @@ router.use('/reels', reelRoutes);
 router.use('/editorial-looks', editorialLookRoutes);
 router.use('/blogs', blogRoutes);
 router.use('/contacts', contactRoutes);
+router.use('/newsletter', newsletterRoutes);
 router.use('/addresses', addressRoutes);
 router.use('/returns', returnRequestRoutes);
 router.use('/notifications', notificationRoutes);
@@ -56,3 +58,4 @@ router.use('/settings', settingRoutes);
 router.use('/shiprocket', shiprocketRoutes);
 
 module.exports = router;
+

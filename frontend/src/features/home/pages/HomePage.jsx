@@ -803,6 +803,30 @@ export default function HomePage() {
   const [reelsDisplayCount, setReelsDisplayCount] = useState(() => {
     return Number(localStorage.getItem("reels_display_count")) || 4;
   });
+  // Newsletter subscription state
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState(null); // { type: 'success' | 'error', message: '' }
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    if (!newsletterEmail || !/^\S+@\S+\.\S+$/.test(newsletterEmail.trim())) {
+      setNewsletterStatus({ type: 'error', message: 'Please enter a valid email address' });
+      return;
+    }
+    setNewsletterLoading(true);
+    setNewsletterStatus(null);
+    try {
+      const res = await api.post('/newsletter/subscribe', { email: newsletterEmail.trim() });
+      setNewsletterStatus({ type: 'success', message: res.data?.message || 'Thank you for subscribing!' });
+      setNewsletterEmail('');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to subscribe. Please try again.';
+      setNewsletterStatus({ type: 'error', message: msg });
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleSettingChange = () => {
@@ -1606,9 +1630,9 @@ export default function HomePage() {
               </span>
             </h2>
           </div>
-          {/* Right: email input */}
-          <div className="flex flex-col gap-3 w-full max-w-xs">
-            <div className="flex items-center gap-3 bg-white rounded-full px-5 py-3">
+          {/* Right: email input & form */}
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-3 w-full max-w-sm">
+            <div className="flex items-center gap-3 bg-white rounded-full px-5 py-3 focus-within:ring-2 focus-within:ring-white/40 transition">
               <svg
                 className="h-4 w-4 text-black/40 shrink-0"
                 fill="none"
@@ -1620,16 +1644,45 @@ export default function HomePage() {
               </svg>
               <input
                 type="email"
+                value={newsletterEmail}
+                onChange={(e) => {
+                  setNewsletterEmail(e.target.value);
+                  if (newsletterStatus) setNewsletterStatus(null);
+                }}
                 placeholder="Enter your email address"
                 className="flex-1 text-xs text-black placeholder-black/40 bg-transparent outline-none font-medium"
+                required
               />
             </div>
-            <button className="w-full rounded-full bg-white text-black py-3 text-xs font-bold tracking-wide hover:bg-white/90 transition shadow-sm">
-              Subscribe to Newsletter
+
+            <button
+              type="submit"
+              disabled={newsletterLoading}
+              className="w-full rounded-full bg-white text-black py-3 text-xs font-bold tracking-wide hover:bg-neutral-100 disabled:opacity-75 transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
+            >
+              {newsletterLoading ? (
+                <>
+                  <span className="h-3 w-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>Subscribing...</span>
+                </>
+              ) : (
+                <span>Subscribe to Newsletter</span>
+              )}
             </button>
-          </div>
+
+            {newsletterStatus && (
+              <div
+                className={`text-xs px-3 py-2 rounded-lg text-center font-medium transition animate-in fade-in ${newsletterStatus.type === "success" ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/30" : "bg-rose-950/80 text-rose-300 border border-rose-500/30"}`}
+              >
+                {newsletterStatus.message}
+              </div>
+            )}
+          </form>
         </div>
       </section>
     </div>
   );
 }
+
+
+

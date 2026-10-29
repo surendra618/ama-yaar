@@ -108,10 +108,8 @@ export default function EditorialBanner() {
             season: item.season || '2026 EDITION',
             drop: item.drop || `DROP 0${idx + 1}`,
             status: item.status || 'IN STOCK',
-            gsm: item.gsm || '240+ GSM',
-            fit: item.fit || 'OVERSIZED',
-            category1: item.category1 || 'STREETWEAR TOP',
-            category2: item.category2 || 'UTILITY BOTTOM',
+            category1: item.category1 || 'TOP LAYER',
+            category2: item.category2 || 'BOTTOM LAYER',
             image: item.image ? getMediaUrl(item.image) : item.image,
             fallback: item.fallback || '/boyse.png',
             isCutout: item.isCutout !== undefined ? Boolean(item.isCutout) : true,
@@ -124,12 +122,12 @@ export default function EditorialBanner() {
 
   const displayLooks = dbLooks.length > 0 ? dbLooks : LOOKS;
 
-  // Auto-cycle look every 4.5 seconds unless hovered/paused
+  // Auto-cycle look every 1 second unless hovered/paused
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % displayLooks.length);
-    }, 4500);
+    }, 1000);
     return () => clearInterval(interval);
   }, [isPaused, displayLooks.length]);
 
@@ -139,8 +137,8 @@ export default function EditorialBanner() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const springConfig = { stiffness: 180, damping: 20 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [3, -3]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-3, 3]), springConfig);
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [2, -2]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-2, 2]), springConfig);
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
@@ -170,168 +168,34 @@ export default function EditorialBanner() {
   };
 
   return (
-    <section className="w-full bg-[#fbfbfb] text-neutral-900 py-14 sm:py-20 select-none overflow-hidden relative border-t border-b border-neutral-200">
+    <section className="w-full bg-[#fafafa] text-neutral-900 py-6 sm:py-8 select-none overflow-hidden relative border-t border-b border-neutral-200/80">
       {/* Background Subtle Luxury Light Ambience */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(225,29,72,0.03),transparent_70%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
 
       {/* Main Standardized Container */}
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 relative z-10">
 
-        {/* Section Top Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-neutral-200">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="h-2 w-2 rounded-full bg-[#e11d48] animate-pulse" />
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-[#e11d48]">
-                AMA YAAR EDITORIAL RUNWAY • 2026
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase italic tracking-tight text-neutral-900 leading-none">
-              CURATED STREETWEAR <span className="text-neutral-500">LOOKBOOK</span>
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-mono font-bold tracking-widest text-neutral-500 uppercase">
-              LOOK <span className="text-neutral-900 font-black text-sm">0{currentIndex + 1}</span> / 0{displayLooks.length}
+        {/* Compact Header Row */}
+        <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-neutral-200">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="h-2 w-2 rounded-full bg-[#e11d48] animate-pulse" />
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#e11d48]">
+              AMA YAAR EDITORIAL
             </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrev}
-                aria-label="Previous Look"
-                className="h-10 w-10 rounded-full border border-neutral-200 bg-white text-neutral-800 flex items-center justify-center hover:bg-neutral-900 hover:text-white hover:border-black transition active:scale-95 shadow-xs"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                onClick={handleNext}
-                aria-label="Next Look"
-                className="h-10 w-10 rounded-full border border-neutral-200 bg-white text-neutral-800 flex items-center justify-center hover:bg-neutral-900 hover:text-white hover:border-black transition active:scale-95 shadow-xs"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
+            <span className="text-neutral-300 hidden sm:inline">|</span>
+            <h2 className="text-base sm:text-xl font-black uppercase italic tracking-tight text-neutral-900 leading-none">
+              CURATED LOOKBOOK
+            </h2>
           </div>
         </div>
 
-        {/* Full-Page Editorial Lookbook Display - Light Theme */}
+        {/* Streamlined Minimalist Lookbook Display */}
         <div
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={handleMouseLeave}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch"
+          className="relative"
         >
-          {/* Left Column: Rich Editorial Dossier & Specs (5 Cols) - Light Theme */}
-          <div className="lg:col-span-5 bg-white border border-neutral-200 p-6 sm:p-8 lg:p-10 flex flex-col justify-between shadow-xs">
-            <div className="space-y-6">
-              {/* Badges Row */}
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="bg-[#e11d48] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1">
-                  {activeLook.tag}
-                </span>
-                <span className="bg-neutral-100 text-neutral-700 text-[10px] font-bold uppercase tracking-wider px-3 py-1 border border-neutral-200">
-                  {activeLook.season}
-                </span>
-                <span className="bg-neutral-100 text-neutral-500 text-[10px] font-mono tracking-wider px-2.5 py-1 border border-neutral-200 ml-auto">
-                  {activeLook.drop}
-                </span>
-              </div>
-
-              {/* Title & Subtitle */}
-              <div>
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase italic tracking-tight text-neutral-900 leading-tight">
-                  {activeLook.title}
-                </h3>
-                <p className="text-sm sm:text-base font-bold uppercase tracking-widest text-neutral-500 mt-1">
-                  {activeLook.subtitle}
-                </p>
-              </div>
-
-              {/* Streetwear Engineered Specs - Light Theme Cards */}
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-neutral-200">
-                <div className="bg-neutral-50 border border-neutral-200/90 p-3.5">
-                  <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider block">FABRIC DENSITY</span>
-                  <span className="text-sm font-black text-neutral-900 uppercase tracking-wide mt-0.5 block">{activeLook.gsm || '240+ GSM TERRY'}</span>
-                </div>
-                <div className="bg-neutral-50 border border-neutral-200/90 p-3.5">
-                  <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider block">SILHOUETTE</span>
-                  <span className="text-sm font-black text-neutral-900 uppercase tracking-wide mt-0.5 block">{activeLook.fit || 'BOXY DROP SHOULDER'}</span>
-                </div>
-              </div>
-
-              {/* Styled Ensemble Breakdown - Light Theme */}
-              <div className="space-y-2.5 bg-neutral-50/70 p-4 border border-neutral-200/90">
-                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-1">
-                  STYLED OUTFIT ENSEMBLE
-                </span>
-                <div className="flex items-center justify-between text-xs text-neutral-700">
-                  <span className="text-neutral-500 font-bold uppercase">TOP LAYER:</span>
-                  <span className="font-black text-neutral-900 uppercase">{activeLook.category1}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-neutral-700 pt-2 border-t border-neutral-200/80">
-                  <span className="text-neutral-500 font-bold uppercase">BOTTOM LAYER:</span>
-                  <span className="font-black text-neutral-900 uppercase">{activeLook.category2}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-neutral-700 pt-2 border-t border-neutral-200/80">
-                  <span className="text-neutral-500 font-bold uppercase">AVAILABILITY:</span>
-                  <span className="font-black text-[#e11d48] uppercase flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#e11d48]" />
-                    {activeLook.status}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Look Switcher Thumbnails & CTA */}
-            <div className="mt-8 pt-6 border-t border-neutral-200 space-y-5">
-              {/* Thumbnail Selector Strip - Light Theme */}
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-2.5">
-                  SELECT RUNWAY LOOK
-                </span>
-                <div className="grid grid-cols-5 gap-2">
-                  {displayLooks.map((look, idx) => {
-                    const isSelected = currentIndex === idx;
-                    return (
-                      <button
-                        key={look.id}
-                        onClick={() => setCurrentIndex(idx)}
-                        className={`relative aspect-[3/4] overflow-hidden border transition duration-200 group/thumb ${isSelected
-                            ? 'border-[#e11d48] ring-2 ring-[#e11d48]/40 scale-102 bg-white shadow-xs'
-                            : 'border-neutral-200 hover:border-neutral-400 bg-neutral-100'
-                          }`}
-                      >
-                        <img
-                          src={look.image}
-                          alt={look.title}
-                          className="h-full w-full object-cover object-top transition duration-300 group-hover/thumb:scale-110"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = look.fallback;
-                          }}
-                        />
-                        <span className={`absolute bottom-0 inset-x-0 text-[9px] font-mono font-bold py-0.5 text-center ${isSelected ? 'bg-[#e11d48] text-white' : 'bg-neutral-900/80 text-white'
-                          }`}>
-                          0{idx + 1}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Shop Fit Action CTA */}
-              <Link
-                to="/products"
-                className="w-full inline-flex items-center justify-center gap-3 bg-neutral-950 text-white py-4 px-6 text-xs font-black uppercase tracking-widest hover:bg-black transition duration-200 group/btn shadow-md"
-              >
-                <span>SHOP THIS LOOKBOOK FIT</span>
-                <ArrowRight className="h-4 w-4 text-white group-hover/btn:translate-x-1 transition duration-200" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Right Column: Hero High-Impact Visual Showcase (7 Cols) - Light Theme */}
+          {/* Main Visual Runway Showcase (Minimal height) */}
           <div
             ref={cardRef}
             onMouseMove={handleMouseMove}
@@ -340,35 +204,35 @@ export default function EditorialBanner() {
               rotateY,
               transformStyle: 'preserve-3d',
             }}
-            className="lg:col-span-7 relative h-[520px] sm:h-[600px] lg:h-[660px] bg-gradient-to-b from-[#f5f7fa] via-[#eef1f5] to-[#e4e8ed] border border-neutral-200 overflow-hidden flex items-center justify-center group shadow-xs"
+            className="relative h-[320px] sm:h-[380px] lg:h-[420px] w-full rounded-xl bg-gradient-to-b from-[#f5f7fa] via-[#edf0f4] to-[#e4e8ed] border border-neutral-200 overflow-hidden flex items-center justify-center group shadow-xs"
           >
             {/* Ambient Dynamic Background Light Glow */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.85)_0%,transparent_75%)] pointer-events-none" />
 
             {/* Subtle Editorial Background Watermark Typography */}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center pointer-events-none select-none overflow-hidden z-0 opacity-10">
-              <span className="text-[12vw] font-black uppercase tracking-tighter text-neutral-900 whitespace-nowrap block leading-none font-display italic">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center pointer-events-none select-none overflow-hidden z-0 opacity-[0.08]">
+              <span className="text-[14vw] font-black uppercase tracking-tighter text-neutral-900 whitespace-nowrap block leading-none font-display italic">
                 AMA YAAR
               </span>
             </div>
 
-            {/* Top Right Floating Season Tag - Light Theme */}
-            <div className="absolute top-5 right-5 z-20 bg-white/90 backdrop-blur-md border border-neutral-200 px-3.5 py-1.5 flex items-center gap-2 shadow-xs">
-              <Sparkles className="h-3.5 w-3.5 text-[#e11d48]" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-900">
+            {/* Top Right Floating Season Tag */}
+            <div className="absolute top-3.5 right-3.5 z-20 bg-white/90 backdrop-blur-md border border-neutral-200/90 px-3 py-1 rounded-md flex items-center gap-1.5 shadow-xs">
+              <Sparkles className="h-3 w-3 text-[#e11d48]" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-900">
                 {activeLook.season}
               </span>
             </div>
 
-            {/* Top Left Look ID - Light Theme */}
-            <div className="absolute top-5 left-5 z-20 bg-white/90 backdrop-blur-md border border-neutral-200 px-3.5 py-1.5 shadow-xs">
-              <span className="text-[10px] font-mono font-bold tracking-widest text-neutral-700 uppercase">
-                SERIES NO. {activeLook.id}
+            {/* Top Left Look ID */}
+            <div className="absolute top-3.5 left-3.5 z-20 bg-white/90 backdrop-blur-md border border-neutral-200/90 px-2.5 py-1 rounded-md shadow-xs">
+              <span className="text-[10px] font-mono font-bold tracking-wider text-neutral-700 uppercase">
+                SERIES 0{currentIndex + 1}
               </span>
             </div>
 
             {/* Main Animated Model Image */}
-            <div className="relative z-10 w-full h-full flex items-center justify-center p-6 sm:p-10">
+            <div className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6">
               <AnimatePresence mode="wait">
                 <motion.img
                   key={activeLook.id}
@@ -378,29 +242,65 @@ export default function EditorialBanner() {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = activeLook.fallback;
                   }}
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 1.04, y: -20 }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="max-h-[92%] sm:max-h-[95%] w-auto object-contain object-bottom drop-shadow-[0_20px_30px_rgba(0,0,0,0.18)] filter contrast-105"
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="max-h-[85%] sm:max-h-[90%] w-auto object-contain object-bottom drop-shadow-[0_15px_25px_rgba(0,0,0,0.15)] filter contrast-105"
                 />
               </AnimatePresence>
             </div>
 
-            {/* Bottom Overlay Info Pill - Light Theme */}
-            <div className="absolute bottom-5 inset-x-5 z-20 flex items-center justify-between bg-white/90 backdrop-blur-md border border-neutral-200 px-5 py-3 shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-[#e11d48]" />
-                <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
-                  {activeLook.title} — {activeLook.subtitle}
+            {/* Compact Bottom Floating Info Bar */}
+            <div className="absolute bottom-3 inset-x-3 sm:inset-x-5 z-20 flex flex-wrap items-center justify-between gap-3 bg-white/92 backdrop-blur-md border border-neutral-200/90 rounded-lg px-4 py-2.5 shadow-sm">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="h-2 w-2 rounded-full bg-[#e11d48] shrink-0" />
+                <span className="text-xs sm:text-sm font-black uppercase tracking-wide text-neutral-900 truncate">
+                  {activeLook.title}
+                </span>
+                <span className="hidden sm:inline text-neutral-300">·</span>
+                <span className="hidden sm:inline text-xs font-semibold text-neutral-500 uppercase truncate">
+                  {activeLook.subtitle}
                 </span>
               </div>
-              <Link
-                to="/products"
-                className="text-[11px] font-black uppercase tracking-widest text-neutral-800 hover:text-[#e11d48] flex items-center gap-1.5 transition"
-              >
-                EXPLORE FIT <ArrowRight className="h-3.5 w-3.5 text-[#e11d48]" />
-              </Link>
+
+              <div className="flex items-center gap-3 ml-auto">
+                {/* Micro Thumbnails Strip */}
+                <div className="flex items-center gap-1.5">
+                  {displayLooks.map((look, idx) => {
+                    const isSelected = currentIndex === idx;
+                    return (
+                      <button
+                        key={look.id}
+                        onClick={() => setCurrentIndex(idx)}
+                        className={`h-7 w-7 rounded overflow-hidden border transition duration-150 ${isSelected
+                            ? 'border-[#e11d48] ring-2 ring-[#e11d48]/40 scale-105'
+                            : 'border-neutral-200 opacity-60 hover:opacity-100'
+                          }`}
+                        title={look.title}
+                      >
+                        <img
+                          src={look.image}
+                          alt={look.title}
+                          className="h-full w-full object-cover object-top"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = look.fallback;
+                          }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <Link
+                  to="/products"
+                  className="inline-flex items-center gap-1.5 bg-neutral-950 text-white rounded px-3 py-1.5 text-[11px] font-black uppercase tracking-wider hover:bg-black transition active:scale-95"
+                >
+                  <span>SHOP FIT</span>
+                  <ArrowRight className="h-3 w-3 text-white" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>

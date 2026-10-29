@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Shirt, Crown, Heart, Smile, Sparkles } from 'lucide-react';
+import { Shirt, Crown, Sparkles, Smile } from 'lucide-react';
 
 const InstagramIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -11,58 +11,60 @@ const InstagramIcon = (props) => (
 
 export default function InstagramBanner() {
   return (
-    <section className="relative overflow-hidden bg-black py-12 lg:py-16 text-white border-t border-b border-neutral-800">
+    <section className="relative overflow-hidden bg-black py-7 sm:py-10 lg:py-14 text-white border-t border-b border-neutral-800">
       {/* Background Crimson Glow */}
-      <div className="pointer-events-none absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-[#e11d48]/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[#e11d48]/15 blur-3xl" />
 
-      {/* Right Diagonal Brand Crimson Geometric Slice */}
+      {/* Right Diagonal Brand Crimson Geometric Slice (Desktop only) */}
       <div className="pointer-events-none absolute top-0 right-0 h-full w-[25%] bg-[#e11d48] [clip-path:polygon(35%_0,100%_0,100%_100%,0%_100%)] hidden lg:block z-0" />
 
       <div className="relative z-10 mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
-        <div className="flex flex-col items-center justify-between gap-10 lg:flex-row">
+        <div className="flex flex-col items-center justify-between gap-6 sm:gap-8 lg:flex-row">
 
           {/* Left: Brand Logo & Underline Tagline */}
           <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
             <a href="https://instagram.com" target="_blank" rel="noreferrer" className="group flex flex-col items-center">
               <img
-                src="/logo-white.png" alt="AMA YAAR" className="h-28 sm:h-36 w-auto object-contain transition-transform group-hover:scale-105"
+                src="/logo-white.png"
+                alt="AMA YAAR"
+                className="h-16 sm:h-24 lg:h-32 w-auto object-contain transition-transform group-hover:scale-105"
               />
             </a>
-            <div className="mt-2 flex items-center justify-center gap-2">
-              <div className="h-[2px] w-8 bg-[#e11d48]" />
-              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[#e11d48]">
+            <div className="mt-1.5 sm:mt-2 flex items-center justify-center gap-2">
+              <div className="h-[2px] w-6 sm:w-8 bg-[#e11d48]" />
+              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] text-[#e11d48]">
                 STYLE KA LAFDA
               </span>
-              <div className="h-[2px] w-8 bg-[#e11d48]" />
+              <div className="h-[2px] w-6 sm:w-8 bg-[#e11d48]" />
             </div>
           </div>
 
           {/* Vertical Divider line for desktop */}
-          <div className="hidden lg:block h-40 w-[2px] bg-white/20" />
+          <div className="hidden lg:block h-32 w-[1.5px] bg-white/20" />
 
           {/* Middle: Main CTA Text, Features & Button */}
           <div className="flex flex-col items-center text-center">
-            <span className="text-xs sm:text-sm font-extrabold uppercase tracking-[0.3em] text-white/90">
+            <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-[0.25em] text-white/90">
               STAY UPDATED ON
             </span>
 
             {/* Outline Instagram Icon + INSTAGRAM text */}
-            <div className="mt-1.5 flex items-center justify-center gap-3 sm:gap-4">
-              <InstagramIcon className="h-12 w-12 sm:h-16 sm:w-16 text-[#e11d48] stroke-[2.2] shrink-0" />
-              <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl font-black italic tracking-tight text-[#e11d48] uppercase">
+            <div className="mt-1 flex items-center justify-center gap-2.5 sm:gap-4">
+              <InstagramIcon className="h-8 w-8 sm:h-12 sm:w-12 text-[#e11d48] stroke-[2.2] shrink-0" />
+              <h2 className="font-display text-3xl sm:text-5xl lg:text-6xl font-black italic tracking-tight text-[#e11d48] uppercase leading-none">
                 INSTAGRAM
               </h2>
             </div>
 
-            <span className="mt-1 text-xs sm:text-sm font-extrabold uppercase tracking-[0.3em] text-white/90">
+            <span className="mt-1 text-[11px] sm:text-xs font-extrabold uppercase tracking-[0.25em] text-white/80">
               FOR NEW OUTFITS
             </span>
 
             {/* Bottom Row: Features on Left, Pill Button on Right */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
+            <div className="mt-4 sm:mt-6 flex flex-row items-center justify-center gap-4 sm:gap-6 flex-wrap">
               {/* Feature: DAILY NEW STOCK */}
-              <div className="flex items-center gap-2.5 text-xs sm:text-sm font-black tracking-wider text-white">
-                <Shirt className="h-5 w-5 text-[#e11d48] fill-[#e11d48]" />
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-black tracking-wider text-white">
+                <Shirt className="h-4 w-4 text-[#e11d48] fill-[#e11d48]" />
                 <span>DAILY NEW STOCK</span>
               </div>
 
@@ -71,17 +73,17 @@ export default function InstagramBanner() {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2.5 rounded-full bg-[#e11d48] px-6 py-2.5 text-xs sm:text-sm font-black text-white transition-all hover:bg-rose-700 hover:scale-105 shadow-xl shadow-rose-950/50"
+                className="inline-flex items-center gap-2 rounded-full bg-[#e11d48] px-5 py-2 text-xs sm:text-sm font-black text-white transition-all hover:bg-rose-700 hover:scale-105 shadow-md shadow-rose-950/40"
               >
-                <InstagramIcon className="h-4 w-4 stroke-[2.5]" />
+                <InstagramIcon className="h-3.5 w-3.5 stroke-[2.5]" />
                 <span className="text-white/40 font-normal">|</span>
                 <span className="tracking-wide">amayaar.in</span>
               </a>
             </div>
           </div>
 
-          {/* Right: Phone Mockup (Instagram Profile Preview) */}
-          <div className="w-full max-w-[270px] shrink-0 lg:mr-2 relative z-10">
+          {/* Right: Phone Mockup (Instagram Profile Preview) - Hidden on mobile screens so it remains ultra-compact */}
+          <div className="hidden lg:block w-full max-w-[270px] shrink-0 lg:mr-2 relative z-10">
             <div className="relative mx-auto rounded-[36px] border-[5px] border-neutral-800 bg-neutral-950 p-4 shadow-2xl ring-1 ring-white/10">
               {/* Top Notch / Time bar */}
               <div className="mb-3 flex items-center justify-between text-[10px] font-semibold text-white/60 px-2">
@@ -179,4 +181,3 @@ export default function InstagramBanner() {
     </section>
   );
 }
-
