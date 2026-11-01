@@ -44,6 +44,11 @@ import {
 } from "../../products/productsSlice";
 import api from "../../../lib/axios";
 import { getMediaUrl } from "../../../utils/mediaUrl";
+import {
+  getInstagramShortcode,
+  getInstagramEmbedUrl,
+  isInstagramUrl,
+} from "../../../utils/instagram";
 import ProductCard from "../../../components/ProductCard";
 import InstagramBanner from "../../../components/InstagramBanner";
 import EditorialBanner from "../../../components/EditorialBanner";
@@ -216,8 +221,10 @@ function ReelCard({ item, onOpenModal }) {
   const [hasError, setHasError] = useState(false);
   const [isExpanded, setIsExpanded] = useState(Boolean(item.initialExpanded));
 
+  const isInstagram = isInstagramUrl(item.video);
+
   useEffect(() => {
-    if (videoRef.current) {
+    if (!isInstagram && videoRef.current) {
       videoRef.current.muted = isMuted;
       const promise = videoRef.current.play();
       if (promise !== undefined) {
@@ -230,7 +237,7 @@ function ReelCard({ item, onOpenModal }) {
         });
       }
     }
-  }, [isMuted]);
+  }, [isMuted, isInstagram]);
 
   const handleProductNavigate = (e) => {
     e.stopPropagation();
@@ -246,13 +253,27 @@ function ReelCard({ item, onOpenModal }) {
       onClick={() => onOpenModal && onOpenModal(item)}
       className="group relative flex flex-col cursor-pointer select-none overflow-hidden rounded-2xl bg-neutral-950 shadow-md aspect-[9/15.5] border border-white/10 transition-all duration-300 hover:shadow-2xl hover:scale-[1.01]"
     >
-      {/* Live Video / Poster */}
-      {hasError ? (
-        <img
-          src={item.poster || "/model01.png"}
-          alt={item.title}
-          className="h-full w-full object-cover"
-        />
+      {/* Media Content: Poster + Play button overlay for Instagram Reel, or native video for MP4 */}
+      {isInstagram || hasError ? (
+        <div className="relative h-full w-full overflow-hidden bg-neutral-900">
+          <img
+            src={item.poster || "/model01.png"}
+            alt={item.title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          {/* Instagram gradient badge on top right */}
+          <span className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-md">
+            <InstagramIcon className="h-3 w-3" />
+            <span>Reel</span>
+          </span>
+
+          {/* Central Play overlay */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-neutral-900 shadow-xl backdrop-blur-xs transition-transform duration-300 group-hover:scale-110">
+              <Play className="h-5 w-5 fill-neutral-900 ml-0.5" />
+            </span>
+          </div>
+        </div>
       ) : (
         <video
           ref={videoRef}
@@ -346,12 +367,15 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
   const modalVideoRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
 
+  const isInstagram = isInstagramUrl(reel?.video);
+  const embedUrl = getInstagramEmbedUrl(reel?.video);
+
   useEffect(() => {
-    if (modalVideoRef.current) {
+    if (!isInstagram && modalVideoRef.current) {
       modalVideoRef.current.muted = isMuted;
       modalVideoRef.current.play().catch(() => {});
     }
-  }, [reel, isMuted]);
+  }, [reel, isMuted, isInstagram]);
 
   if (!reel) return null;
 
@@ -362,10 +386,10 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative flex h-[82vh] max-h-[720px] w-full max-w-[380px] flex-col overflow-hidden rounded-2xl bg-black shadow-2xl border border-neutral-800 text-white"
+        className="relative flex h-[85vh] max-h-[740px] w-full max-w-[400px] flex-col overflow-hidden rounded-2xl bg-black shadow-2xl border border-neutral-800 text-white"
       >
         {/* Top Header matching Image 4 */}
-        <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+        <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between p-4 bg-gradient-to-b from-black/85 via-black/40 to-transparent pointer-events-auto">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black font-black text-xs shadow-md">
               AY
@@ -381,17 +405,19 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition"
-              aria-label="Toggle mute"
-            >
-              {isMuted ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4 text-white" />
-              )}
-            </button>
+            {!isInstagram && (
+              <button
+                onClick={() => setIsMuted(!isMuted)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition"
+                aria-label="Toggle mute"
+              >
+                {isMuted ? (
+                  <VolumeX className="h-4 w-4" />
+                ) : (
+                  <Volume2 className="h-4 w-4 text-white" />
+                )}
+              </button>
+            )}
             <button
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition"
@@ -402,19 +428,30 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
           </div>
         </div>
 
-        {/* Video Player */}
-        <div className="relative flex-1 bg-black overflow-hidden">
-          <video
-            ref={modalVideoRef}
-            autoPlay
-            loop
-            muted={isMuted}
-            playsInline
-            className="h-full w-full object-cover"
-          >
-            <source src={reel.video} type="video/mp4" />
-            <source src={reel.altVideo} type="video/mp4" />
-          </video>
+        {/* Video Player or Instagram Reel Embed */}
+        <div className="relative flex-1 bg-black overflow-hidden flex items-center justify-center">
+          {isInstagram && embedUrl ? (
+            <iframe
+              src={embedUrl}
+              className="h-full w-full border-0 bg-black"
+              scrolling="no"
+              allowTransparency="true"
+              allow="autoplay; encrypted-media; picture-in-picture; web-share"
+              title={reel.title || "Instagram Reel"}
+            />
+          ) : (
+            <video
+              ref={modalVideoRef}
+              autoPlay
+              loop
+              muted={isMuted}
+              playsInline
+              className="h-full w-full object-cover"
+            >
+              <source src={reel.video} type="video/mp4" />
+              <source src={reel.altVideo} type="video/mp4" />
+            </video>
+          )}
         </div>
 
         {/* Navigation Side Controls */}
@@ -438,14 +475,14 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
         )}
 
         {/* Bottom Button matching Image 4: [Instagram Icon] Open in Instagram */}
-        <div className="absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
+        <div className="absolute inset-x-0 bottom-4 z-30 flex justify-center px-4 pointer-events-auto">
           <a
-            href="https://www.instagram.com"
+            href={isInstagram ? reel.video : "https://www.instagram.com"}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-full bg-white/90 hover:bg-white px-5 py-2.5 text-xs font-bold text-neutral-900 shadow-xl backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 rounded-full bg-white/95 hover:bg-white px-5 py-2.5 text-xs font-bold text-neutral-900 shadow-xl backdrop-blur-md transition-all hover:scale-105 active:scale-95"
           >
-            <InstagramIcon className="h-4 w-4 text-black" />
+            <InstagramIcon className="h-4 w-4 text-pink-600" />
             <span>Open in Instagram</span>
           </a>
         </div>
@@ -1170,13 +1207,13 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         {/* 2. Category Cards Slider Rail */}
-        <section className="py-12 sm:py-16">
+        <section className="pt-8 sm:pt-12 pb-2 sm:pb-3">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-6 flex items-center justify-between"
+            className="mb-4 sm:mb-5 flex items-center justify-between"
           >
             <span className="text-xs font-black uppercase tracking-[0.2em] text-neutral-400">
               Shop By Category
@@ -1219,7 +1256,7 @@ export default function HomePage() {
             onMouseLeave={() => {
               isCategoryHoveredRef.current = false;
             }}
-            className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-hide pb-6 pt-2 snap-x snap-mandatory scroll-smooth"
+            className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-hide pb-2 pt-1 snap-x snap-mandatory scroll-smooth"
           >
             {displayCardSliders.map((item, idx) => (
               <motion.div
@@ -1271,14 +1308,14 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         {/* 4. Fresh fits grid (Products Section) */}
-        <section className="pb-16 pt-8 sm:pt-12">
+        <section className="pb-14 pt-3 sm:pt-5">
           {/* Heading */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="text-center mb-10"
+            className="text-center mb-5 sm:mb-6"
           >
             <h2 className="font-display text-3xl sm:text-4xl leading-tight tracking-wide text-black font-black">
               FRESH FITS FOR{" "}
@@ -1289,8 +1326,8 @@ export default function HomePage() {
             </h2>
           </motion.div>
 
-          {/* Product Grid - 5 Cards per row (3 rows = 15 cards) with 100% professional WTFlex/BonkersCorner style, zero shadow */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 sm:gap-5">
+          {/* Product Grid - 4 Cards per row */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:gap-5">
             {(grid.length ? grid : Array.from({ length: 15 })).map((p, i) => {
               const localImages = [
                 "/model01.png",
@@ -1522,7 +1559,7 @@ export default function HomePage() {
                 data-aos-delay={idx * 100}
                 data-aos-duration="600"
                 whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className="relative flex flex-col justify-between min-w-[340px] max-w-[370px] shrink-0 snap-start rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs hover:shadow-xl transition-all duration-300 hover:border-neutral-400 group"
+                className="relative flex flex-col justify-between w-[280px] sm:w-[340px] min-w-[270px] sm:min-w-[340px] max-w-[370px] shrink-0 snap-start rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs hover:shadow-xl transition-all duration-300 hover:border-neutral-400 group"
               >
                 <div>
                   {/* Top rating & date */}

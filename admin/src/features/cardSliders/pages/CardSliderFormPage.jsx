@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ArrowLeft, Save, Upload, X, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
 import { fetchCardSliderById, createCardSlider, updateCardSlider, clearCurrentCardSlider } from '../cardSlidersSlice';
 import api from '../../../lib/axios';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 const emptyForm = {
   title: '',
@@ -203,7 +204,7 @@ export default function CardSliderFormPage() {
             <div className="relative h-44 w-36 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
               {form.image ? (
                 <>
-                  <img src={form.image} alt="Preview" className="h-full w-full object-cover" />
+                  <img src={getMediaUrl(form.image)} alt="Preview" className="h-full w-full object-cover" />
                   <button
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, image: '' }))}

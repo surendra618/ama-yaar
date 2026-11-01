@@ -36,23 +36,41 @@ async function uploadMediaFile(file) {
     }
   }
 
-  // Fallback: Save locally to public/uploads
-  const uploadDir = path.join(__dirname, '../../../public/uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  // Fallback: Save locally to public/uploads or /tmp in serverless
+  try {
+    let uploadDir = path.join(__dirname, '../../../public/uploads');
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    } catch (dirErr) {
+      // In serverless environments like Vercel, root is read-only so use /tmp
+      uploadDir = '/tmp/uploads';
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    }
+
+    const prefix = isVideo ? 'video' : 'img';
+    const ext = path.extname(file.originalname || '') || (isVideo ? '.mp4' : '.jpg');
+    const filename = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    const filePath = path.join(uploadDir, filename);
+
+    fs.writeFileSync(filePath, file.buffer);
+
+    return {
+      url: `/uploads/${filename}`,
+      filename,
+    };
+  } catch (fsWriteErr) {
+    // If local disk writing fails completely, return inline base64 data URI so user data is never lost
+    const mime = file.mimetype || (isVideo ? 'video/mp4' : 'image/jpeg');
+    const dataUrl = `data:${mime};base64,${file.buffer.toString('base64')}`;
+    return {
+      url: dataUrl,
+      filename: file.originalname || (isVideo ? 'video.mp4' : 'image.jpg'),
+    };
   }
-
-  const prefix = isVideo ? 'video' : 'img';
-  const ext = path.extname(file.originalname) || (isVideo ? '.mp4' : '.jpg');
-  const filename = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-  const filePath = path.join(uploadDir, filename);
-
-  fs.writeFileSync(filePath, file.buffer);
-
-  return {
-    url: `/uploads/${filename}`,
-    filename,
-  };
 }
 
 module.exports = { uploadImage, uploadMediaFile };

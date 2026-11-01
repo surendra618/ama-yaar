@@ -1,21 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-const API_URL = 'http://localhost:5000/api/v1/contacts';
+import api from '../../lib/axios';
 
 export const fetchContactMessages = createAsyncThunk(
   'contactMessages/fetchContactMessages',
   async (queryParams = {}, { rejectWithValue }) => {
     try {
-      const params = new URLSearchParams(queryParams).toString();
-      const url = params ? `${API_URL}?${params}` : API_URL;
-      const response = await fetch(url);
-      const data = await response.json();
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to fetch contact messages');
-      }
-      return data.data?.data || data.data || data; // { messages, total, page, totalPages }
+      const response = await api.get('/contacts', { params: queryParams });
+      return response.data?.data?.data || response.data?.data || response.data; // { messages, total, page, totalPages }
     } catch (err) {
-      return rejectWithValue(err.message || 'Network error');
+      return rejectWithValue(err.response?.data?.message || err.message || 'Network error');
     }
   }
 );
@@ -24,18 +17,10 @@ export const updateMessageStatus = createAsyncThunk(
   'contactMessages/updateMessageStatus',
   async ({ id, status, adminNotes }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_URL}/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, adminNotes }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to update message status');
-      }
-      return data.data?.message || data.data || data;
+      const response = await api.patch(`/contacts/${id}/status`, { status, adminNotes });
+      return response.data?.data?.message || response.data?.data || response.data;
     } catch (err) {
-      return rejectWithValue(err.message || 'Network error');
+      return rejectWithValue(err.response?.data?.message || err.message || 'Network error');
     }
   }
 );
@@ -44,16 +29,10 @@ export const deleteContactMessage = createAsyncThunk(
   'contactMessages/deleteContactMessage',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        return rejectWithValue(data.message || 'Failed to delete message');
-      }
+      await api.delete(`/contacts/${id}`);
       return id;
     } catch (err) {
-      return rejectWithValue(err.message || 'Network error');
+      return rejectWithValue(err.response?.data?.message || err.message || 'Network error');
     }
   }
 );

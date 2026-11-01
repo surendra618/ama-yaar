@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Image as ImageIcon, CheckCircle2 } from 'lucide-r
 import { fetchCardSliders, deleteCardSlider, updateCardSlider } from '../cardSlidersSlice';
 import DataTable from '../../../components/DataTable';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 export default function CardSlidersListPage() {
   const dispatch = useDispatch();
@@ -39,7 +40,7 @@ export default function CardSlidersListPage() {
           <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100 ring-1 ring-slate-200/60">
             {card.image ? (
               <img
-                src={card.image}
+                src={getMediaUrl(card.image)}
                 alt={card.title}
                 className="h-full w-full object-cover"
                 onError={(e) => {

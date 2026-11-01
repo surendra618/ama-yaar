@@ -21,7 +21,7 @@ export function getMediaUrl(path) {
     import.meta.env.VITE_API_BASE_URL ||
     (import.meta.env.MODE === 'production'
       ? 'https://ama-yaar.vercel.app/api/v1'
-      : 'http://localhost:5000/api/v1');
+      : 'http://localhost:5005/api/v1');
 
   const origin = base.replace(/\/api\/v1\/?$/, '');
   const cleanPath = path.startsWith('/') ? path : `/${path}`;

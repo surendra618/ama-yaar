@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const asyncHandler = require('../../utils/asyncHandler');
 const ApiResponse = require('../../utils/ApiResponse');
 const ApiError = require('../../utils/ApiError');
@@ -30,11 +31,24 @@ const createReel = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Title, price, poster, and video are required');
   }
 
+  const cleanProduct =
+    product && product !== '' && mongoose.Types.ObjectId.isValid(product)
+      ? product
+      : productId && productId !== '' && mongoose.Types.ObjectId.isValid(productId)
+      ? productId
+      : null;
+  const cleanProduct2 =
+    product2 && product2 !== '' && mongoose.Types.ObjectId.isValid(product2)
+      ? product2
+      : product2Id && product2Id !== '' && mongoose.Types.ObjectId.isValid(product2Id)
+      ? product2Id
+      : null;
+
   const calculatedDiscount = discount || (mrp ? `${Math.round(((mrp - price) / mrp) * 100)}% OFF` : '50% OFF');
 
   const newReel = await service.createReel({
-    product: product || productId || null,
-    product2: product2 || product2Id || null,
+    product: cleanProduct,
+    product2: cleanProduct2,
     title,
     price: Number(price),
     mrp: Number(mrp || price * 2),
@@ -52,7 +66,14 @@ const createReel = asyncHandler(async (req, res) => {
 });
 
 const updateReel = asyncHandler(async (req, res) => {
-  const updated = await service.updateReel(req.params.id, req.body);
+  const data = { ...req.body };
+  if (!data.product || data.product === '' || data.product === 'null' || !mongoose.Types.ObjectId.isValid(data.product)) {
+    data.product = null;
+  }
+  if (!data.product2 || data.product2 === '' || data.product2 === 'null' || !mongoose.Types.ObjectId.isValid(data.product2)) {
+    data.product2 = null;
+  }
+  const updated = await service.updateReel(req.params.id, data);
   if (!updated) throw new ApiError(404, 'Reel not found');
   res.status(200).json(new ApiResponse(200, updated, 'Reel updated successfully'));
 });

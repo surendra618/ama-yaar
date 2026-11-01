@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { fetchEditorialLooks, createEditorialLook, updateEditorialLook, deleteEditorialLook } from '../editorialLooksSlice';
 import api from '../../../lib/axios';
+import resolveMediaUrl from '../../../utils/mediaUrl';
 
 const GRADIENT_PRESETS = [
   { name: 'Dark Slate & Charcoal', value: 'from-[#202125] via-[#3a3d44] to-[#bfc4c9]' },
@@ -172,10 +173,7 @@ export default function EditorialLooksListPage() {
   const getMediaUrl = (url, preview) => {
     if (preview) return preview;
     if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('data:')) return url;
-    if (url.startsWith('/uploads')) return `http://localhost:5000${url}`;
-    if (url.startsWith('/')) return `http://localhost:5173${encodeURI(url)}`;
-    return url;
+    return resolveMediaUrl(url);
   };
 
   const safeLooks = Array.isArray(looks) ? looks : [];

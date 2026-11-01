@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { Reel, ReelSetting } = require('./reel.model');
 
 async function getReelSettings() {
@@ -31,11 +32,25 @@ async function getAllReels() {
 }
 
 async function createReel(data) {
-  return Reel.create(data);
+  const cleanData = { ...data };
+  if (!cleanData.product || cleanData.product === '' || cleanData.product === 'null' || !mongoose.Types.ObjectId.isValid(cleanData.product)) {
+    cleanData.product = null;
+  }
+  if (!cleanData.product2 || cleanData.product2 === '' || cleanData.product2 === 'null' || !mongoose.Types.ObjectId.isValid(cleanData.product2)) {
+    cleanData.product2 = null;
+  }
+  return Reel.create(cleanData);
 }
 
 async function updateReel(id, data) {
-  return Reel.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  const cleanData = { ...data };
+  if (!cleanData.product || cleanData.product === '' || cleanData.product === 'null' || !mongoose.Types.ObjectId.isValid(cleanData.product)) {
+    cleanData.product = null;
+  }
+  if (!cleanData.product2 || cleanData.product2 === '' || cleanData.product2 === 'null' || !mongoose.Types.ObjectId.isValid(cleanData.product2)) {
+    cleanData.product2 = null;
+  }
+  return Reel.findByIdAndUpdate(id, cleanData, { new: true, runValidators: true });
 }
 
 async function deleteReel(id) {

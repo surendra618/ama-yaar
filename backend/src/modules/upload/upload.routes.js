@@ -20,8 +20,8 @@ const optionalAuth = (req, res, next) => {
   next();
 };
 
-router.post('/', optionalAuth, controller.upload.single('image'), controller.uploadSingle);
-router.post('/single', optionalAuth, controller.upload.single('image'), controller.uploadSingle);
-router.post('/multiple', optionalAuth, controller.upload.array('images', 8), controller.uploadMultiple);
+router.post('/', optionalAuth, controller.upload.any(), controller.uploadSingle);
+router.post('/single', optionalAuth, controller.upload.any(), controller.uploadSingle);
+router.post('/multiple', optionalAuth, controller.upload.any(), controller.uploadMultiple);
 
 module.exports = router;

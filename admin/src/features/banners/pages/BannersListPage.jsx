@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Image as ImageIcon, CheckCircle2 } from 'lucide-r
 import { fetchBanners, deleteBanner, updateBanner } from '../bannersSlice';
 import DataTable from '../../../components/DataTable';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 const POSITION_LABELS = {
   home_hero: 'Home Hero',
@@ -46,7 +47,7 @@ export default function BannersListPage() {
           <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200/60">
             {b.image ? (
               <img
-                src={b.image}
+                src={getMediaUrl(b.image)}
                 alt={b.title}
                 className="h-full w-full object-cover"
                 onError={(e) => {

@@ -17,9 +17,33 @@ import {
   Check,
   Pencil,
   ShoppingBag,
+  ExternalLink,
 } from 'lucide-react';
 import { fetchReels, createReel, deleteReel, updateReel } from '../reelsSlice';
 import api from '../../../lib/axios';
+import getMediaUrl from '../../../utils/mediaUrl';
+import {
+  getInstagramShortcode,
+  getInstagramEmbedUrl,
+  isInstagramUrl,
+} from '../../../utils/instagram';
+
+const InstagramIcon = ({ className = 'h-4 w-4', ...props }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    {...props}
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
 
 export default function ReelsListPage() {
   const dispatch = useDispatch();
@@ -47,10 +71,8 @@ export default function ReelsListPage() {
 
   const [posterFile, setPosterFile] = useState(null);
   const [altPosterFile, setAltPosterFile] = useState(null);
-  const [videoFile, setVideoFile] = useState(null);
   const [posterPreview, setPosterPreview] = useState('');
   const [altPosterPreview, setAltPosterPreview] = useState('');
-  const [videoPreview, setVideoPreview] = useState('');
 
   const [displayCount, setDisplayCount] = useState(() => {
     return Number(localStorage.getItem('reels_display_count')) || 4;
@@ -111,10 +133,8 @@ export default function ReelsListPage() {
     });
     setPosterFile(null);
     setAltPosterFile(null);
-    setVideoFile(null);
     setPosterPreview('');
     setAltPosterPreview('');
-    setVideoPreview('');
     setSearchQuery1('');
     setSearchQuery2('');
     setModalOpen(true);
@@ -140,10 +160,8 @@ export default function ReelsListPage() {
 
     setPosterFile(null);
     setAltPosterFile(null);
-    setVideoFile(null);
     setPosterPreview(reel.poster || '');
     setAltPosterPreview(reel.altPoster || '');
-    setVideoPreview(reel.video || '');
     setModalOpen(true);
   };
 
@@ -157,9 +175,6 @@ export default function ReelsListPage() {
     } else if (type === 'altPoster') {
       setAltPosterFile(file);
       setAltPosterPreview(URL.createObjectURL(file));
-    } else if (type === 'video') {
-      setVideoFile(file);
-      setVideoPreview(URL.createObjectURL(file));
     }
   };
 
@@ -178,11 +193,15 @@ export default function ReelsListPage() {
       return;
     }
 
+    if (!formData.video || !formData.video.trim()) {
+      alert('Please enter an Instagram Reel URL (e.g., https://www.instagram.com/reel/...)');
+      return;
+    }
+
     try {
       setUploadingMedia(true);
       let uploadedPoster = formData.poster;
       let uploadedAltPoster = formData.altPoster;
-      let uploadedVideo = formData.video;
 
       // Upload Poster Image if file selected
       if (posterFile) {
@@ -204,43 +223,39 @@ export default function ReelsListPage() {
         uploadedAltPoster = data.data.url;
       }
 
-      // Upload Video File if file selected
-      if (videoFile) {
-        const body = new FormData();
-        body.append('image', videoFile);
-        const { data } = await api.post('/upload/single', body, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        uploadedVideo = data.data.url;
-      }
-
-      if (!uploadedPoster || !uploadedVideo) {
-        alert('Please upload both Poster Cover Image and Reel Video file or enter their URLs.');
+      if (!uploadedPoster) {
+        alert('Please select or upload a Poster Cover Image for the reel.');
         setUploadingMedia(false);
         return;
       }
+
+      const cleanProduct =
+        formData.product && String(formData.product).trim() !== '' && formData.product !== 'null'
+          ? formData.product
+          : null;
+      const cleanProduct2 =
+        formData.product2 && String(formData.product2).trim() !== '' && formData.product2 !== 'null'
+          ? formData.product2
+          : null;
+
+      const payload = {
+        ...formData,
+        product: cleanProduct,
+        product2: cleanProduct2,
+        poster: uploadedPoster,
+        altPoster: uploadedAltPoster || '',
+        video: formData.video.trim(),
+      };
 
       if (editingReelId) {
         await dispatch(
           updateReel({
             id: editingReelId,
-            payload: {
-              ...formData,
-              poster: uploadedPoster,
-              altPoster: uploadedAltPoster,
-              video: uploadedVideo,
-            },
+            payload,
           })
         ).unwrap();
       } else {
-        await dispatch(
-          createReel({
-            ...formData,
-            poster: uploadedPoster,
-            altPoster: uploadedAltPoster,
-            video: uploadedVideo,
-          })
-        ).unwrap();
+        await dispatch(createReel(payload)).unwrap();
       }
 
       setModalOpen(false);
@@ -259,10 +274,8 @@ export default function ReelsListPage() {
       });
       setPosterFile(null);
       setAltPosterFile(null);
-      setVideoFile(null);
       setPosterPreview('');
       setAltPosterPreview('');
-      setVideoPreview('');
       setSearchQuery1('');
       setSearchQuery2('');
     } catch (err) {
@@ -282,12 +295,10 @@ export default function ReelsListPage() {
     dispatch(updateReel({ id: reel._id, payload: { isActive: !reel.isActive } }));
   };
 
-  const getMediaUrl = (file, url, preview) => {
+  const resolveMediaPreview = (file, url, preview) => {
     if (preview) return preview;
     if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('data:')) return url;
-    if (url.startsWith('/uploads')) return `http://localhost:5000${url}`;
-    return url;
+    return getMediaUrl(url);
   };
 
   const getProductInfo = (prodRef) => {
@@ -301,25 +312,18 @@ export default function ReelsListPage() {
   const getProductImg = (prod, fallbackUrl) => {
     if (prod) {
       const img = prod.images?.[0] || prod.image || '';
-      if (img) {
-        if (img.startsWith('http') || img.startsWith('data:')) return img;
-        if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
-        return img;
-      }
+      if (img) return getMediaUrl(img);
     }
     if (fallbackUrl) {
-      if (fallbackUrl.startsWith('http') || fallbackUrl.startsWith('data:')) return fallbackUrl;
-      if (fallbackUrl.startsWith('/uploads')) return `http://localhost:5000${fallbackUrl}`;
-      return fallbackUrl;
+      return getMediaUrl(fallbackUrl);
     }
     return null;
   };
 
-
-
-  const currentPosterPreview = getMediaUrl(posterFile, formData.poster, posterPreview);
-  const currentAltPosterPreview = getMediaUrl(altPosterFile, formData.altPoster, altPosterPreview);
-  const currentVideoPreview = getMediaUrl(videoFile, formData.video, videoPreview);
+  const currentPosterPreview = resolveMediaPreview(posterFile, formData.poster, posterPreview);
+  const currentAltPosterPreview = resolveMediaPreview(altPosterFile, formData.altPoster, altPosterPreview);
+  const isCurrentInsta = isInstagramUrl(formData.video);
+  const currentShortcode = getInstagramShortcode(formData.video);
 
   const safeReels = Array.isArray(reels) ? reels : [];
 
@@ -368,10 +372,10 @@ export default function ReelsListPage() {
 
           <button
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition active:scale-95 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:brightness-110 transition active:scale-95 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            <span>Upload New Reel</span>
+            <span>Add Shopping Reel</span>
           </button>
         </div>
       </div>
@@ -383,28 +387,20 @@ export default function ReelsListPage() {
         </div>
       ) : safeReels.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 rounded-none bg-white border border-slate-200 text-center px-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3">
-            <Video className="h-7 w-7" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-pink-50 text-pink-500 mb-3 border border-pink-200">
+            <InstagramIcon className="h-7 w-7" />
           </div>
-          <h3 className="text-sm font-bold text-slate-800">No Reels Uploaded Yet</h3>
+          <h3 className="text-sm font-bold text-slate-800">No Reels Added Yet</h3>
           <p className="text-xs text-slate-500 max-w-sm mt-1">
-            Click "Upload New Reel" above to add your first shopping reel video and poster.
+            Click "Add Shopping Reel" above to paste an Instagram Reel link and connect catalog products.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {safeReels.map((reel) => {
-            const posterUrl = reel.poster?.startsWith('http')
-              ? reel.poster
-              : reel.poster?.startsWith('/uploads')
-              ? `http://localhost:5000${reel.poster}`
-              : reel.poster;
-
-            const videoUrl = reel.video?.startsWith('http')
-              ? reel.video
-              : reel.video?.startsWith('/uploads')
-              ? `http://localhost:5000${reel.video}`
-              : reel.video;
+            const posterUrl = getMediaUrl(reel.poster);
+            const videoUrl = getMediaUrl(reel.video);
+            const isInsta = isInstagramUrl(reel.video);
 
             const prod1 = getProductInfo(reel.product);
             const prod2 = getProductInfo(reel.product2);
@@ -416,24 +412,41 @@ export default function ReelsListPage() {
                 key={reel._id}
                 className="group relative flex flex-col overflow-hidden rounded-none bg-white border border-slate-300 shadow-xs hover:shadow-md transition"
               >
-                {/* Reel Card Media Preview (Non-rounded sharp border) */}
+                {/* Reel Card Media Preview */}
                 <div className="relative aspect-[3/4] overflow-hidden bg-slate-950 rounded-none">
-                  <video
-                    src={videoUrl}
-                    poster={posterUrl}
-                    muted
-                    loop
-                    onMouseEnter={(e) => e.target.play().catch(() => {})}
-                    onMouseLeave={(e) => e.target.pause()}
-                    className="h-full w-full object-cover"
-                  />
-                  <span className="absolute left-2 top-2 rounded-none bg-amber-400 px-2 py-0.5 text-[9px] font-bold text-slate-950 shadow-xs">
+                  {isInsta ? (
+                    <div className="relative h-full w-full">
+                      <img
+                        src={posterUrl || '/model01.png'}
+                        alt={reel.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30 pointer-events-none" />
+                      {/* Instagram Reel Badge */}
+                      <span className="absolute right-2 top-2 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-xs flex items-center gap-1 z-10">
+                        <InstagramIcon className="h-2.5 w-2.5" />
+                        <span>Reel</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <video
+                      src={videoUrl}
+                      poster={posterUrl}
+                      muted
+                      loop
+                      onMouseEnter={(e) => e.target.play().catch(() => {})}
+                      onMouseLeave={(e) => e.target.pause()}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+
+                  <span className="absolute left-2 top-2 rounded-none bg-amber-400 px-2 py-0.5 text-[9px] font-bold text-slate-950 shadow-xs z-10">
                     {reel.badge || 'Top Selling'}
                   </span>
-                  <span className="absolute bottom-2 left-2 rounded-none bg-black/70 px-2 py-0.5 text-[9px] font-semibold text-white backdrop-blur-xs">
+                  <span className="absolute bottom-2 left-2 rounded-none bg-black/70 px-2 py-0.5 text-[9px] font-semibold text-white backdrop-blur-xs z-10">
                     {reel.views}
                   </span>
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-80 group-hover:opacity-0 transition">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-80 group-hover:opacity-0 transition z-10">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-md">
                       <Play className="h-5 w-5 fill-slate-900 ml-0.5" />
                     </span>
@@ -480,7 +493,7 @@ export default function ReelsListPage() {
                     </div>
                   </div>
 
-                  {/* Card Actions: Approve Button, Edit, Delete */}
+                  {/* Card Actions: Approve Button, Instagram Link, Edit, Delete */}
                   <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-xs">
                     {/* Approve Toggle */}
                     <button
@@ -500,8 +513,19 @@ export default function ReelsListPage() {
                       {reel.isActive ? 'Approved' : 'Approve'}
                     </button>
 
-                    {/* Colored Edit & Delete Action Buttons */}
+                    {/* Action Buttons */}
                     <div className="flex items-center gap-1.5">
+                      {isInsta && (
+                        <a
+                          href={reel.video}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-md p-1.5 text-pink-600 bg-pink-50 border border-pink-200 hover:bg-pink-600 hover:text-white transition cursor-pointer shadow-2xs"
+                          title="Open Reel in Instagram"
+                        >
+                          <InstagramIcon className="h-3.5 w-3.5" />
+                        </a>
+                      )}
                       <button
                         onClick={() => handleEditReel(reel)}
                         className="rounded-md p-1.5 text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-600 hover:text-white transition cursor-pointer shadow-2xs"
@@ -533,12 +557,14 @@ export default function ReelsListPage() {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <UploadCloud className="h-5 w-5 text-indigo-600" />
-                  <span>Upload & Publish Shopping Reel</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-xs">
+                    <InstagramIcon className="h-4 w-4" />
+                  </span>
+                  <span>{editingReelId ? 'Edit Shopping Reel' : 'Add & Publish Shopping Reel'}</span>
                   <Sparkles className="h-4 w-4 text-amber-500" />
                 </h3>
                 <p className="text-xs text-slate-500 font-normal mt-0.5">
-                  Link catalog products, set cover images, and upload reel MP4 video media.
+                  Link catalog products, set cover images, and paste Instagram Reel link.
                 </p>
               </div>
               <button
@@ -597,13 +623,7 @@ export default function ReelsListPage() {
                           });
                           setPosterFile(null);
                           if (img) {
-                            setPosterPreview(
-                              img.startsWith('http')
-                                ? img
-                                : img.startsWith('/uploads')
-                                ? `http://localhost:5000${img}`
-                                : img
-                            );
+                            setPosterPreview(getMediaUrl(img));
                           }
                         } else {
                           setFormData({ ...formData, product: '' });
@@ -659,13 +679,7 @@ export default function ReelsListPage() {
                           });
                           setAltPosterFile(null);
                           if (img) {
-                            setAltPosterPreview(
-                              img.startsWith('http')
-                                ? img
-                                : img.startsWith('/uploads')
-                                ? `http://localhost:5000${img}`
-                                : img
-                            );
+                            setAltPosterPreview(getMediaUrl(img));
                           }
                         } else {
                           setFormData({ ...formData, product2: '', altPoster: '' });
@@ -922,69 +936,94 @@ export default function ReelsListPage() {
                     )}
                   </div>
 
-                  {/* Reel Video File Upload Container */}
+                  {/* Instagram Reel URL Section (No Video File Upload) */}
                   <div className="space-y-2 pt-2 border-t border-slate-200">
-                    <label className="block text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-800 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
-                        <Video className="h-4 w-4 text-indigo-600" />
-                        <span>Reel Video File (MP4)</span>
+                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-xs">
+                          <InstagramIcon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="font-bold text-slate-900">Instagram Reel Link</span>
                         <span className="text-rose-500">*</span>
                       </span>
+                      {isCurrentInsta && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <Check className="h-3 w-3 text-emerald-600" />
+                          <span>Valid Reel ({currentShortcode})</span>
+                        </span>
+                      )}
                     </label>
 
-                    {/* Option A: Select Video File */}
-                    <div className="space-y-1">
-                      <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
-                        <Upload className="h-3.5 w-3.5 text-black" /> Option A: Select MP4 Video File
-                      </span>
-                      <label className="relative flex flex-col items-center justify-center rounded-md border border-dashed border-indigo-300 bg-indigo-50/20 p-3 text-center cursor-pointer hover:bg-indigo-50/50 transition">
-                        <input
-                          type="file"
-                          accept="video/mp4,video/webm,video/*"
-                          onChange={(e) => handleFileChange(e, 'video')}
-                          className="hidden"
-                        />
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-100 text-indigo-700">
-                            <Video className="h-4 w-4" />
-                          </div>
-                          <div className="text-left">
-                            <p className="text-xs font-bold text-slate-800">
-                              Choose Video File <span className="text-indigo-600 font-semibold underline">or drag MP4 video</span>
-                            </p>
-                            <p className="text-[10px] text-slate-500 font-medium">MP4, WEBM formats supported</p>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-
-                    {/* Divider OR */}
-                    <div className="relative flex items-center justify-center my-1">
-                      <div className="w-full border-t border-slate-200" />
-                      <span className="absolute bg-white px-2.5 text-[10px] font-bold text-slate-400">OR</span>
-                    </div>
-
-                    {/* Option B: Video URL Input */}
-                    <div className="space-y-1">
-                      <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
-                        <LinkIcon className="h-3.5 w-3.5 text-black" /> Option B: Paste MP4 Video URL
-                      </span>
+                    <div className="relative flex items-center bg-white border border-slate-300 rounded-md shadow-xs focus-within:border-pink-500 focus-within:ring-1 focus-within:ring-pink-500">
+                      <div className="pl-3 pr-2 text-slate-400">
+                        <LinkIcon className="h-4 w-4 text-pink-500" />
+                      </div>
                       <input
-                        type="text"
+                        type="url"
                         name="video"
                         value={formData.video}
-                        onChange={(e) => setFormData({ ...formData, video: e.target.value })}
-                        placeholder="https://cdn.example.com/videos/reel1.mp4"
-                        className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none transition"
+                        onChange={(e) => setFormData({ ...formData, video: e.target.value.trim() })}
+                        placeholder="https://www.instagram.com/reel/C_xyz123... or https://instagram.com/p/..."
+                        className="w-full bg-transparent py-2 pr-8 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none"
                       />
+                      {formData.video && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData((f) => ({ ...f, video: '' }))}
+                          className="absolute right-2 text-slate-400 hover:text-slate-600 p-1"
+                          title="Clear link"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
+                    <p className="text-[11px] text-slate-500">
+                      Paste the link of any public Instagram Reel. No video file upload required.
+                    </p>
 
-                    {/* Video Player Preview Box */}
-                    {currentVideoPreview && (
+                    {/* Live Instagram Reel Preview Embed */}
+                    {isCurrentInsta && (
+                      <div className="mt-3 rounded-lg border border-pink-200 bg-gradient-to-br from-pink-50/50 via-purple-50/30 to-indigo-50/40 p-3 shadow-xs">
+                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-pink-100">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white">
+                              <InstagramIcon className="h-3 w-3" />
+                            </span>
+                            <span className="text-xs font-bold text-slate-900">Instagram Reel Preview</span>
+                            <span className="text-[10px] font-mono text-pink-700 bg-pink-100/70 px-1.5 py-0.5 rounded font-semibold">
+                              {currentShortcode}
+                            </span>
+                          </div>
+                          <a
+                            href={formData.video}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-pink-600 hover:text-pink-700 hover:underline"
+                          >
+                            <span>Open Reel</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+
+                        <div className="relative mx-auto w-full max-w-[280px] aspect-[9/16] max-h-[380px] rounded-lg overflow-hidden bg-black shadow-md border border-slate-700">
+                          <iframe
+                            src={getInstagramEmbedUrl(formData.video)}
+                            className="h-full w-full border-0 bg-black"
+                            scrolling="no"
+                            allowTransparency="true"
+                            allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+                            title="Instagram Reel Preview"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Fallback preview for direct MP4 URL */}
+                    {!isCurrentInsta && formData.video && (
                       <div className="relative overflow-hidden rounded-md border border-slate-300 bg-slate-950 h-28 mt-2 shadow-xs flex items-center justify-between p-2">
                         <div className="flex items-center gap-3">
                           <video
-                            src={currentVideoPreview}
+                            src={formData.video}
                             muted
                             loop
                             autoPlay
@@ -992,20 +1031,16 @@ export default function ReelsListPage() {
                           />
                           <div>
                             <span className="inline-flex items-center gap-1 bg-indigo-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
-                              <Check className="h-3 w-3" /> Reel Video Loaded
+                              <Check className="h-3 w-3" /> Video URL Loaded
                             </span>
                             <p className="text-[10px] text-slate-400 mt-1 truncate max-w-[200px]">
-                              {videoFile ? videoFile.name : formData.video}
+                              {formData.video}
                             </p>
                           </div>
                         </div>
                         <button
                           type="button"
-                          onClick={() => {
-                            setVideoFile(null);
-                            setVideoPreview('');
-                            setFormData((f) => ({ ...f, video: '' }));
-                          }}
+                          onClick={() => setFormData((f) => ({ ...f, video: '' }))}
                           className="flex items-center gap-1 rounded-md bg-rose-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition"
                         >
                           <X className="h-3 w-3" /> Remove

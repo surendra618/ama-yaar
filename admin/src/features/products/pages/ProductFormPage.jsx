@@ -28,6 +28,7 @@ import {
   clearCurrentProduct,
 } from '../productsSlice';
 import api from '../../../lib/axios';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 const emptyForm = {
   name: '',
@@ -183,7 +184,14 @@ export default function ProductFormPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.images.length) {
+    let currentImages = [...form.images];
+    if (urlInput.trim() && !currentImages.includes(urlInput.trim())) {
+      currentImages.push(urlInput.trim());
+      setUrlInput('');
+      setForm((f) => ({ ...f, images: currentImages }));
+    }
+
+    if (!currentImages.length) {
       setUploadError('Please upload at least one product image.');
       return;
     }
@@ -199,7 +207,7 @@ export default function ProductFormPage() {
       exchangeDays: form.exchangeDays ? Number(form.exchangeDays) : 7,
       keyFeatures: cleanFeatures,
       highlights: cleanFeatures,
-      images: form.images.filter(Boolean),
+      images: currentImages.filter(Boolean),
     };
 
     const action = isEdit ? updateProduct({ id, payload }) : createProduct(payload);
@@ -213,9 +221,7 @@ export default function ProductFormPage() {
       : 0;
 
   const mainImage = form.images[0]
-    ? form.images[0].startsWith('http') || form.images[0].startsWith('data:')
-      ? form.images[0]
-      : `http://localhost:5000${form.images[0]}`
+    ? getMediaUrl(form.images[0])
     : null;
 
   return (
@@ -745,10 +751,7 @@ export default function ProductFormPage() {
                 <span className="text-[11px] font-bold text-slate-600">Selected Product Images ({form.images.length}):</span>
                 <div className="grid grid-cols-4 gap-2.5">
                   {form.images.map((imgUrl, idx) => {
-                    const fullSrc =
-                      imgUrl.startsWith('http') || imgUrl.startsWith('data:')
-                        ? imgUrl
-                        : `http://localhost:5000${imgUrl}`;
+                    const fullSrc = getMediaUrl(imgUrl);
                     return (
                       <div
                         key={idx}

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Plus, Pencil, Trash2, FolderTree, CheckCircle2, CornerDownRight, Layers, Sparkles, MoreVertical } from 'lucide-react';
 import { fetchCategories, updateCategory, deleteCategory } from '../categoriesSlice';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 export default function CategoriesListPage() {
   const dispatch = useDispatch();
@@ -37,14 +38,7 @@ export default function CategoriesListPage() {
   };
 
   const getImageUrl = (image) => {
-    if (!image) return '';
-    if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:')) {
-      return image;
-    }
-    const backendUrl = import.meta.env.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace('/api/v1', '')
-      : 'http://localhost:5000';
-    return `${backendUrl}${image.startsWith('/') ? '' : '/'}${image}`;
+    return getMediaUrl(image);
   };
 
   // Group items into Root Cards with their respective subcategories inside

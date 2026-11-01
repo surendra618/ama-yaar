@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ArrowLeft, Save, Upload, X, Image as ImageIcon, Link as LinkIcon, Sparkles, Check } from 'lucide-react';
 import { fetchBannerById, createBanner, updateBanner, clearCurrentBanner } from '../bannersSlice';
 import api from '../../../lib/axios';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 const emptyForm = {
   title: '',
@@ -99,9 +100,7 @@ export default function BannerFormPage() {
   };
 
   const previewImage = form.image
-    ? form.image.startsWith('http') || form.image.startsWith('data:')
-      ? form.image
-      : `http://localhost:5000${form.image}`
+    ? getMediaUrl(form.image)
     : null;
 
   return (

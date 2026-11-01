@@ -19,8 +19,14 @@ const upload = multer({
 });
 
 const uploadSingle = asyncHandler(async (req, res) => {
-  if (!req.file) throw new ApiError(400, 'No file uploaded');
-  const data = await service.uploadMediaFile(req.file);
+  const file = req.file || (req.files && req.files[0]) || (req.files && Object.values(req.files).flat()[0]);
+  if (!file) {
+    if (req.body?.url || req.body?.image) {
+      return res.status(200).json(new ApiResponse(200, { url: req.body.url || req.body.image }, 'File received'));
+    }
+    throw new ApiError(400, 'No file uploaded');
+  }
+  const data = await service.uploadMediaFile(file);
   res.status(200).json(new ApiResponse(200, data, 'File uploaded successfully'));
 });
 

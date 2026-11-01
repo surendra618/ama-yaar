@@ -6,6 +6,7 @@ import { fetchProducts, updateProduct, deleteProduct } from '../productsSlice';
 import DataTable from '../../../components/DataTable';
 import Pagination from '../../../components/Pagination';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 export default function ProductsListPage() {
   const dispatch = useDispatch();
@@ -41,7 +42,7 @@ export default function ProductsListPage() {
         <div className="flex items-center gap-3">
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200/60">
             <img
-              src={p.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'}
+              src={getMediaUrl(p.images?.[0]) || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'}
               alt={p.name}
               className="h-full w-full object-cover"
               onError={(e) => {

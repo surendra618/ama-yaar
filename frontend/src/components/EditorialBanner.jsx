@@ -8,8 +8,8 @@ import { getMediaUrl } from '../utils/mediaUrl';
 const LOOKS = [
   {
     id: 1,
-    image: '/Streetwear Cutout with Headphones.png',
-    fallback: '/boys.png',
+    image: '/editorial-looks/look1-cargo-rib.png',
+    fallback: '/editorial-looks/look1-cargo-rib.png',
     title: 'CARGO HIGH RIB',
     subtitle: 'JOGGER FIT',
     tag: 'FALL / WINTER',
@@ -24,8 +24,8 @@ const LOOKS = [
   },
   {
     id: 2,
-    image: '/Ivory Jacket Streetwear Cutout.png',
-    fallback: '/boyse.png',
+    image: '/editorial-looks/look2-tactical-matrix.png',
+    fallback: '/editorial-looks/look2-tactical-matrix.png',
     title: 'TACTICAL CAP & TANK',
     subtitle: 'STREET MATRIX',
     tag: 'LIMITED RUN',
@@ -34,14 +34,14 @@ const LOOKS = [
     status: 'LOW STOCK',
     gsm: '240 GSM COMBED',
     fit: 'BOXY OVERSIZED',
-    category1: 'TACTICAL CAP',
+    category1: 'TACTICAL UTILITY',
     category2: '6-POCKET CARGO',
     isCutout: true,
   },
   {
     id: 3,
-    image: '/Streetwear Model in Oversized Hoodie.png',
-    fallback: '/cardauto.png',
+    image: '/editorial-looks/look3-raw-vintage.png',
+    fallback: '/editorial-looks/look3-raw-vintage.png',
     title: 'RAW VINTAGE FIT',
     subtitle: 'OVERSIZED DRIP',
     tag: 'TIMELESS CUT',
@@ -51,13 +51,13 @@ const LOOKS = [
     gsm: '280 GSM FLEECE',
     fit: 'DROP SHOULDER',
     category1: 'BAGGY DENIM',
-    category2: 'CHUNKY SNEAKERS',
+    category2: 'ACID WASH TEE',
     isCutout: true,
   },
   {
     id: 4,
-    image: '/Curly-Haired Model in Beige Polo.png',
-    fallback: '/boyse.png',
+    image: '/editorial-looks/look4-ivory-polo.png',
+    fallback: '/editorial-looks/look4-ivory-polo.png',
     title: 'GRAPHIC EAGLE TEE',
     subtitle: 'HEAVYWEIGHT POLO',
     tag: 'CORE ESSENTIAL',
@@ -66,14 +66,14 @@ const LOOKS = [
     status: 'SELLING FAST',
     gsm: '240 GSM COMBED',
     fit: 'RELAXED BOX CUT',
-    category1: 'OVERSIZED POLO',
-    category2: 'VINTAGE WASH DENIM',
+    category1: 'IVORY POLO',
+    category2: 'TAILORED TROUSERS',
     isCutout: true,
   },
   {
     id: 5,
-    image: '/Stylish Streetwear Man with Backpack.png',
-    fallback: '/boyse.png',
+    image: '/editorial-looks/look5-boxy-utility.png',
+    fallback: '/editorial-looks/look5-boxy-utility.png',
     title: 'BOXY UTILITY POLO',
     subtitle: 'URBAN EXPLORER',
     tag: 'AVANT-GARDE',
@@ -82,8 +82,8 @@ const LOOKS = [
     status: 'NEW ARRIVAL',
     gsm: '250 GSM BIO-WASH',
     fit: 'ENGINEERED DRAPE',
-    category1: 'UTILITY TEE',
-    category2: 'TECHNICAL BACKPACK',
+    category1: 'UTILITY OVERSHIRT',
+    category2: 'TECHNICAL CARGO',
     isCutout: true,
   },
 ];
@@ -122,12 +122,12 @@ export default function EditorialBanner() {
 
   const displayLooks = dbLooks.length > 0 ? dbLooks : LOOKS;
 
-  // Auto-cycle look every 1 second unless hovered/paused
+  // Auto-cycle look every 3 seconds unless hovered/paused
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % displayLooks.length);
-    }, 1000);
+    }, 3000);
     return () => clearInterval(interval);
   }, [isPaused, displayLooks.length]);
 
@@ -231,9 +231,9 @@ export default function EditorialBanner() {
               </span>
             </div>
 
-            {/* Main Animated Model Image */}
-            <div className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6">
-              <AnimatePresence mode="wait">
+            {/* Main Animated Model Image - Seamless Outfit Crossfade on Same Model */}
+            <div className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+              <AnimatePresence>
                 <motion.img
                   key={activeLook.id}
                   src={activeLook.image}
@@ -242,11 +242,11 @@ export default function EditorialBanner() {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = activeLook.fallback;
                   }}
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.02 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
-                  className="max-h-[85%] sm:max-h-[90%] w-auto object-contain object-bottom drop-shadow-[0_15px_25px_rgba(0,0,0,0.15)] filter contrast-105"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease: 'easeInOut' }}
+                  className="absolute max-h-[85%] sm:max-h-[90%] w-auto object-contain object-bottom drop-shadow-[0_15px_25px_rgba(0,0,0,0.15)] filter contrast-105 pointer-events-none"
                 />
               </AnimatePresence>
             </div>

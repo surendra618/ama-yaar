@@ -6,6 +6,7 @@ import { fetchReturnById, updateReturnStatus, clearCurrentReturn } from '../retu
 import StatusBadge from '../../../components/StatusBadge';
 import { Select, Input, Textarea } from '../../../components/FormField';
 import Loader from '../../../components/Loader';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 const STATUS_OPTIONS = ['requested', 'approved', 'rejected', 'picked_up', 'verified', 'refunded'];
 
@@ -91,7 +92,7 @@ export default function ReturnDetailsPage() {
         {ret.images?.length > 0 && (
           <div className="mt-3 flex gap-2">
             {ret.images.map((img, i) => (
-              <img key={i} src={img} alt={`Return evidence ${i + 1}`} className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-100" />
+              <img key={i} src={getMediaUrl(img)} alt={`Return evidence ${i + 1}`} className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-100" />
             ))}
           </div>
         )}

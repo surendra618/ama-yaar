@@ -51,10 +51,16 @@ export default function ProductListPage() {
     if (value === undefined || value === null || value === '') {
       next.delete(key);
     } else {
-      next.set(key, value);
+      next.set(key, String(value));
     }
-    next.set('page', '1');
+    // Only reset to page 1 if changing a filter (category, sort, price, etc.), NOT when navigating pages
+    if (key !== 'page') {
+      next.set('page', '1');
+    }
     setSearchParams(next);
+    if (key === 'page') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const clearAllFilters = () => {
@@ -224,12 +230,12 @@ export default function ProductListPage() {
               </div>
             )}
 
-            {/* Product Grid Area (Full Width 4 Columns) */}
+            {/* Product Grid Area (Always 4 Columns on Desktop) */}
             {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-10 sm:gap-x-6 sm:gap-y-12">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-5 lg:gap-x-6 gap-y-8 sm:gap-y-12">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="animate-pulse flex flex-col">
-                    <div className="aspect-[3/4] bg-neutral-200 w-full" />
+                    <div className="aspect-[3/4.2] bg-neutral-200 w-full rounded-xs" />
                     <div className="mt-3 h-4 bg-neutral-200 w-3/4" />
                     <div className="mt-2 h-4 bg-neutral-200 w-1/3" />
                   </div>
@@ -310,8 +316,8 @@ export default function ProductListPage() {
                 })}
               </div>
             ) : (
-              /* Standard 4-Column Grid View */
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-10 sm:gap-x-6 sm:gap-y-12">
+              /* Always 4 Columns Grid View */
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-5 lg:gap-x-6 gap-y-8 sm:gap-y-12">
                 {products.map((product) => (
                   <ProductCard key={product._id} product={product} />
                 ))}

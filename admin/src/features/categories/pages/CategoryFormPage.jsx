@@ -10,6 +10,7 @@ import {
   clearCurrentCategory,
 } from '../categoriesSlice';
 import api from '../../../lib/axios';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 const emptyForm = { name: '', parent: '', image: '', banner: '', isActive: true };
 
@@ -93,9 +94,7 @@ export default function CategoryFormPage() {
   const parentOptions = items.filter((c) => c._id !== id);
 
   const previewImage = form.image
-    ? form.image.startsWith('http') || form.image.startsWith('data:')
-      ? form.image
-      : `http://localhost:5000${form.image}`
+    ? getMediaUrl(form.image)
     : null;
 
   return (

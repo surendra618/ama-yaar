@@ -34,6 +34,7 @@ import StatCard from '../components/StatCard';
 import SalesChart from '../components/SalesChart';
 import RecentOrders from '../components/RecentOrders';
 import Loader from '../../../components/Loader';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 const MOCK_TOP_PRODUCTS = [
   {
@@ -273,7 +274,7 @@ export default function DashboardPage() {
             {productsList.slice(0, 4).map((p) => (
               <div key={p._id || p.name} className="group flex items-center gap-3 p-1 rounded-md transition hover:bg-slate-50">
                 <img
-                  src={p.image || p.images?.[0] || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=120&q=80'}
+                  src={getMediaUrl(p.image || p.images?.[0]) || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=120&q=80'}
                   alt={p.name}
                   className="h-10 w-10 rounded-md object-cover ring-1 ring-slate-200 shrink-0"
                 />

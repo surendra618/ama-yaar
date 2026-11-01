@@ -103,9 +103,10 @@ const productsSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.products;
-        state.pagination = action.payload.pagination;
-        saveCache('ay_cached_products', action.payload.products);
+        const productsList = action.payload?.products || (Array.isArray(action.payload) ? action.payload : []);
+        state.items = productsList;
+        state.pagination = action.payload?.pagination || { page: 1, limit: 12, total: productsList.length, pages: 1 };
+        saveCache('ay_cached_products', productsList);
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;

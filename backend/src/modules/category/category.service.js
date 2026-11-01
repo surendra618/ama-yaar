@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Category = require('./category.model');
 const Product = require('../product/product.model');
 const ApiError = require('../../utils/ApiError');
@@ -109,6 +110,9 @@ async function create(data) {
   if (!data.slug && data.name) {
     data.slug = slugify(data.name);
   }
+  if (!data.parent || data.parent === '' || data.parent === 'null' || !mongoose.Types.ObjectId.isValid(data.parent)) {
+    data.parent = null;
+  }
   const created = await Category.create(data);
   clearCategoryCache();
   return created;
@@ -120,6 +124,11 @@ async function update(id, data) {
   }
   if (!id.match(/^[0-9a-fA-F]{24}$/)) {
     return { _id: id, ...data };
+  }
+  if (data.parent !== undefined) {
+    if (!data.parent || data.parent === '' || data.parent === 'null' || !mongoose.Types.ObjectId.isValid(data.parent)) {
+      data.parent = null;
+    }
   }
   const doc = await Category.findByIdAndUpdate(id, data, { new: true, runValidators: true });
   if (!doc) throw new ApiError(404, 'Category not found');

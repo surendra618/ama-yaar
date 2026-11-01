@@ -621,20 +621,18 @@ export default function Navbar() {
       <header
         className={`z-50 w-full transition-all duration-300 ${
           isHome
-            ? isScrolled
-              ? "fixed top-0 inset-x-0 bg-neutral-950/80 backdrop-blur-md text-white border-b border-white/10 shadow-sm"
-              : "fixed top-0 inset-x-0 bg-transparent border-none text-white"
+            ? "fixed top-0 inset-x-0 bg-black/15 backdrop-blur-md text-white border-b border-white/10 shadow-sm"
             : "sticky top-0 bg-neutral-950/85 backdrop-blur-md text-white border-b border-white/10 shadow-xs"
         }`}
       >
         {/* Main Nav Bar with container padding */}
         <nav className="relative">
-          <div className="relative mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12 flex items-center justify-between py-2.5 sm:py-3.5">
+          <div className="relative mx-auto max-w-[1480px] px-3 sm:px-6 lg:px-12 flex items-center justify-between py-2 sm:py-3.5">
             {/* Left: Hamburger menu toggle */}
-            <div className="flex items-center z-20">
+            <div className="flex items-center z-20 shrink-0 sm:min-w-[140px] md:min-w-[160px]">
               <button
                 onClick={() => setMobileMenuOpen((v) => !v)}
-                className="rounded-full p-2 transition cursor-pointer text-white hover:bg-white/10 drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)]"
+                className="rounded-full p-1.5 sm:p-2 transition cursor-pointer text-white hover:bg-white/10 drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)]"
                 aria-label="Toggle navigation menu"
               >
                 {mobileMenuOpen ? (
@@ -645,30 +643,30 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Center: Brand Logo - Always perfectly centered across phone and desktop viewports */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto z-10 flex items-center justify-center">
+            {/* Center: Brand Logo - Mascot logo (original black, no glow, auto-responsive) */}
+            <div className="flex-1 flex items-center justify-center min-w-0 px-1 sm:px-4 z-10">
               <Link
                 to="/"
-                className="flex items-center leading-none group transition-transform duration-200 hover:scale-[1.02]"
+                className="flex items-center justify-center leading-none group transition-transform duration-200 hover:scale-[1.02]"
               >
                 <img
-                  src="/logo.png"
+                  src="/logo-mascot.png"
                   alt="AMA YAAR"
-                  className="h-7 sm:h-11 max-w-[125px] sm:max-w-none w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
+                  className="h-7 sm:h-9 md:h-10 max-h-11 w-auto object-contain transition-opacity group-hover:opacity-90"
                 />
               </Link>
             </div>
 
             {/* Right: Search, Notifications, User, Cart */}
-            <div className="flex items-center gap-2 sm:gap-3.5 ml-2 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)] z-20">
+            <div className="flex items-center justify-end gap-1 sm:gap-2.5 md:gap-3.5 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)] z-20 shrink-0 sm:min-w-[140px] md:min-w-[160px]">
               {/* Search Toggle Button */}
               <button
                 onClick={() => setSearchOpen((v) => !v)}
-                className="p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                className="p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 aria-label="Search"
                 title="Search fits"
               >
-                <Search className="h-5 w-5 stroke-[2]" />
+                <Search className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
               </button>
 
               {/* Notifications */}
@@ -679,12 +677,12 @@ export default function Navbar() {
                       setUserMenuOpen(false);
                       setNotifMenuOpen((v) => !v);
                     }}
-                    className="relative p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                    className="relative p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                     title="Notifications"
                   >
-                    <Bell className="h-5 w-5 stroke-[2]" />
+                    <Bell className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#e11d48] ring-2 ring-neutral-900" />
+                      <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-[#e11d48] ring-2 ring-neutral-900" />
                     )}
                   </button>
 
@@ -742,9 +740,9 @@ export default function Navbar() {
                       setNotifMenuOpen(false);
                       setUserMenuOpen((v) => !v);
                     }}
-                    className="flex items-center gap-1 p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                    className="flex items-center gap-1 p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                   >
-                    <User className="h-5 w-5 stroke-[2]" />
+                    <User className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
                     <ChevronDown className="hidden h-3 w-3 sm:block text-white/70" />
                   </button>
 
@@ -797,11 +795,11 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => setAuthModalOpen(true)}
-                  className="p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                  className="p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                   title="Sign In / Sign Up"
                   aria-label="Sign In"
                 >
-                  <User className="h-5 w-5 stroke-[2]" />
+                  <User className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
                 </button>
               )}
 
@@ -809,10 +807,10 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => dispatch(openDrawer())}
-                className="relative p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                className="relative p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 title="Cart"
               >
-                <ShoppingBag className="h-5 w-5 stroke-[2]" />
+                <ShoppingBag className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
                 {itemCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black bg-white text-black shadow-xs">
                     {itemCount}
@@ -884,12 +882,12 @@ export default function Navbar() {
               className="relative z-10 w-full max-w-md bg-white h-full flex flex-col shadow-2xl overflow-y-auto"
             >
               {/* Drawer Top Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100 bg-white sticky top-0 z-20">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 bg-white sticky top-0 z-20">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)}>
                   <img
-                    src="/logo-black.png"
+                    src="/logo-mascot.png"
                     alt="AMA YAAR"
-                    className="h-9 w-auto object-contain"
+                    className="h-9 sm:h-10 w-auto object-contain"
                   />
                 </Link>
                 <button

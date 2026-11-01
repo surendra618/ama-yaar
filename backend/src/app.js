@@ -76,8 +76,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 
-// Serve static uploads
+// Serve static uploads and editorial looks
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use('/editorial-looks', express.static(path.join(__dirname, '../public/editorial-looks')));
 
 app.get('/health', (req, res) => res.json({ status: 'ok', env: env.nodeEnv }));
 

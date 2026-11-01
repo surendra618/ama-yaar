@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { fetchBlogs, createBlog, deleteBlog, updateBlog } from '../blogsSlice';
 import api from '../../../lib/axios';
+import getMediaUrl from '../../../utils/mediaUrl';
 
 const CATEGORY_OPTIONS = [
   'Style Guide',
@@ -167,9 +168,7 @@ export default function BlogsListPage() {
 
   const getImageSrc = (imgUrl) => {
     if (!imgUrl) return 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80';
-    if (imgUrl.startsWith('http') || imgUrl.startsWith('data:')) return imgUrl;
-    if (imgUrl.startsWith('/uploads')) return `http://localhost:5000${imgUrl}`;
-    return imgUrl;
+    return getMediaUrl(imgUrl);
   };
 
   const safeBlogs = Array.isArray(blogs) ? blogs : [];

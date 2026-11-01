@@ -27,6 +27,7 @@ import {
   Lock,
 } from 'lucide-react';
 import api from '../../../lib/axios';
+import getMediaUrl from '../../../utils/mediaUrl';
 import { fetchOrderById, updateOrderStatus, clearCurrentOrder } from '../ordersSlice';
 import StatusBadge from '../../../components/StatusBadge';
 import { Select, Textarea } from '../../../components/FormField';
@@ -866,7 +867,7 @@ export default function OrderDetailsPage() {
               <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-slate-100 border border-slate-200">
                 {item.image ? (
                   <img
-                    src={item.image}
+                    src={getMediaUrl(item.image)}
                     alt={item.name}
                     className="h-full w-full object-cover"
                     onError={(e) => {

@@ -198,10 +198,13 @@ export default function DeliverySettingsPage() {
     }
   };
 
+  const getBackendOrigin = () => {
+    const base = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || '';
+    return base.replace(/\/api\/v1\/?$/, '') || (typeof window !== 'undefined' ? window.location.origin : '');
+  };
+
   const copyWebhookUrl = () => {
-    const backendOrigin = window.location.origin.includes('localhost')
-      ? 'http://localhost:5000'
-      : window.location.origin;
+    const backendOrigin = getBackendOrigin();
     const url = `${backendOrigin}/api/v1/shiprocket/webhook`;
     navigator.clipboard.writeText(url);
     setWebhookCopied(true);
@@ -1322,12 +1325,7 @@ export default function DeliverySettingsPage() {
                   <input
                     type="text"
                     readOnly
-                    value={`${typeof window !== 'undefined' && window.location.origin.includes('localhost')
-                      ? 'http://localhost:5000'
-                      : typeof window !== 'undefined'
-                        ? window.location.origin
-                        : ''
-                      }/api/v1/shiprocket/webhook`}
+                    value={`${getBackendOrigin()}/api/v1/shiprocket/webhook`}
                     className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 font-mono select-all focus:outline-hidden"
                   />
                   <button

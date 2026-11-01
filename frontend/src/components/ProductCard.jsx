@@ -67,8 +67,8 @@ export default function ProductCard({ product }) {
 
   return (
     <div className="group relative flex flex-col bg-transparent select-none">
-      {/* Product Image Container (3:4 portrait, tall streetwear framing) */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-neutral-900/10">
+      {/* Product Image Container (Tall high-impact streetwear framing matching reference) */}
+      <div className="relative aspect-[3/4.2] w-full overflow-hidden rounded-xs bg-neutral-100">
         <Link to={`/products/${product.slug || product._id}`} className="block h-full w-full">
           <img
             src={currentImage}
@@ -82,8 +82,17 @@ export default function ProductCard({ product }) {
           />
         </Link>
 
-        {/* Top-Left Action: Wishlist Heart Button */}
-        <div className="absolute top-2.5 left-2.5 z-10">
+        {/* Top-Left Action: SAVE X% Badge (Exact match with reference image) */}
+        {discountPercent > 0 && (
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <span className="bg-[#e62020] text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 tracking-wider uppercase rounded-xs shadow-xs">
+              SAVE {discountPercent}%
+            </span>
+          </div>
+        )}
+
+        {/* Top-Right Action: Wishlist Heart Button (Exact match with reference image) */}
+        <div className="absolute top-2.5 right-2.5 z-10">
           <button
             type="button"
             onClick={(e) => {
@@ -91,34 +100,26 @@ export default function ProductCard({ product }) {
               e.stopPropagation();
               setIsWishlisted((prev) => !prev);
             }}
-            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#272732]/90 hover:bg-[#353544] text-white flex items-center justify-center shadow-md transition cursor-pointer backdrop-blur-xs"
+            className="p-1 transition cursor-pointer text-neutral-800 hover:text-black drop-shadow-sm"
             aria-label="Save to wishlist"
           >
             <Heart
-              className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
-                isWishlisted ? 'fill-[#e11d48] text-[#e11d48]' : 'text-neutral-200'
+              className={`h-5 w-5 transition-colors ${
+                isWishlisted ? 'fill-[#e62020] text-[#e62020]' : 'text-neutral-800 stroke-[1.8]'
               }`}
             />
           </button>
         </div>
 
-        {/* Top-Right: Rating Badge Pill */}
-        <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-[#272732]/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-white/10 shadow-xs">
-          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-          <span className="text-white text-[9.5px]">
-            {product.rating ? Number(product.rating).toFixed(1) : '4.3'}
-          </span>
-        </div>
-
-        {/* Bottom-Right Bag Button */}
+        {/* Bottom-Right Bag Button (appears on hover) */}
         <button
           type="button"
           onClick={handleAddToCart}
-          className="absolute bottom-2.5 right-2.5 z-20 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#272732]/90 hover:bg-[#e07a5f] text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-md backdrop-blur-xs group/bag"
+          className="absolute bottom-2.5 right-2.5 z-20 h-8 w-8 rounded-full bg-white/95 hover:bg-black text-black hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-md opacity-0 group-hover:opacity-100"
           title="Add to Cart"
           aria-label="Add to Cart"
         >
-          <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.2]" />
+          <ShoppingBag className="h-4 w-4 stroke-[2.2]" />
         </button>
 
         {/* Image Carousel Arrows (shown on hover) */}
@@ -144,30 +145,31 @@ export default function ProductCard({ product }) {
         )}
       </div>
 
-      {/* Details Below Image */}
-      <div className="pt-2 px-0.5">
-        {/* Product Title: Clean sans-serif title case */}
+      {/* Details Below Image (Exact styling from reference image) */}
+      <div className="pt-2.5 px-0.5">
+        {/* Product Title: Clean bold uppercase */}
         <Link
           to={`/products/${product.slug || product._id}`}
-          className="block text-xs sm:text-[13px] font-semibold text-neutral-900 hover:underline leading-snug line-clamp-1 tracking-tight"
+          className="block text-xs sm:text-[13px] font-bold text-neutral-900 uppercase hover:underline leading-snug line-clamp-1 tracking-tight"
         >
           {product.name}
         </Link>
 
-        {/* Price Row matching Video 00:01: $189 $229 Sale */}
-        <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
-          <span className="text-xs sm:text-[13.5px] font-bold text-neutral-900">
-            ₹{product.price?.toLocaleString('en-IN')}.00
-          </span>
-          {product.mrp && product.mrp > product.price && (
+        {/* Price Row: Rs. 2,199.00 (strikethrough)  Rs. 1,999.00 (red) */}
+        <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+          {product.mrp && product.mrp > product.price ? (
             <>
               <span className="text-[11px] sm:text-xs text-neutral-400 line-through font-normal">
-                ₹{product.mrp?.toLocaleString('en-IN')}.00
+                Rs.{product.mrp?.toLocaleString('en-IN')}.00
               </span>
-              <span className="text-[9px] font-bold text-[#e07a5f] bg-[#e07a5f]/10 px-1.5 py-0.2 rounded-xs uppercase tracking-wider">
-                Sale
+              <span className="text-xs sm:text-[13.5px] font-bold text-[#e62020]">
+                Rs.{product.price?.toLocaleString('en-IN')}.00
               </span>
             </>
+          ) : (
+            <span className="text-xs sm:text-[13.5px] font-bold text-neutral-900">
+              Rs.{product.price?.toLocaleString('en-IN')}.00
+            </span>
           )}
         </div>
       </div>
