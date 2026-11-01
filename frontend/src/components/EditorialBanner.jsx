@@ -230,10 +230,10 @@ export default function EditorialBanner() {
               rotateY,
               transformStyle: 'preserve-3d',
             }}
-            className="relative h-[480px] sm:h-[560px] md:h-[620px] lg:h-[680px] xl:h-[720px] w-full rounded-2xl bg-gradient-to-b from-[#f8fafc] via-[#eff2f6] to-[#e2e7ee] border border-neutral-200/90 overflow-hidden flex items-center justify-center shadow-sm"
+            className="relative h-[460px] sm:h-[520px] md:h-[580px] lg:h-[640px] xl:h-[680px] w-full rounded-2xl bg-gradient-to-b from-[#f8fafc] via-[#eff2f6] to-[#e2e7ee] border border-neutral-200/90 overflow-hidden flex items-center justify-center shadow-sm"
           >
             {/* Ambient High-Key Studio Center Spotlight */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_75%_at_50%_40%,rgba(255,255,255,1)_0%,rgba(255,255,255,0.75)_35%,transparent_80%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_75%_at_50%_45%,rgba(255,255,255,1)_0%,rgba(255,255,255,0.75)_40%,transparent_80%)] pointer-events-none" />
 
             {/* Subtle Editorial Background Watermark Typography */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center pointer-events-none select-none overflow-hidden z-0 opacity-[0.06]">
@@ -276,10 +276,10 @@ export default function EditorialBanner() {
             </button>
 
             {/* Studio Floor Soft Contact Shadow under Model Feet */}
-            <div className="absolute bottom-16 sm:bottom-20 w-48 sm:w-72 md:w-88 h-6 sm:h-8 bg-neutral-950/20 rounded-[100%] blur-md pointer-events-none z-10" />
+            <div className="absolute bottom-[76px] sm:bottom-[86px] w-48 sm:w-68 h-5 sm:h-6 bg-neutral-950/15 rounded-[100%] blur-md pointer-events-none z-10" />
 
-            {/* Main Model Runway Stage - Grand Prominent Model with Seamless Outfit Transition */}
-            <div className="relative z-10 w-full h-full flex items-end justify-center pb-14 sm:pb-16 overflow-hidden pointer-events-none">
+            {/* Main Model Runway Stage - Fully Uncut Model with Headroom and Footroom */}
+            <div className="absolute inset-x-0 top-0 bottom-[72px] sm:bottom-[82px] pt-14 sm:pt-16 px-4 z-10 flex items-center justify-center pointer-events-none overflow-visible">
               {displayLooks.map((look, idx) => {
                 const isActive = currentIndex === idx;
                 return (
@@ -299,8 +299,9 @@ export default function EditorialBanner() {
                       duration: 0.35,
                       ease: 'easeInOut',
                     }}
-                    className="absolute h-full max-h-[92%] sm:max-h-[96%] w-auto object-contain object-bottom drop-shadow-[0_25px_45px_rgba(0,0,0,0.25)] filter contrast-[1.07] brightness-[1.03] select-none"
+                    className="max-h-full max-w-full w-auto h-full object-contain object-center drop-shadow-[0_20px_35px_rgba(0,0,0,0.22)] filter contrast-[1.06] brightness-[1.02] select-none"
                     style={{
+                      position: 'absolute',
                       pointerEvents: isActive ? 'auto' : 'none',
                     }}
                   />
