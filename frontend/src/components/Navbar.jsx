@@ -643,16 +643,16 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Center: Brand Logo - Mascot logo (original black, no glow, auto-responsive) */}
-            <div className="flex-1 flex items-center justify-center min-w-0 px-1 sm:px-4 z-10">
+            {/* Center: Brand Logo - Always perfectly centered across phone and desktop viewports */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto z-10 flex items-center justify-center">
               <Link
                 to="/"
-                className="flex items-center justify-center leading-none group transition-transform duration-200 hover:scale-[1.02]"
+                className="flex items-center leading-none group transition-transform duration-200 hover:scale-[1.02]"
               >
                 <img
-                  src="/logo-mascot.png"
+                  src="/logo.png"
                   alt="AMA YAAR"
-                  className="h-7 sm:h-9 md:h-10 max-h-11 w-auto object-contain transition-opacity group-hover:opacity-90"
+                  className="h-7 sm:h-11 max-w-[125px] sm:max-w-none w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
                 />
               </Link>
             </div>
@@ -885,9 +885,9 @@ export default function Navbar() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 bg-white sticky top-0 z-20">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)}>
                   <img
-                    src="/logo-mascot.png"
+                    src="/logo-black.png"
                     alt="AMA YAAR"
-                    className="h-9 sm:h-10 w-auto object-contain"
+                    className="h-9 w-auto object-contain"
                   />
                 </Link>
                 <button
