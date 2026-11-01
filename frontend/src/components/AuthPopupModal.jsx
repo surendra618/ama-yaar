@@ -24,7 +24,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   // Step state: 'phone' | 'otp'
   const [step, setStep] = useState('phone');
 
-  // Form states
+  // Form state
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
