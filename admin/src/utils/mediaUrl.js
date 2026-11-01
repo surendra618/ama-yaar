@@ -6,7 +6,8 @@ export function getMediaUrl(path) {
     path.startsWith('http://') ||
     path.startsWith('https://') ||
     path.startsWith('data:') ||
-    path.startsWith('blob:')
+    path.startsWith('blob:') ||
+    path.startsWith('/editorial-looks/')
   ) {
     return path;
   }
