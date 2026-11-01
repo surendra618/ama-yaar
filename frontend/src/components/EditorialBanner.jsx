@@ -230,29 +230,29 @@ export default function EditorialBanner() {
               rotateY,
               transformStyle: 'preserve-3d',
             }}
-            className="relative h-[340px] sm:h-[400px] lg:h-[450px] w-full rounded-xl bg-gradient-to-b from-[#f5f7fa] via-[#edf0f4] to-[#e4e8ed] border border-neutral-200 overflow-hidden flex items-center justify-center shadow-xs"
+            className="relative h-[480px] sm:h-[560px] md:h-[620px] lg:h-[680px] xl:h-[720px] w-full rounded-2xl bg-gradient-to-b from-[#f8fafc] via-[#eff2f6] to-[#e2e7ee] border border-neutral-200/90 overflow-hidden flex items-center justify-center shadow-sm"
           >
-            {/* Ambient Dynamic Background Light Glow */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.85)_0%,transparent_75%)] pointer-events-none" />
+            {/* Ambient High-Key Studio Center Spotlight */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_75%_at_50%_40%,rgba(255,255,255,1)_0%,rgba(255,255,255,0.75)_35%,transparent_80%)] pointer-events-none" />
 
             {/* Subtle Editorial Background Watermark Typography */}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center pointer-events-none select-none overflow-hidden z-0 opacity-[0.08]">
-              <span className="text-[14vw] font-black uppercase tracking-tighter text-neutral-900 whitespace-nowrap block leading-none font-display italic">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center pointer-events-none select-none overflow-hidden z-0 opacity-[0.06]">
+              <span className="text-[16vw] font-black uppercase tracking-tighter text-neutral-900 whitespace-nowrap block leading-none font-display italic">
                 AMA YAAR
               </span>
             </div>
 
             {/* Top Right Floating Season Tag */}
-            <div className="absolute top-3.5 right-3.5 z-20 bg-white/90 backdrop-blur-md border border-neutral-200/90 px-3 py-1 rounded-md flex items-center gap-1.5 shadow-xs">
-              <Sparkles className="h-3 w-3 text-[#e11d48]" />
-              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-900">
+            <div className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-md border border-neutral-200/90 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xs">
+              <Sparkles className="h-3.5 w-3.5 text-[#e11d48]" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-neutral-900">
                 {activeLook.season}
               </span>
             </div>
 
             {/* Top Left Look ID */}
-            <div className="absolute top-3.5 left-3.5 z-20 bg-white/90 backdrop-blur-md border border-neutral-200/90 px-2.5 py-1 rounded-md shadow-xs">
-              <span className="text-[10px] font-mono font-bold tracking-wider text-neutral-700 uppercase">
+            <div className="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md border border-neutral-200/90 px-3 py-1.5 rounded-lg shadow-xs">
+              <span className="text-[11px] font-mono font-bold tracking-wider text-neutral-800 uppercase">
                 SERIES 0{currentIndex + 1}
               </span>
             </div>
@@ -262,21 +262,24 @@ export default function EditorialBanner() {
               type="button"
               onClick={handlePrev}
               aria-label="Previous look"
-              className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/85 hover:bg-white text-neutral-800 shadow-sm border border-neutral-200/90 flex items-center justify-center transition-all duration-150 opacity-0 group-hover/container:opacity-100 hover:scale-105 active:scale-95"
+              className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/95 hover:bg-white text-neutral-900 shadow-md border border-neutral-200 flex items-center justify-center transition-all duration-150 opacity-90 hover:opacity-100 hover:scale-110 active:scale-95"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             <button
               type="button"
               onClick={handleNext}
               aria-label="Next look"
-              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-30 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/85 hover:bg-white text-neutral-800 shadow-sm border border-neutral-200/90 flex items-center justify-center transition-all duration-150 opacity-0 group-hover/container:opacity-100 hover:scale-105 active:scale-95"
+              className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/95 hover:bg-white text-neutral-900 shadow-md border border-neutral-200 flex items-center justify-center transition-all duration-150 opacity-90 hover:opacity-100 hover:scale-110 active:scale-95"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
 
-            {/* Main Model Runway Stage - Seamless Clothes Crossfade on Exact Same Model */}
-            <div className="relative z-10 w-full h-full flex items-center justify-center p-3 sm:p-5 pb-16 overflow-hidden pointer-events-none">
+            {/* Studio Floor Soft Contact Shadow under Model Feet */}
+            <div className="absolute bottom-16 sm:bottom-20 w-48 sm:w-72 md:w-88 h-6 sm:h-8 bg-neutral-950/20 rounded-[100%] blur-md pointer-events-none z-10" />
+
+            {/* Main Model Runway Stage - Grand Prominent Model with Seamless Outfit Transition */}
+            <div className="relative z-10 w-full h-full flex items-end justify-center pb-14 sm:pb-16 overflow-hidden pointer-events-none">
               {displayLooks.map((look, idx) => {
                 const isActive = currentIndex === idx;
                 return (
@@ -296,7 +299,7 @@ export default function EditorialBanner() {
                       duration: 0.35,
                       ease: 'easeInOut',
                     }}
-                    className="absolute max-h-[88%] sm:max-h-[92%] w-auto object-contain object-bottom drop-shadow-[0_20px_35px_rgba(0,0,0,0.18)] filter contrast-[1.03] select-none"
+                    className="absolute h-full max-h-[92%] sm:max-h-[96%] w-auto object-contain object-bottom drop-shadow-[0_25px_45px_rgba(0,0,0,0.25)] filter contrast-[1.07] brightness-[1.03] select-none"
                     style={{
                       pointerEvents: isActive ? 'auto' : 'none',
                     }}
@@ -306,21 +309,21 @@ export default function EditorialBanner() {
             </div>
 
             {/* Compact Bottom Floating Info Bar */}
-            <div className="absolute bottom-3 inset-x-3 sm:inset-x-5 z-20 flex flex-wrap items-center justify-between gap-3 bg-white/92 backdrop-blur-md border border-neutral-200/90 rounded-lg px-4 py-2.5 shadow-sm">
+            <div className="absolute bottom-3.5 sm:bottom-4 inset-x-3 sm:inset-x-6 z-20 flex flex-wrap items-center justify-between gap-3 bg-white/95 backdrop-blur-md border border-neutral-200/90 rounded-xl px-4 sm:px-5 py-3 shadow-md">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="h-2 w-2 rounded-full bg-[#e11d48] shrink-0" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#e11d48] shrink-0 animate-pulse" />
                 <span className="text-xs sm:text-sm font-black uppercase tracking-wide text-neutral-900 truncate">
                   {activeLook.title}
                 </span>
                 <span className="hidden sm:inline text-neutral-300">·</span>
-                <span className="hidden sm:inline text-xs font-semibold text-neutral-500 uppercase truncate">
+                <span className="hidden sm:inline text-xs font-bold text-neutral-500 uppercase truncate">
                   {activeLook.subtitle}
                 </span>
               </div>
 
               <div className="flex items-center gap-3 ml-auto">
                 {/* Micro Thumbnails Strip */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   {displayLooks.map((look, idx) => {
                     const isSelected = currentIndex === idx;
                     return (
@@ -328,7 +331,7 @@ export default function EditorialBanner() {
                         key={look.id || idx}
                         type="button"
                         onClick={() => setCurrentIndex(idx)}
-                        className={`relative h-7 w-7 sm:h-8 sm:w-8 rounded-md overflow-hidden border bg-neutral-100 transition-all duration-150 ${isSelected
+                        className={`relative h-8 w-8 sm:h-9 sm:w-9 rounded-lg overflow-hidden border bg-neutral-100 transition-all duration-150 ${isSelected
                             ? 'border-[#e11d48] ring-2 ring-[#e11d48]/40 scale-105 shadow-xs'
                             : 'border-neutral-200 opacity-60 hover:opacity-100 hover:border-neutral-400'
                           }`}
@@ -350,10 +353,10 @@ export default function EditorialBanner() {
 
                 <Link
                   to="/products"
-                  className="inline-flex items-center gap-1.5 bg-neutral-950 text-white rounded px-3 py-1.5 text-[11px] font-black uppercase tracking-wider hover:bg-black transition active:scale-95"
+                  className="inline-flex items-center gap-1.5 bg-neutral-950 text-white rounded-lg px-3.5 py-2 text-xs font-black uppercase tracking-wider hover:bg-black transition active:scale-95 shadow-xs"
                 >
                   <span>SHOP FIT</span>
-                  <ArrowRight className="h-3 w-3 text-white" />
+                  <ArrowRight className="h-3.5 w-3.5 text-white" />
                 </Link>
               </div>
             </div>
