@@ -76,7 +76,7 @@ async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
     amount: paiseAmount,
     currency,
     receipt: receipt || `rcpt_${Date.now()}`,
-    keyId: env.razorpay.keyId || 'rzp_test_S7lSvWtu89c6zD',
+    keyId: env.razorpay.keyId || 'rzp_live_TpNj0k4nh8EVkG',
   };
 }
 
