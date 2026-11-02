@@ -652,7 +652,7 @@ export default function Navbar() {
                 <img
                   src="/logo.png"
                   alt="AMA YAAR"
-                  className="h-7 sm:h-11 max-w-[125px] sm:max-w-none w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
+                  className="h-7 sm:h-11 max-w-[125px] sm:max-w-none w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
                 />
               </Link>
             </div>
@@ -662,7 +662,7 @@ export default function Navbar() {
               {/* Search Toggle Button */}
               <button
                 onClick={() => setSearchOpen((v) => !v)}
-                className="p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                className="hidden sm:inline-flex p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 aria-label="Search"
                 title="Search fits"
               >
@@ -807,7 +807,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => dispatch(openDrawer())}
-                className="relative p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                className="hidden sm:inline-flex relative p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 title="Cart"
               >
                 <ShoppingBag className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />

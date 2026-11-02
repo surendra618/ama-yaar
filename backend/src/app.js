@@ -80,6 +80,18 @@ app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 app.use('/editorial-looks', express.static(path.join(__dirname, '../public/editorial-looks')));
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'AMA YAAR API Server is running',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      api: '/api/v1'
+    }
+  });
+});
+
 app.get('/health', (req, res) => res.json({ status: 'ok', env: env.nodeEnv }));
 
 app.use('/api/v1', routes);
