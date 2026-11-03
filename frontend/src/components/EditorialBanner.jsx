@@ -77,21 +77,21 @@ export default function EditorialBanner() {
   const currentSlide = slides[currentIndex] || slides[0];
 
   return (
-    <section className="relative w-full bg-white text-black py-4 sm:py-6 md:py-8 overflow-hidden select-none">
-      <div className="relative mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-14 min-h-[480px] sm:min-h-[540px] md:min-h-[600px] lg:min-h-[660px] flex items-center justify-center">
+    <section className="relative w-full bg-white text-black py-6 sm:py-8 md:py-10 overflow-hidden select-none">
+      <div className="relative mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-14 flex flex-col md:flex-row md:items-center md:justify-center min-h-[560px] sm:min-h-[580px] md:min-h-[600px] lg:min-h-[660px]">
 
-        {/* Left Side Copy / Editorial Headline (NOCTA Studio Style) */}
-        <div className="absolute top-3 left-4 sm:top-6 sm:left-8 md:top-1/2 md:-translate-y-1/2 md:left-12 lg:left-16 z-30 max-w-[320px] sm:max-w-[360px] md:max-w-[380px] text-left pointer-events-auto">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-black uppercase tracking-tight leading-[0.92] text-black">
+        {/* Copy / Editorial Headline (Clean top-stacked on mobile, absolute left on desktop) */}
+        <div className="relative md:absolute md:top-1/2 md:-translate-y-1/2 md:left-12 lg:left-16 z-30 w-full max-w-[340px] sm:max-w-[360px] md:max-w-[380px] text-left pointer-events-auto mb-6 md:mb-0">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-[54px] font-black uppercase tracking-tight leading-[0.92] text-black">
             THE NOCTA<br />COLLECTION
           </h2>
-          <p className="mt-3.5 sm:mt-4 text-xs sm:text-sm font-medium text-neutral-600 leading-relaxed tracking-normal">
+          <p className="mt-2.5 sm:mt-3 md:mt-4 text-xs sm:text-sm font-medium text-neutral-600 leading-relaxed tracking-normal">
             Made for the night shift. / Worn around the clock.
           </p>
-          <div className="mt-5 sm:mt-6">
+          <div className="mt-4 sm:mt-5 md:mt-6">
             <Link
               to={currentSlide.link || '/products'}
-              className="inline-flex items-center justify-center px-7 sm:px-8 py-2.5 sm:py-3 rounded-full border-[2px] border-black text-xs sm:text-[13px] font-black uppercase tracking-wider text-black bg-transparent hover:bg-black hover:text-white transition-colors duration-200 shadow-xs"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-2 sm:py-2.5 md:py-3 rounded-full border-[2px] border-black text-[11px] sm:text-xs md:text-[13px] font-black uppercase tracking-wider text-black bg-transparent hover:bg-black hover:text-white transition-colors duration-200 shadow-xs"
             >
               Shop now
             </Link>
@@ -103,7 +103,7 @@ export default function EditorialBanner() {
           ref={containerRef}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
-          className="relative w-[280px] sm:w-[340px] md:w-[390px] lg:w-[420px] aspect-[9/16] max-h-[620px] flex items-center justify-center z-10 touch-pan-y"
+          className="relative mx-auto w-[240px] xs:w-[270px] sm:w-[320px] md:w-[380px] lg:w-[420px] aspect-[9/16] max-h-[480px] sm:max-h-[540px] md:max-h-[620px] flex items-center justify-center z-10 touch-pan-y my-2 md:my-0"
         >
           {/* Static High-Resolution Base Model Figure */}
           <img

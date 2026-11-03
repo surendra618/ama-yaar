@@ -1432,7 +1432,7 @@ export default function HomePage() {
       <EditorialBanner />
 
       {/* 6. Instagram reel cards row — Exactly 5 cards in 1 row on desktop */}
-      <section className="w-full bg-[#0a0a0a] py-14 mt-4 mb-10 overflow-hidden">
+      <section className="w-full bg-[#0a0a0a] py-8 sm:py-10 mt-2 mb-0 overflow-hidden">
         {/* Stylish Modern Heading */}
         <div className="mb-10 text-center px-4 flex flex-col items-center justify-center">
           <div className="flex items-center gap-2 mb-1.5">
@@ -1510,7 +1510,7 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         {/* 7. Customer reviews with AOS Animation & Functional Scroll */}
-        <section className="py-16 overflow-hidden">
+        <section className="pt-6 pb-4 sm:pt-8 sm:pb-6 overflow-hidden">
           <div
             data-aos="fade-up"
             data-aos-duration="600"
@@ -1650,17 +1650,17 @@ export default function HomePage() {
       <InstagramBanner />
 
       {/* 9. Newsletter floating card */}
-      <section className="bg-white py-10 px-4 sm:px-6 lg:px-12">
-        <div className="mx-auto max-w-[1480px] bg-black rounded-2xl p-8 sm:p-10 lg:px-14 lg:py-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
+      <section className="bg-white pt-2 pb-6 sm:pt-4 sm:pb-8 lg:py-8 px-3 sm:px-6 lg:px-12">
+        <div className="mx-auto max-w-[1480px] bg-black rounded-xl sm:rounded-2xl p-4 sm:p-7 lg:px-14 lg:py-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-8 shadow-sm">
           {/* Left: heading */}
-          <div className="text-white flex-1">
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold leading-tight tracking-wide">
+          <div className="text-white flex-1 text-center md:text-left">
+            <h2 className="font-display text-xl sm:text-3xl md:text-4xl font-extrabold leading-tight tracking-tight sm:tracking-wide">
               STAY UPTO DATE{" "}
               <span className="font-script italic font-normal text-white/90">
                 About
               </span>
             </h2>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold leading-tight tracking-wide mt-1">
+            <h2 className="font-display text-xl sm:text-3xl md:text-4xl font-extrabold leading-tight tracking-tight sm:tracking-wide mt-0.5 sm:mt-1">
               OUR LATEST{" "}
               <span className="font-script italic font-normal text-white/90">
                 Offer
@@ -1668,8 +1668,8 @@ export default function HomePage() {
             </h2>
           </div>
           {/* Right: email input & form */}
-          <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-3 w-full max-w-sm">
-            <div className="flex items-center gap-3 bg-white rounded-full px-5 py-3 focus-within:ring-2 focus-within:ring-white/40 transition">
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-2 sm:gap-3 w-full max-w-sm">
+            <div className="flex items-center gap-2.5 sm:gap-3 bg-white rounded-full px-4 sm:px-5 py-2 sm:py-3 focus-within:ring-2 focus-within:ring-white/40 transition">
               <svg
                 className="h-4 w-4 text-black/40 shrink-0"
                 fill="none"
@@ -1695,7 +1695,7 @@ export default function HomePage() {
             <button
               type="submit"
               disabled={newsletterLoading}
-              className="w-full rounded-full bg-white text-black py-3 text-xs font-bold tracking-wide hover:bg-neutral-100 disabled:opacity-75 transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
+              className="w-full rounded-full bg-white text-black py-2.5 sm:py-3 text-xs font-bold tracking-wide hover:bg-neutral-100 disabled:opacity-75 transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
             >
               {newsletterLoading ? (
                 <>

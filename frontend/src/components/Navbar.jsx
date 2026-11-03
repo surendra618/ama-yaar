@@ -632,7 +632,7 @@ export default function Navbar() {
             <div className="flex items-center z-20 shrink-0 sm:min-w-[140px] md:min-w-[160px]">
               <button
                 onClick={() => setMobileMenuOpen((v) => !v)}
-                className="rounded-full p-1.5 sm:p-2 transition cursor-pointer text-white hover:bg-white/10 drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)]"
+                className="rounded-full p-1.5 sm:p-2 transition cursor-pointer text-white hover:bg-white/10"
                 aria-label="Toggle navigation menu"
               >
                 {mobileMenuOpen ? (
@@ -652,17 +652,17 @@ export default function Navbar() {
                 <img
                   src="/logo.png"
                   alt="AMA YAAR"
-                  className="h-6 sm:h-10 md:h-11 max-w-[110px] sm:max-w-none w-auto object-contain transition-all group-hover:opacity-90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                  className="h-6 sm:h-10 md:h-11 max-w-[110px] sm:max-w-none w-auto object-contain transition-all group-hover:opacity-90"
                 />
               </Link>
             </div>
 
             {/* Right: Search, Notifications, User, Cart */}
-            <div className="flex items-center justify-end gap-1 sm:gap-2.5 md:gap-3.5 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)] z-20 shrink-0 sm:min-w-[140px] md:min-w-[160px]">
+            <div className="flex items-center justify-end gap-1 sm:gap-2.5 md:gap-3.5 transition-colors text-white z-20 shrink-0 sm:min-w-[140px] md:min-w-[160px]">
               {/* Search Toggle Button */}
               <button
                 onClick={() => setSearchOpen((v) => !v)}
-                className="hidden sm:inline-flex p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                className="flex items-center p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 aria-label="Search"
                 title="Search fits"
               >
@@ -819,20 +819,6 @@ export default function Navbar() {
 
               
             </div>
-          </div>
-
-          {/* Mobile Search Bar below navbar (Bonkers Corner Style) */}
-          <div className="sm:hidden px-3.5 pb-2.5 pt-2 mt-1">
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-none border border-white/40 hover:border-white/80 bg-transparent text-white/85 hover:text-white transition cursor-pointer"
-            >
-              <span className="text-[12px] font-medium tracking-wide">
-                Search AMA YAAR fits, drops...
-              </span>
-              <Search className="h-4 w-4 text-white/90 shrink-0" />
-            </button>
           </div>
         </nav>
       </header>
