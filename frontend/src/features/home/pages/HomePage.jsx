@@ -1432,7 +1432,7 @@ export default function HomePage() {
       <EditorialBanner />
 
       {/* 6. Instagram reel cards row — Exactly 5 cards in 1 row on desktop */}
-      <section className="w-full bg-[#0a0a0a] py-14 my-10 overflow-hidden">
+      <section className="w-full bg-[#0a0a0a] py-14 mt-4 mb-10 overflow-hidden">
         {/* Stylish Modern Heading */}
         <div className="mb-10 text-center px-4 flex flex-col items-center justify-center">
           <div className="flex items-center gap-2 mb-1.5">

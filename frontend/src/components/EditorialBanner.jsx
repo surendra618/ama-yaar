@@ -77,11 +77,11 @@ export default function EditorialBanner() {
   const currentSlide = slides[currentIndex] || slides[0];
 
   return (
-    <section className="relative w-full bg-white text-black py-12 md:py-20 overflow-hidden select-none">
-      <div className="relative mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-14 min-h-[580px] sm:min-h-[660px] md:min-h-[740px] lg:min-h-[820px] flex items-center justify-center">
+    <section className="relative w-full bg-white text-black py-4 sm:py-6 md:py-8 overflow-hidden select-none">
+      <div className="relative mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-14 min-h-[480px] sm:min-h-[540px] md:min-h-[600px] lg:min-h-[660px] flex items-center justify-center">
 
         {/* Left Side Copy / Editorial Headline (NOCTA Studio Style) */}
-        <div className="absolute top-4 left-4 sm:top-8 sm:left-8 md:top-1/2 md:-translate-y-1/2 md:left-12 lg:left-16 z-30 max-w-[320px] sm:max-w-[360px] md:max-w-[380px] text-left pointer-events-auto">
+        <div className="absolute top-3 left-4 sm:top-6 sm:left-8 md:top-1/2 md:-translate-y-1/2 md:left-12 lg:left-16 z-30 max-w-[320px] sm:max-w-[360px] md:max-w-[380px] text-left pointer-events-auto">
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-black uppercase tracking-tight leading-[0.92] text-black">
             THE NOCTA<br />COLLECTION
           </h2>
@@ -103,7 +103,7 @@ export default function EditorialBanner() {
           ref={containerRef}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
-          className="relative w-[300px] sm:w-[380px] md:w-[440px] lg:w-[480px] xl:w-[500px] aspect-[9/16] max-h-[760px] flex items-center justify-center z-10 touch-pan-y"
+          className="relative w-[280px] sm:w-[340px] md:w-[390px] lg:w-[420px] aspect-[9/16] max-h-[620px] flex items-center justify-center z-10 touch-pan-y"
         >
           {/* Static High-Resolution Base Model Figure */}
           <img
@@ -116,13 +116,18 @@ export default function EditorialBanner() {
           {/* Interactive Garment Carousel Track */}
           <div className="absolute inset-0 z-20 pointer-events-none overflow-visible">
             {slides.map((slide, idx) => {
-              const diff = idx - currentIndex;
+              // Calculate shortest circular difference so slides wrap around infinitely in one direction
+              let diff = idx - currentIndex;
+              const n = slides.length;
+              if (diff > n / 2) diff -= n;
+              if (diff < -n / 2) diff += n;
+
               const isActive = diff === 0;
               const isNear = Math.abs(diff) === 1;
 
-              // Compute X shift percentage based on slot distance
+              // Compute X shift percentage based on circular slot distance
               const translateX = `${diff * 134}%`;
-              const opacity = isActive ? 1 : isNear ? 0.32 : 0.08;
+              const opacity = isActive ? 1 : isNear ? 0.32 : 0;
               const scale = isActive ? 1 : 0.94;
 
               return (
@@ -135,6 +140,7 @@ export default function EditorialBanner() {
                   style={{
                     transform: `translateX(${translateX}) scale(${scale})`,
                     opacity,
+                    visibility: Math.abs(diff) <= 1 ? 'visible' : 'hidden',
                   }}
                   title={slide.name}
                 >
