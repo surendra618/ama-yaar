@@ -176,51 +176,6 @@ export default function EditorialBanner() {
           <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
 
-        {/* Bottom Left Garment Label (Shopify NOCTA style) */}
-        <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-8 md:bottom-8 md:left-12 z-30 pointer-events-none">
-          <p className="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.2em] text-neutral-800 uppercase">
-            {currentSlide.name}
-          </p>
-        </div>
-
-        {/* Bottom Center Indicator Dots + Autoplay Pause/Play Toggle */}
-        <div className="absolute bottom-4 inset-x-0 sm:bottom-6 md:bottom-8 z-30 flex items-center justify-center gap-3 pointer-events-auto">
-          <div className="flex items-center gap-1.5">
-            {slides.map((slide, idx) => {
-              const isActive = currentIndex === idx;
-              return (
-                <button
-                  key={slide.id || idx}
-                  type="button"
-                  onClick={() => setCurrentIndex(idx)}
-                  aria-label={`Go to slide ${idx + 1}`}
-                  className="h-6 w-6 flex items-center justify-center p-0 bg-transparent cursor-pointer"
-                >
-                  <span
-                    className={`block rounded-full bg-black transition-all duration-300 ${
-                      isActive ? 'h-2 w-2 opacity-100 scale-125' : 'h-1.5 w-1.5 opacity-25 hover:opacity-60 scale-100'
-                    }`}
-                  />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Autoplay Pause/Resume button */}
-          <button
-            type="button"
-            onClick={() => setIsPlaying((p) => !p)}
-            aria-label={isPlaying ? 'Pause automatic change' : 'Resume automatic change'}
-            className="h-6 w-6 flex items-center justify-center text-black/60 hover:text-black transition cursor-pointer"
-          >
-            {isPlaying ? (
-              <Pause className="h-3 w-3 stroke-[2.5]" />
-            ) : (
-              <Play className="h-3 w-3 fill-current stroke-none" />
-            )}
-          </button>
-        </div>
-
       </div>
     </section>
   );
