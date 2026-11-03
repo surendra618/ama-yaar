@@ -621,8 +621,8 @@ export default function Navbar() {
       <header
         className={`z-50 w-full transition-all duration-300 ${
           isHome
-            ? (isScrolled ? "fixed top-0 inset-x-0 bg-neutral-950/95 backdrop-blur-md text-white border-b border-white/10 shadow-md" : "fixed top-0 inset-x-0 bg-black/10 text-white border-b border-transparent shadow-xs")
-            : (isScrolled ? "sticky top-0 bg-neutral-950/95 backdrop-blur-md text-white border-b border-white/10 shadow-md" : "sticky top-0 bg-neutral-950 text-white border-b border-transparent shadow-xs")
+            ? "fixed top-0 inset-x-0 bg-black/10 backdrop-blur-[1px] text-white border-b border-transparent shadow-none"
+            : "sticky top-0 bg-neutral-950 text-white border-b border-transparent shadow-xs"
         }`}
       >
         {/* Main Nav Bar with container padding */}
