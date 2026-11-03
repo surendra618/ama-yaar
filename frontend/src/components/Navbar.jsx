@@ -621,8 +621,8 @@ export default function Navbar() {
       <header
         className={`z-50 w-full transition-all duration-300 ${
           isHome
-            ? "fixed top-0 inset-x-0 bg-black/15 backdrop-blur-md text-white border-b border-white/10 shadow-sm"
-            : "sticky top-0 bg-neutral-950/85 backdrop-blur-md text-white border-b border-white/10 shadow-xs"
+            ? (isScrolled ? "fixed top-0 inset-x-0 bg-neutral-950/95 backdrop-blur-md text-white border-b border-white/10 shadow-md" : "fixed top-0 inset-x-0 bg-black/10 text-white border-b border-transparent shadow-xs")
+            : (isScrolled ? "sticky top-0 bg-neutral-950/95 backdrop-blur-md text-white border-b border-white/10 shadow-md" : "sticky top-0 bg-neutral-950 text-white border-b border-transparent shadow-xs")
         }`}
       >
         {/* Main Nav Bar with container padding */}
@@ -652,7 +652,7 @@ export default function Navbar() {
                 <img
                   src="/logo.png"
                   alt="AMA YAAR"
-                  className="h-7 sm:h-11 max-w-[125px] sm:max-w-none w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                  className="h-6 sm:h-10 md:h-11 max-w-[110px] sm:max-w-none w-auto object-contain transition-all group-hover:opacity-90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
                 />
               </Link>
             </div>
@@ -668,10 +668,11 @@ export default function Navbar() {
               >
                 <Search className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
               </button>
+              
 
               {/* Notifications */}
               {isAuthenticated && (
-                <div className="relative" ref={notifMenuRef}>
+                <div className="relative hidden sm:block" ref={notifMenuRef}>
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
@@ -734,7 +735,7 @@ export default function Navbar() {
 
               {/* User Profile / Phone OTP Login Popup */}
               {isAuthenticated ? (
-                <div className="relative" ref={userMenuRef}>
+                <div className="relative hidden sm:block" ref={userMenuRef}>
                   <button
                     onClick={() => {
                       setNotifMenuOpen(false);
@@ -795,7 +796,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => setAuthModalOpen(true)}
-                  className="p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                  className="hidden sm:inline-flex p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                   title="Sign In / Sign Up"
                   aria-label="Sign In"
                 >
@@ -807,56 +808,32 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => dispatch(openDrawer())}
-                className="hidden sm:inline-flex relative p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                className="relative flex items-center p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 title="Cart"
               >
                 <ShoppingBag className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black bg-white text-black shadow-xs">
-                    {itemCount}
-                  </span>
-                )}
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black bg-white text-black shadow-xs">
+                  {itemCount || 0}
+                </span>
               </button>
+
+              
             </div>
           </div>
 
-          {/* Quick Search Strip */}
-          {searchOpen && (
-            <div className="px-4 py-3 border-t transition-colors bg-black/75 backdrop-blur-md border-white/10 animate-in fade-in duration-150">
-              <form
-                onSubmit={(e) => {
-                  handleSearch(e);
-                  setSearchOpen(false);
-                }}
-                className="mx-auto max-w-xl flex items-center gap-2"
-              >
-                <Search className="h-4 w-4 shrink-0 text-white/60" />
-                <input
-                  type="text"
-                  autoFocus
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search fits, collections, products..."
-                  className="flex-1 bg-transparent text-sm focus:outline-hidden text-white placeholder:text-neutral-400"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="text-neutral-400 hover:text-white cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="text-xs font-black uppercase tracking-wider px-3.5 py-1.5 transition text-black bg-white hover:bg-neutral-200 cursor-pointer rounded-xs"
-                >
-                  Search
-                </button>
-              </form>
-            </div>
-          )}
+          {/* Mobile Search Bar below navbar (Bonkers Corner Style) */}
+          <div className="sm:hidden px-3.5 pb-2.5 pt-2 mt-1">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="w-full flex items-center justify-between px-3.5 py-2 rounded-none border border-white/40 hover:border-white/80 bg-transparent text-white/85 hover:text-white transition cursor-pointer"
+            >
+              <span className="text-[12px] font-medium tracking-wide">
+                Search AMA YAAR fits, drops...
+              </span>
+              <Search className="h-4 w-4 text-white/90 shrink-0" />
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -1014,6 +991,154 @@ export default function Navbar() {
                     <User className="h-4 w-4" /> Sign In / Sign Up
                   </button>
                 )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      
+      {/* Right-Side Search Sidebar Drawer (Bonkers Corner Style) */}
+      <AnimatePresence>
+        {searchOpen && (
+          <div className="fixed inset-0 z-[100] flex justify-end">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSearchOpen(false)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            />
+
+            {/* Right Side Drawer Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.28, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-md bg-white h-full flex flex-col shadow-2xl overflow-y-auto"
+            >
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 bg-white sticky top-0 z-20">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4.5 w-4.5 text-black" />
+                  <span className="text-xs font-black uppercase tracking-wider text-black">
+                    Search Fits
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(false)}
+                  className="p-1.5 text-neutral-500 hover:text-black rounded-full hover:bg-neutral-100 transition cursor-pointer"
+                  aria-label="Close search"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Search Form Input */}
+              <div className="p-5 border-b border-neutral-100 bg-neutral-50/60">
+                <form
+                  onSubmit={(e) => {
+                    handleSearch(e);
+                    setSearchOpen(false);
+                  }}
+                  className="relative flex items-center"
+                >
+                  <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-neutral-400" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Search t-shirts, cargos, jackets..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-neutral-200 bg-white py-2.5 pl-10 pr-10 text-xs font-semibold text-black placeholder:text-neutral-400 focus:border-black focus:outline-none transition shadow-xs"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 text-neutral-400 hover:text-black cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </form>
+              </div>
+
+              {/* Quick Popular Searches / Trending Drops (Bonkers Corner Style) */}
+              <div className="p-5 flex-1 overflow-y-auto space-y-6">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-wider text-neutral-400 mb-3">
+                    Popular Searches
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Oversized Printed",
+                      "Acid Wash",
+                      "Heavyweight (240+ GSM)",
+                      "Street Cargos",
+                      "Baggy Denim",
+                      "Anime Back-Prints",
+                      "Vintage Drops",
+                      "Polo Tees",
+                    ].map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery(term);
+                          navigate(`/products?search=${encodeURIComponent(term)}`);
+                          setSearchOpen(false);
+                        }}
+                        className="rounded-full border border-neutral-200 bg-neutral-50 hover:bg-black hover:text-white hover:border-black px-3.5 py-1.5 text-xs font-semibold text-neutral-700 transition cursor-pointer"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-wider text-neutral-400 mb-3">
+                    Curated Categories
+                  </p>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[
+                      { name: "Topwear", link: "/products?category=oversized-printed" },
+                      { name: "Bottomwear", link: "/products?search=cargo" },
+                      { name: "New Arrivals", link: "/products?isNewArrival=true" },
+                      { name: "Best Sellers", link: "/products?isBestSeller=true" },
+                      { name: "Acid Wash Series", link: "/products?category=sleeveless-acid-wash" },
+                      { name: "All Products", link: "/products" },
+                    ].map((cat) => (
+                      <Link
+                        key={cat.name}
+                        to={cat.link}
+                        onClick={() => setSearchOpen(false)}
+                        className="flex items-center justify-between p-3 rounded-lg border border-neutral-100 bg-neutral-50/80 hover:bg-black hover:text-white transition group"
+                      >
+                        <span className="text-xs font-bold">{cat.name}</span>
+                        <ArrowRight className="h-3.5 w-3.5 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 transition" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Search Drawer Footer CTA */}
+              <div className="p-4 border-t border-neutral-100 bg-neutral-50">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    handleSearch(e);
+                    setSearchOpen(false);
+                  }}
+                  className="w-full rounded-lg bg-black py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-sm"
+                >
+                  View All Search Results
+                </button>
               </div>
             </motion.div>
           </div>
