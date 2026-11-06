@@ -27,6 +27,31 @@ import {
 } from "../features/notifications/notificationsSlice";
 import AuthPopupModal from "./AuthPopupModal";
 
+// Social Media marks for navigation drawer
+const FacebookIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.15 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.9h-2.34V22c4.78-.79 8.44-4.94 8.44-9.94Z" />
+  </svg>
+);
+const InstagramIcon = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    {...props}
+  >
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+const YoutubeIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M23 12s0-3.6-.46-5.3a2.9 2.9 0 0 0-2-2C18.9 4.2 12 4.2 12 4.2s-6.9 0-8.54.5a2.9 2.9 0 0 0-2 2C1 8.4 1 12 1 12s0 3.6.46 5.3a2.9 2.9 0 0 0 2 2c1.64.5 8.54.5 8.54.5s6.9 0 8.54-.5a2.9 2.9 0 0 0 2-2C23 15.6 23 12 23 12ZM9.8 15.5v-7l6 3.5-6 3.5Z" />
+  </svg>
+);
+
 const MEGA_MENU_DATA = {
   SHOP: {
     title: "Explore AMA YAAR Collection",
@@ -977,6 +1002,41 @@ export default function Navbar() {
                     <User className="h-4 w-4" /> Sign In / Sign Up
                   </button>
                 )}
+                {/* Social Media Links (Matching User Design) */}
+                <div className="pt-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2.5">
+                    Connect With Us
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="https://facebook.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877f2] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <FacebookIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://instagram.com/amayaar.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <InstagramIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://youtube.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="YouTube"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff0000] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <YoutubeIcon className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -1125,6 +1185,41 @@ export default function Navbar() {
                 >
                   View All Search Results
                 </button>
+                {/* Social Media Links (Matching User Design) */}
+                <div className="pt-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2.5">
+                    Connect With Us
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="https://facebook.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877f2] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <FacebookIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://instagram.com/amayaar.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <InstagramIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://youtube.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="YouTube"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff0000] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <YoutubeIcon className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>

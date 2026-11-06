@@ -1317,12 +1317,16 @@ export default function HomePage() {
             transition={{ duration: 0.7, ease: "easeOut" }}
             className="text-center mb-5 sm:mb-6"
           >
-            <h2 className="font-display text-3xl sm:text-4xl leading-tight tracking-wide text-black font-black">
-              FRESH FITS FOR{" "}
-              <span className="font-script italic font-normal">Your</span>
+            <h2 className="text-center font-display text-[26px] xs:text-[30px] sm:text-[42px] md:text-[48px] lg:text-[54px] font-black uppercase text-black leading-[1.08] tracking-tight">
+              <span className="inline-flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                <span>FRESH FITS FOR</span>
+                <span className="font-script normal-case font-normal text-[1.28em] leading-none text-black -mt-1 sm:-mt-2">Your</span>
+              </span>
               <br />
-              <span className="font-script italic font-normal">Next</span>{" "}
-              OUTFITS
+              <span className="inline-flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                <span className="font-script normal-case font-normal text-[1.28em] leading-none text-black -mt-1 sm:-mt-2">Next</span>
+                <span>OUTFITS</span>
+              </span>
             </h2>
           </motion.div>
 

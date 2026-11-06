@@ -50,23 +50,29 @@ export default function Footer() {
 
             <div className="mt-6 flex items-center gap-3">
               <a
-                href="#"
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Facebook"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877f2] text-[#ffffff] shadow-xs transition hover:scale-105"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877f2] text-white shadow-xs transition hover:scale-110 active:scale-95"
               >
                 <FacebookIcon className="h-4 w-4" />
               </a>
               <a
-                href="#"
+                href="https://instagram.com/amayaar.in"
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-[#ffffff] shadow-xs transition hover:scale-105"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-white shadow-xs transition hover:scale-110 active:scale-95"
               >
                 <InstagramIcon className="h-4 w-4" />
               </a>
               <a
-                href="#"
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="YouTube"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff0000] text-[#ffffff] shadow-xs transition hover:scale-105"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff0000] text-white shadow-xs transition hover:scale-110 active:scale-95"
               >
                 <YoutubeIcon className="h-4 w-4" />
               </a>
