@@ -15,13 +15,12 @@ export default function SalesChart({ data = [] }) {
   const [chartType, setChartType] = useState('area'); // 'area' | 'bar'
   const [hoveredPoint, setHoveredPoint] = useState(null);
 
-  // If backend data has real non-zero sales, use it; otherwise use realistic presentation data
   const hasBackendSales = Array.isArray(data) && data.some((d) => d && d.revenue > 0);
-  const activeData = hasBackendSales ? data : SAMPLE_REVENUE_DATA;
+  const activeData = data && data.length > 0 ? data : [];
 
   const maxRevenue = Math.max(1, ...activeData.map((d) => d.revenue || 0));
   const totalRevenue = activeData.reduce((acc, d) => acc + (d.revenue || 0), 0);
-  const totalOrders = activeData.reduce((acc, d) => acc + (d.orders || 1), 0);
+  const totalOrders = activeData.reduce((acc, d) => acc + (d.orders || 0), 0);
 
   // Calculate SVG Points for Area/Line Chart (Width: 600, Height: 180)
   const svgWidth = 600;

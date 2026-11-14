@@ -43,6 +43,11 @@ const DEFAULT_MESSAGES = [
 
 class ContactService {
   async seedInitialMessages() {
+    // Only auto-seed dummy sample messages in development environment
+    if (process.env.NODE_ENV === 'production' || process.env.MONGODB_URI?.includes('ama-yaar-prod')) {
+      return;
+    }
+
     try {
       if (mongoose.connection.readyState !== 1) return;
       const count = await Contact.countDocuments();
