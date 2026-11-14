@@ -60,6 +60,14 @@ const settingSchema = new mongoose.Schema(
     defaultPackageBreadth: { type: Number, default: 20, min: 1 },
     defaultPackageHeight: { type: Number, default: 5, min: 1 },
     shiprocketWebhookSecret: { type: String, default: '' },
+
+    // 5. Admin Email & In-App Notification Preferences
+    notifyNewUser: { type: Boolean, default: true },
+    notifyNewOrder: { type: Boolean, default: true },
+    notifyOrderCancelled: { type: Boolean, default: true },
+    notifyNewReturn: { type: Boolean, default: true },
+    notifyNewContact: { type: Boolean, default: true },
+    notifyAdminEmails: { type: [String], default: [] },
   },
   { timestamps: true }
 );

@@ -100,6 +100,23 @@ async function updateDeliverySettings(data = {}) {
   if (data.defaultPackageHeight !== undefined) update.defaultPackageHeight = Math.max(1, Number(data.defaultPackageHeight));
   if (data.shiprocketWebhookSecret !== undefined) update.shiprocketWebhookSecret = String(data.shiprocketWebhookSecret).trim();
 
+  // 5. Admin Email & In-App Notification Preferences
+  if (data.notifyNewUser !== undefined) update.notifyNewUser = Boolean(data.notifyNewUser);
+  if (data.notifyNewOrder !== undefined) update.notifyNewOrder = Boolean(data.notifyNewOrder);
+  if (data.notifyOrderCancelled !== undefined) update.notifyOrderCancelled = Boolean(data.notifyOrderCancelled);
+  if (data.notifyNewReturn !== undefined) update.notifyNewReturn = Boolean(data.notifyNewReturn);
+  if (data.notifyNewContact !== undefined) update.notifyNewContact = Boolean(data.notifyNewContact);
+  if (data.notifyAdminEmails !== undefined) {
+    if (Array.isArray(data.notifyAdminEmails)) {
+      update.notifyAdminEmails = data.notifyAdminEmails.map((e) => String(e).trim().toLowerCase()).filter(Boolean);
+    } else if (typeof data.notifyAdminEmails === 'string') {
+      update.notifyAdminEmails = data.notifyAdminEmails
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => e.includes('@'));
+    }
+  }
+
   const doc = await Setting.findOneAndUpdate(
     { key: 'delivery' },
     { $set: update },

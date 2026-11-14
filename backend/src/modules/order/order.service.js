@@ -11,6 +11,8 @@ const bcrypt = require('bcryptjs');
 const ApiError = require('../../utils/ApiError');
 const settingService = require('../setting/setting.service');
 const shiprocketService = require('../shiprocket/shiprocket.service');
+const { notifyAdmins } = require('../notification/adminNotifier');
+const { newOrderTemplate } = require('../../utils/emailTemplates');
 
 async function createOrder(userId, payload) {
   const { shippingAddressId, shippingAddress: directAddress, paymentProvider = 'cod', paymentMethod = 'Cash on Delivery', paymentId } = payload;
@@ -230,6 +232,25 @@ async function createOrder(userId, payload) {
     message: `Your order #${order.orderNumber || order._id} for ₹${total} has been received.`,
   }).catch(() => {});
 
+  // Notify Admins about new order
+  // Notify Admins about new order with styled template
+  notifyAdmins({
+    event: 'newOrder',
+    subject: `New Order Placed: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()} (₹${total})`,
+    html: newOrderTemplate({
+      orderNumber: order.orderNumber || String(order._id).slice(-6).toUpperCase(),
+      customerName: finalAddress?.fullName || 'Customer',
+      customerPhone: finalAddress?.phone || 'No phone',
+      total,
+      itemCount: orderItems.length,
+      paymentMethod,
+      paymentStatus,
+      address: `${finalAddress?.line1 || ''}, ${finalAddress?.city || ''}, ${finalAddress?.state || ''} - ${finalAddress?.postalCode || ''}`,
+      viewUrl: `${process.env.ADMIN_URL || 'http://localhost:5174'}/orders/${order._id}`,
+    }),
+    text: `New order #${order.orderNumber || order._id} received for ₹${total} from ${finalAddress?.fullName || 'Customer'}.`,
+  }).catch(() => {});
+
   // Auto-push order to Shiprocket if enabled in settings
   if (deliverySettings?.shiprocketEnabled && deliverySettings?.shiprocketAutoCreateOrder) {
     shiprocketService.createShiprocketOrder(order._id).catch((err) => {
@@ -404,12 +425,32 @@ async function cancelOrder(id, user, { reason = 'Cancelled by user' }) {
     });
   }
 
-  // Notify
+  // Notify User
   await Notification.create({
     user: order.user,
     type: 'order',
     title: 'Order Cancelled',
     message: `Your order #${order.orderNumber} has been cancelled.`,
+  }).catch(() => {});
+
+  // Notify Admins about cancelled order
+  notifyAdmins({
+    event: 'orderCancelled',
+    subject: `Order Cancelled: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:540px;margin:auto;border:1px solid #e2e8f0;border-radius:8px;padding:24px;background:#ffffff">
+        <h2 style="color:#e11d48;margin-top:0">⚠️ Order Cancelled</h2>
+        <div style="background:#fff1f2;border-left:4px solid #e11d48;padding:12px 16px;margin:16px 0;border-radius:4px">
+          <p style="margin:4px 0"><strong>Order Number:</strong> #${order.orderNumber || String(order._id).slice(-6).toUpperCase()}</p>
+          <p style="margin:4px 0"><strong>Reason:</strong> ${reason}</p>
+          <p style="margin:4px 0"><strong>Total Amount:</strong> ₹${(order.total || 0).toLocaleString('en-IN')}</p>
+        </div>
+        <a href="${process.env.ADMIN_URL || 'http://localhost:5174'}/orders/${order._id}" style="display:inline-block;padding:10px 18px;background:#e11d48;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:13px">
+          View Order
+        </a>
+      </div>
+    `,
+    text: `Order #${order.orderNumber || order._id} was cancelled. Reason: ${reason}`,
   }).catch(() => {});
 
   return order;

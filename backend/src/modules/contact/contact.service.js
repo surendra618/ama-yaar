@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Contact = require('./contact.model');
+const { notifyAdmins } = require('../notification/adminNotifier');
 
 const DEFAULT_MESSAGES = [
   {
@@ -56,6 +57,27 @@ class ContactService {
 
   async createMessage(data) {
     const message = await Contact.create(data);
+
+    notifyAdmins({
+      event: 'newContact',
+      subject: `New Customer Message: ${message.subject || 'Support Request'}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:540px;margin:auto;border:1px solid #e2e8f0;border-radius:8px;padding:24px;background:#ffffff">
+          <h2 style="color:#0284c7;margin-top:0">📬 New Customer Inquiry</h2>
+          <div style="background:#f0f9ff;border-left:4px solid #0284c7;padding:12px 16px;margin:16px 0;border-radius:4px">
+            <p style="margin:4px 0"><strong>From:</strong> ${message.name} (${message.email})</p>
+            <p style="margin:4px 0"><strong>Phone:</strong> ${message.phone || 'N/A'}</p>
+            <p style="margin:4px 0"><strong>Subject:</strong> ${message.subject || 'Support'}</p>
+            <p style="margin:8px 0 4px;font-style:italic;color:#334155">"${message.message}"</p>
+          </div>
+          <a href="${process.env.ADMIN_URL || 'http://localhost:5174'}/contact-messages" style="display:inline-block;padding:10px 18px;background:#0284c7;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:13px">
+            Reply in Dashboard
+          </a>
+        </div>
+      `,
+      text: `Customer message from ${message.name} (${message.email}): ${message.message}`,
+    }).catch(() => {});
+
     return message;
   }
 

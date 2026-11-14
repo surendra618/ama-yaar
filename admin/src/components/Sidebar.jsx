@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   LayoutDashboard,
   Users,
+  UserCheck,
+  Shield,
   Package,
   FolderTree,
   ShoppingBag,
@@ -26,6 +28,7 @@ import {
   ChevronRight,
   Truck,
   Settings,
+  Bell,
 } from 'lucide-react';
 import AdminLogo from './AdminLogo';
 import { logout } from '../features/auth/authSlice';
@@ -38,12 +41,18 @@ const NAV_GROUPS = [
     ],
   },
   {
+    title: 'STAFF & USERS',
+    items: [
+      { to: '/team', label: 'Team & Admins', icon: Shield, badge: 'STAFF', badgeColor: 'bg-purple-100 text-purple-700' },
+      { to: '/customers', label: 'Customers', icon: Users },
+    ],
+  },
+  {
     title: 'CATALOG & ORDERS',
     items: [
       { to: '/products', label: 'Products', icon: Package },
       { to: '/categories', label: 'Categories', icon: FolderTree },
       { to: '/orders', label: 'Orders', icon: ShoppingBag, badge: 'LIVE', badgeColor: 'bg-emerald-100 text-emerald-700' },
-      { to: '/users', label: 'Users', icon: Users },
     ],
   },
   {
@@ -74,6 +83,7 @@ const NAV_GROUPS = [
   {
     title: 'STORE CONFIGURATION',
     items: [
+      { to: '/settings/notifications', label: 'Email & Alerts Settings', icon: Bell, badge: 'ALERTS', badgeColor: 'bg-indigo-100 text-indigo-700' },
       { to: '/settings/delivery', label: 'Delivery & Policy Settings', icon: Truck, badge: 'CONFIG', badgeColor: 'bg-indigo-100 text-indigo-700' },
     ],
   },
@@ -132,7 +142,7 @@ export default function Sidebar() {
             <div className="space-y-0.5">
               {group.items.map(({ to, label, icon: Icon, end, badge, badgeColor }) => (
                 <NavLink
-                  key={to}
+                  key={`${to}-${label}`}
                   to={to}
                   end={end}
                   className={({ isActive }) =>
