@@ -3,6 +3,26 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, ShoppingBag, ChevronRight } from 'lucide-react';
 import StatusBadge from '../../../components/StatusBadge';
 
+function formatOrderDate(dateVal) {
+  if (!dateVal) return 'Recent';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+
+    // Format: "2 Jan, 03:45 PM"
+    return d.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return String(dateVal);
+  }
+}
+
 export default function RecentOrders({ orders = [] }) {
   const MOCK_ORDERS = [
     {
@@ -71,7 +91,7 @@ export default function RecentOrders({ orders = [] }) {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="truncate text-xs font-bold text-slate-900">{order.orderNumber || `#${order._id.slice(-6)}`}</p>
-                  <span className="text-[10px] text-slate-400">• {order.createdAt || 'Recent'}</span>
+                  <span className="text-[11px] font-medium text-slate-400">• {formatOrderDate(order.createdAt)}</span>
                 </div>
                 <p className="truncate text-xs text-slate-500">{order.user?.name || 'Customer'}</p>
               </div>
