@@ -410,14 +410,17 @@ export default function CheckoutPage() {
         });
         rzpData = rzpRes.data || rzpRes;
       } catch (payErr) {
-        console.warn('API create-order for payment failed, using local checkout config:', payErr);
-        rzpData = {
-          id: `rzp_sim_${Date.now()}`,
-          amount: Math.round(Number(createdOrder.total) * 100),
-          currency: 'INR',
-          keyId: 'rzp_live_U00eTD8bUufKVi',
-        };
+        console.error('API create-order for payment failed:', payErr);
+        const errMsg = payErr.response?.data?.message || payErr.message || 'Payment gateway initialization failed';
+        setOrderError('Payment Gateway Error: ' + errMsg + '. Please select Cash on Delivery or contact support.');
+        return;
       }
+
+      if (!rzpData || !rzpData.id || !rzpData.id.startsWith('order_')) {
+        setOrderError('Unable to generate valid payment order from Razorpay. Please retry or choose Cash on Delivery.');
+        return;
+      }
+
 
       const options = {
         key: rzpData.keyId || 'rzp_live_U00eTD8bUufKVi',
