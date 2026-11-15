@@ -356,29 +356,38 @@ export default function ProductDetailsPage() {
             </p>
 
             {/* Bullet points with small clean dots */}
-            <ul className="mt-4 space-y-1.5 text-xs sm:text-[12px] text-neutral-700 font-normal leading-normal">
-              <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
-                <span>Fit: oversized, dropped shoulder</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
-                <span>Fabric: heavyweight cotton</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
-                <span>Finish: washed effect with high-density print</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
-                <span>Collar: reinforced rib</span>
-              </li>
-            </ul>
+            {(() => {
+              const bullets =
+                (Array.isArray(product.bulletFeatures) && product.bulletFeatures.length > 0)
+                  ? product.bulletFeatures
+                  : (Array.isArray(product.keyFeatures) && product.keyFeatures.length > 0)
+                  ? product.keyFeatures
+                  : (Array.isArray(product.highlights) && product.highlights.length > 0)
+                  ? product.highlights
+                  : [
+                      product.fit ? `Fit: ${product.fit}` : 'Fit: oversized, dropped shoulder',
+                      product.fabric ? `Fabric: ${product.fabric}` : 'Fabric: heavyweight cotton',
+                      product.gsm ? `Weight: ${product.gsm}` : 'Finish: washed effect with high-density print',
+                      'Collar: reinforced rib',
+                    ];
+              return (
+                <ul className="mt-4 space-y-1.5 text-xs sm:text-[12px] text-neutral-700 font-normal leading-normal">
+                  {bullets.map((b, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
 
             {/* Model wear info */}
-            <p className="mt-3.5 text-[11.5px] text-neutral-400 font-normal">
-              {product.modelInfo || "Model is 1.90 m and wears size M"}
-            </p>
+            {(product.modelInfo || product.modelInfo === undefined) && (
+              <p className="mt-3.5 text-[11.5px] text-neutral-400 font-normal">
+                {product.modelInfo || "Model is 1.90 m and wears size M"}
+              </p>
+            )}
           </div>
 
           {/* CENTER COLUMN: Large Focused Product Image (Centered, High Visibility, No Padding Restriction) */}
