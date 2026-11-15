@@ -162,7 +162,8 @@ async function createOrder(userId, payload) {
   const total = Math.max(0, Math.round(subtotal - couponDiscount + deliveryCharge + tax));
 
   const isOnlinePayment = paymentProvider !== 'cod';
-  const paymentStatus = isOnlinePayment ? 'paid' : 'pending';
+  const paymentStatus = 'pending';
+  const initialOrderStatus = isOnlinePayment ? 'pending' : 'placed';
 
   const order = await Order.create({
     user: finalUserId,
@@ -170,15 +171,15 @@ async function createOrder(userId, payload) {
     shippingAddress: finalAddress,
     paymentInfo: {
       provider: paymentProvider,
-      paymentId: paymentId || (isOnlinePayment ? `PAY-${Date.now()}` : undefined),
+      paymentId: paymentId || undefined,
       method: paymentMethod,
       status: paymentStatus,
     },
-    status: isOnlinePayment ? 'confirmed' : 'placed',
+    status: initialOrderStatus,
     statusHistory: [
       {
-        status: isOnlinePayment ? 'confirmed' : 'placed',
-        note: isOnlinePayment ? 'Order placed and payment verified' : 'Order placed via Cash on Delivery',
+        status: initialOrderStatus,
+        note: isOnlinePayment ? 'Order initiated, awaiting online payment confirmation' : 'Order placed via Cash on Delivery',
         at: new Date(),
       },
     ],
@@ -199,15 +200,18 @@ async function createOrder(userId, payload) {
     paymentId: order.paymentInfo.paymentId,
     method: paymentMethod,
     amount: total,
-    status: isOnlinePayment ? 'success' : 'pending',
+    status: 'pending',
   }).catch(() => {});
 
-  // Reduce product inventory
-  for (const item of orderItems) {
-    if (item.product) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity },
-      }).catch(() => {});
+  // Reduce product inventory only for confirmed COD orders immediately.
+  // For online payments, inventory is reduced upon verified payment.
+  if (!isOnlinePayment) {
+    for (const item of orderItems) {
+      if (item.product) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: -item.quantity },
+        }).catch(() => {});
+      }
     }
   }
 
@@ -224,30 +228,32 @@ async function createOrder(userId, payload) {
         { $set: { items: [], coupon: null } }
       ).catch(() => {});
     }
+
+    // Create user notification for COD
+    await Notification.create({
+      user: finalUserId,
+      type: 'order',
+      title: 'Order Placed Successfully!',
+      message: `Your order #${order.orderNumber || order._id} for ₹${total} has been received.`,
+    }).catch(() => {});
+
+    // Notify Admins about new COD order
+    notifyAdmins({
+      event: 'newOrder',
+      subject: `New Order Placed: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()} (₹${total})`,
+      html: newOrderTemplate({
+        orderNumber: order.orderNumber || String(order._id).slice(-6).toUpperCase(),
+        customerName: finalAddress?.fullName || 'Customer',
+        customerPhone: finalAddress?.phone || 'No phone',
+        total,
+        itemCount: orderItems.length,
+        paymentMethod,
+        paymentStatus,
+        address: `${finalAddress?.line1 || ''}, ${finalAddress?.city || ''}, ${finalAddress?.state || ''} - ${finalAddress?.postalCode || ''}`,
+      }),
+      text: `New COD order #${order.orderNumber || order._id} for ₹${total} by ${finalAddress?.fullName || 'Customer'}`,
+    }).catch(() => {});
   }
-
-  // Create user notification
-  await Notification.create({
-    user: finalUserId,
-    type: 'order',
-    title: 'Order Placed Successfully!',
-    message: `Your order #${order.orderNumber || order._id} for ₹${total} has been received.`,
-  }).catch(() => {});
-
-  // Notify Admins about new order
-  // Notify Admins about new order with styled template
-  notifyAdmins({
-    event: 'newOrder',
-    subject: `New Order Placed: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()} (₹${total})`,
-    html: newOrderTemplate({
-      orderNumber: order.orderNumber || String(order._id).slice(-6).toUpperCase(),
-      customerName: finalAddress?.fullName || 'Customer',
-      customerPhone: finalAddress?.phone || 'No phone',
-      total,
-      itemCount: orderItems.length,
-      paymentMethod,
-      paymentStatus,
-      address: `${finalAddress?.line1 || ''}, ${finalAddress?.city || ''}, ${finalAddress?.state || ''} - ${finalAddress?.postalCode || ''}`,
       viewUrl: `${process.env.ADMIN_URL || 'http://localhost:5174'}/orders/${order._id}`,
     }),
     text: `New order #${order.orderNumber || order._id} received for ₹${total} from ${finalAddress?.fullName || 'Customer'}.`,

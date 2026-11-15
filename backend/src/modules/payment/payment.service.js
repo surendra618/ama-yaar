@@ -3,6 +3,10 @@ const crypto = require('crypto');
 const Payment = require('./payment.model');
 const Order = require('../order/order.model');
 const Cart = require('../cart/cart.model');
+const Product = require('../product/product.model');
+const Notification = require('../notification/notification.model');
+const { notifyAdmins } = require('../../utils/notificationAlerts');
+const { newOrderTemplate } = require('../../utils/emailTemplates');
 const ApiError = require('../../utils/ApiError');
 const env = require('../../config/env');
 
@@ -142,6 +146,40 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
           { $set: { items: [], coupon: null } }
         ).catch(() => {});
       }
+
+      // Deduct inventory
+      for (const item of (order.items || [])) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: { stock: -item.quantity },
+          }).catch(() => {});
+        }
+      }
+
+      // Create user notification
+      await Notification.create({
+        user: order.user,
+        type: 'order',
+        title: 'Payment Successful & Order Confirmed!',
+        message: `Your payment of ₹${order.total} for order #${order.orderNumber || order._id} was successful.`,
+      }).catch(() => {});
+
+      // Notify Admins
+      notifyAdmins({
+        event: 'newOrder',
+        subject: `New Paid Order: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()} (₹${order.total})`,
+        html: newOrderTemplate({
+          orderNumber: order.orderNumber || String(order._id).slice(-6).toUpperCase(),
+          customerName: order.shippingAddress?.fullName || 'Customer',
+          customerPhone: order.shippingAddress?.phone || 'No phone',
+          total: order.total,
+          itemCount: order.items?.length || 1,
+          paymentMethod: method || 'Razorpay Online',
+          paymentStatus: 'paid',
+          address: `${order.shippingAddress?.line1 || ''}, ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} - ${order.shippingAddress?.pincode || order.shippingAddress?.postalCode || ''}`,
+        }),
+        text: `New paid order #${order.orderNumber || order._id} (₹${order.total}) verified via Razorpay`,
+      }).catch(() => {});
     }
   }
 
