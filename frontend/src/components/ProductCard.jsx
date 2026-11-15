@@ -20,8 +20,7 @@ export default function ProductCard({ product }) {
     : [product.image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80'];
 
   const images = rawImages.map((img) => {
-    if (!img) return 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80';
-    return getMediaUrl(img);
+    return getMediaUrl(img, product.name || product.slug);
   });
 
   // When hovering, switch to next image (or activeImgIndex)

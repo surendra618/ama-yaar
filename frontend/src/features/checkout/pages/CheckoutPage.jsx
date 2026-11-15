@@ -35,6 +35,7 @@ import { fetchCart, resetCart, clearCart, closeDrawer } from '../../cart/cartSli
 import { createOrder } from '../../orders/ordersSlice';
 import Loader from '../../../components/Loader';
 import AuthPopupModal from '../../../components/AuthPopupModal';
+import { getMediaUrl, getFallbackForName } from '../../../utils/mediaUrl';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -925,8 +926,12 @@ export default function CheckoutPage() {
                 <div key={i._id} className="py-3 flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-3 truncate">
                     <img
-                      src={i.product?.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'}
+                      src={getMediaUrl(i.product?.images?.[0] || i.product?.image, i.product?.name)}
                       alt=""
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getFallbackForName(i.product?.name);
+                      }}
                       className="h-11 w-11 shrink-0 rounded-lg object-cover bg-neutral-100 border border-neutral-200/60"
                     />
                     <div className="truncate">

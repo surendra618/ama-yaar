@@ -28,6 +28,7 @@ import {
 } from '../cartSlice';
 import { fetchAddresses } from '../../account/accountSlice';
 import AuthPopupModal from '../../../components/AuthPopupModal';
+import { getMediaUrl, getFallbackForName } from '../../../utils/mediaUrl';
 
 export default function ZeptoCartDrawer() {
   const dispatch = useDispatch();
@@ -234,12 +235,8 @@ export default function ZeptoCartDrawer() {
               <div className="space-y-3">
                 {items.map((item) => {
                   const p = item.product || {};
-                  const img =
-                    p.images?.[0] ||
-                    '/model01.png';
-                  const displayImg = img.startsWith('http') || img.startsWith('data:')
-                    ? img
-                    : img;
+                  const rawImg = p.images?.[0] || p.image;
+                  const displayImg = getMediaUrl(rawImg, p.name);
 
                   return (
                     <div
@@ -250,6 +247,10 @@ export default function ZeptoCartDrawer() {
                       <img
                         src={displayImg}
                         alt={p.name || 'Product'}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = getFallbackForName(p.name);
+                        }}
                         className="h-20 w-16 rounded-xl object-cover bg-neutral-100 shrink-0 border border-neutral-200/60"
                       />
 

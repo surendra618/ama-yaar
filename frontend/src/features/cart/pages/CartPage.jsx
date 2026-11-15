@@ -23,6 +23,7 @@ import {
 import { fetchActiveCoupons } from '../../coupons/couponsSlice';
 import Loader from '../../../components/Loader';
 import AuthPopupModal from '../../../components/AuthPopupModal';
+import { getMediaUrl, getFallbackForName } from '../../../utils/mediaUrl';
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -146,8 +147,12 @@ export default function CartPage() {
                     className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-neutral-100 border border-neutral-200/80"
                   >
                     <img
-                      src={item.product?.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80'}
+                      src={getMediaUrl(item.product?.images?.[0] || item.product?.image, item.product?.name)}
                       alt={item.product?.name}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getFallbackForName(item.product?.name);
+                      }}
                       className="h-full w-full object-cover"
                     />
                   </Link>
