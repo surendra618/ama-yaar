@@ -50,6 +50,13 @@ async function getById(id) {
 async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
   const paiseAmount = Math.round(Number(amount) * 100);
 
+  if (!razorpayInstance && env.razorpay.keyId && env.razorpay.keySecret) {
+    razorpayInstance = new Razorpay({
+      key_id: env.razorpay.keyId,
+      key_secret: env.razorpay.keySecret,
+    });
+  }
+
   if (razorpayInstance) {
     try {
       const razorpayOrder = await razorpayInstance.orders.create({
@@ -65,19 +72,12 @@ async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
         keyId: env.razorpay.keyId,
       };
     } catch (err) {
-      console.error('Razorpay order creation failed, falling back to simulated order:', err);
+      console.error('Razorpay order creation failed:', err.error || err.message);
+      throw new ApiError(500, `Razorpay error: ${err.error?.description || err.message}`);
     }
   }
 
-  // Fallback / simulated order if SDK creation fails
-  const orderId = `rzp_order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-  return {
-    id: orderId,
-    amount: paiseAmount,
-    currency,
-    receipt: receipt || `rcpt_${Date.now()}`,
-    keyId: env.razorpay.keyId || 'rzp_live_TpNj0k4nh8EVkG',
-  };
+  throw new ApiError(500, 'Razorpay gateway not configured');
 }
 
 async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId, method = 'Razorpay Online' }) {
