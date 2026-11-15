@@ -415,12 +415,12 @@ export default function CheckoutPage() {
           id: `rzp_sim_${Date.now()}`,
           amount: Math.round(Number(createdOrder.total) * 100),
           currency: 'INR',
-          keyId: 'rzp_live_TpNj0k4nh8EVkG',
+          keyId: 'rzp_live_U00eTD8bUufKVi',
         };
       }
 
       const options = {
-        key: rzpData.keyId || 'rzp_live_TpNj0k4nh8EVkG',
+        key: rzpData.keyId || 'rzp_live_U00eTD8bUufKVi',
         amount: rzpData.amount,
         currency: rzpData.currency || 'INR',
         name: 'AMA YAAR',
