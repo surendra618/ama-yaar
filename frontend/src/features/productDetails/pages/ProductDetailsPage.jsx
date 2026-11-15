@@ -343,9 +343,9 @@ export default function ProductDetailsPage() {
         </nav>
 
         {/* Product Overview 3-Column Grid (Image Centered & Large, Minimal Padding) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center py-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start py-0">
           {/* LEFT COLUMN: Title, Description, Bullet Features, Model Info */}
-          <div className="lg:col-span-3 flex flex-col justify-center order-2 lg:order-1 pr-0 lg:pr-2">
+          <div className="lg:col-span-3 flex flex-col justify-start order-2 lg:order-1 pr-0 lg:pr-2 pt-0 sm:pt-1">
             <h1 className="text-xl sm:text-2xl lg:text-[27px] font-bold tracking-tight text-neutral-900 leading-[1.2]">
               {product.name || "Men's Oversized Puffer Winter Bubble Jacket"}
             </h1>
@@ -391,7 +391,7 @@ export default function ProductDetailsPage() {
           </div>
 
           {/* CENTER COLUMN: Large Focused Product Image (Centered, High Visibility, No Padding Restriction) */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center order-1 lg:order-2">
+          <div className="lg:col-span-6 flex flex-col items-center justify-start order-1 lg:order-2 pt-0">
             <div
               className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group cursor-crosshair select-none"
               onMouseEnter={() => setIsHoveringZoom(true)}
@@ -531,7 +531,7 @@ export default function ProductDetailsPage() {
           </div>
 
           {/* RIGHT COLUMN: Size Selectors, ADD TO CART Button, Details Tabs */}
-          <div className="lg:col-span-3 flex flex-col justify-center order-3 pl-0 lg:pl-2 space-y-4">
+          <div className="lg:col-span-3 flex flex-col justify-start order-3 pl-0 lg:pl-2 space-y-4 pt-0 sm:pt-1">
             {/* Size Selector */}
             <div>
               <span className="block text-xs font-medium text-neutral-500 mb-2">
