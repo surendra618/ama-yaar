@@ -251,8 +251,8 @@ async function quickLogin({ email, phone, name, password }) {
     }).catch(() => {});
   } else {
     let updated = false;
-    if (name && (!user.name || user.name.startsWith('Guest') || user.name.startsWith('User '))) {
-      user.name = name;
+    if (name && name.trim()) {
+      user.name = name.trim();
       updated = true;
     }
     if (cleanEmail && (!user.email || user.email.includes('@guest.') || user.email.includes('@mobile.'))) {
