@@ -51,8 +51,12 @@ async function getById(id) {
 async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
   const paiseAmount = Math.round(Number(amount) * 100);
 
-  const effectiveKeyId = env.razorpay.keyId || 'rzp_live_U00eTD8bUufKVi';
-  const effectiveKeySecret = env.razorpay.keySecret || '7kqlWKxtVLVyeRF4azmuak51';
+  const envKey = (env.razorpay.keyId || '').trim();
+  const envSecret = (env.razorpay.keySecret || '').trim();
+
+  // If envKey is a test key or mismatching, fallback to live keys
+  const effectiveKeyId = (envKey.startsWith('rzp_live_') ? envKey : '') || 'rzp_live_U00eTD8bUufKVi';
+  const effectiveKeySecret = (envKey.startsWith('rzp_live_') ? envSecret : '') || '7kqlWKxtVLVyeRF4azmuak51';
 
   // Always instantiate with verified credentials
   const client = new Razorpay({
@@ -82,7 +86,9 @@ async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
 async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId, method = 'Razorpay Online' }) {
   let isVerified = false;
 
-  const secretToVerify = env.razorpay.keySecret || '7kqlWKxtVLVyeRF4azmuak51';
+  const envKey = (env.razorpay.keyId || '').trim();
+  const envSecret = (env.razorpay.keySecret || '').trim();
+  const secretToVerify = (envKey.startsWith('rzp_live_') ? envSecret : '') || '7kqlWKxtVLVyeRF4azmuak51';
   if (razorpay_order_id && razorpay_payment_id && razorpay_signature) {
     const generatedSignature = crypto
       .createHmac('sha256', secretToVerify)
