@@ -5,7 +5,7 @@ const Order = require('../order/order.model');
 const Cart = require('../cart/cart.model');
 const Product = require('../product/product.model');
 const Notification = require('../notification/notification.model');
-const { notifyAdmins } = require('../../utils/notificationAlerts');
+const { notifyAdmins } = require('../notification/adminNotifier');
 const { newOrderTemplate } = require('../../utils/emailTemplates');
 const ApiError = require('../../utils/ApiError');
 const env = require('../../config/env');
@@ -144,7 +144,7 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
         await Cart.findOneAndUpdate(
           { user: order.user },
           { $set: { items: [], coupon: null } }
-        ).catch(() => {});
+        ).catch(() => { });
       }
 
       // Deduct inventory

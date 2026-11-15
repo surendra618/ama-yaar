@@ -250,14 +250,11 @@ async function createOrder(userId, payload) {
         paymentMethod,
         paymentStatus,
         address: `${finalAddress?.line1 || ''}, ${finalAddress?.city || ''}, ${finalAddress?.state || ''} - ${finalAddress?.postalCode || ''}`,
+        viewUrl: `${process.env.ADMIN_URL || 'http://localhost:5174'}/orders/${order._id}`,
       }),
       text: `New COD order #${order.orderNumber || order._id} for ₹${total} by ${finalAddress?.fullName || 'Customer'}`,
     }).catch(() => {});
   }
-      viewUrl: `${process.env.ADMIN_URL || 'http://localhost:5174'}/orders/${order._id}`,
-    }),
-    text: `New order #${order.orderNumber || order._id} received for ₹${total} from ${finalAddress?.fullName || 'Customer'}.`,
-  }).catch(() => {});
 
   // Auto-push order to Shiprocket if enabled in settings
   if (deliverySettings?.shiprocketEnabled && deliverySettings?.shiprocketAutoCreateOrder) {
