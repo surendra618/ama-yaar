@@ -7,7 +7,9 @@ export const createOrder = createAsyncThunk(
   async (orderPayload, { rejectWithValue, dispatch }) => {
     try {
       const { data } = await api.post('/orders', orderPayload);
-      dispatch(fetchCart());
+      if (orderPayload.paymentProvider === 'cod') {
+        dispatch(fetchCart());
+      }
       return data.data;
     } catch (err) {
       console.warn('API createOrder failed, creating local confirmed order:', err);
@@ -25,9 +27,13 @@ export const createOrder = createAsyncThunk(
       try {
         const storedOrders = JSON.parse(localStorage.getItem('ay_orders') || '[]');
         localStorage.setItem('ay_orders', JSON.stringify([fallbackOrder, ...storedOrders]));
-        localStorage.removeItem('ay_guest_cart');
+        if (orderPayload.paymentProvider === 'cod') {
+          localStorage.removeItem('ay_guest_cart');
+        }
       } catch (_) {}
-      dispatch(fetchCart());
+      if (orderPayload.paymentProvider === 'cod') {
+        dispatch(fetchCart());
+      }
       return fallbackOrder;
     }
   }

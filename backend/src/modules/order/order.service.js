@@ -211,17 +211,19 @@ async function createOrder(userId, payload) {
     }
   }
 
-  // Clear cart
-  if (cart) {
-    cart.items = [];
-    cart.coupon = null;
-    await cart.save().catch(() => {});
-  }
-  if (finalUserId) {
-    await Cart.findOneAndUpdate(
-      { user: finalUserId },
-      { $set: { items: [], coupon: null } }
-    ).catch(() => {});
+  // Clear cart only if this was an immediate success (e.g. COD)
+  if (!isOnlinePayment) {
+    if (cart) {
+      cart.items = [];
+      cart.coupon = null;
+      await cart.save().catch(() => {});
+    }
+    if (finalUserId) {
+      await Cart.findOneAndUpdate(
+        { user: finalUserId },
+        { $set: { items: [], coupon: null } }
+      ).catch(() => {});
+    }
   }
 
   // Create user notification

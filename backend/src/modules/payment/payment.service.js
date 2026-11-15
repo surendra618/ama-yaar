@@ -2,6 +2,7 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Payment = require('./payment.model');
 const Order = require('../order/order.model');
+const Cart = require('../cart/cart.model');
 const ApiError = require('../../utils/ApiError');
 const env = require('../../config/env');
 
@@ -128,6 +129,14 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
         },
         { upsert: true, new: true }
       );
+
+      // Now that online payment is verified successfully, clear the user's cart
+      if (order.user) {
+        await Cart.findOneAndUpdate(
+          { user: order.user },
+          { $set: { items: [], coupon: null } }
+        ).catch(() => {});
+      }
     }
   }
 
