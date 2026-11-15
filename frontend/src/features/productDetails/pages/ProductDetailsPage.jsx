@@ -395,6 +395,11 @@ export default function ProductDetailsPage() {
                 key={safeImageIndex}
                 src={displayImages[safeImageIndex] || displayImages[0]}
                 alt={product.name || "Product Showcase"}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src =
+                    "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=1200&q=85";
+                }}
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                   transform: isHoveringZoom ? "scale(2.5)" : "scale(1)",
@@ -503,6 +508,11 @@ export default function ProductDetailsPage() {
                     <img
                       src={img}
                       alt=""
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src =
+                          "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400&q=80";
+                      }}
                       className="h-full w-full object-cover object-top"
                     />
                   </button>
