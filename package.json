@@ -1,0 +1,14 @@
+{
+  "name": "ama-yaar-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AMA YAAR E-Commerce Platform Root Workspace",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:admin": "npm --prefix admin run dev",
+    "build": "npm --prefix frontend run build",
+    "build:admin": "npm --prefix admin run build"
+  }
+}
