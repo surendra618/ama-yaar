@@ -34,9 +34,11 @@ export function getMediaUrl(path, fallbackName = '') {
     path.startsWith('https://') ||
     path.startsWith('data:') ||
     path.startsWith('blob:') ||
-    path.startsWith('/editorial-looks/')
+    path.startsWith('/editorial-looks/') ||
+    path.startsWith('/video/') ||
+    path.startsWith('video/')
   ) {
-    return path;
+    return path.startsWith('/') ? path : `/${path}`;
   }
 
   // When path is a placeholder /products/... that doesn't exist on server
