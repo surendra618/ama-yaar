@@ -77,8 +77,8 @@ export default function EditorialBanner() {
   const currentSlide = slides[currentIndex] || slides[0];
 
   return (
-    <section className="relative w-full bg-white text-black py-6 sm:py-8 md:py-10 overflow-hidden select-none">
-      <div className="relative mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-14 flex flex-col md:flex-row md:items-center md:justify-center min-h-[560px] sm:min-h-[580px] md:min-h-[600px] lg:min-h-[660px]">
+    <section className="relative w-full bg-white text-black pt-4 pb-0 sm:pt-6 md:pt-8 overflow-hidden select-none">
+      <div className="relative mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-14 flex flex-col md:flex-row md:items-end md:justify-center min-h-[460px] sm:min-h-[500px] md:min-h-[540px] lg:min-h-[580px]">
 
         {/* Copy / Editorial Headline (Clean top-stacked on mobile, absolute left on desktop) */}
         <div className="relative md:absolute md:top-1/2 md:-translate-y-1/2 md:left-12 lg:left-16 z-30 w-full max-w-[340px] sm:max-w-[360px] md:max-w-[380px] text-left pointer-events-auto mb-6 md:mb-0">
@@ -103,13 +103,13 @@ export default function EditorialBanner() {
           ref={containerRef}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
-          className="relative mx-auto w-[240px] xs:w-[270px] sm:w-[320px] md:w-[380px] lg:w-[420px] aspect-[9/16] max-h-[480px] sm:max-h-[540px] md:max-h-[620px] flex items-center justify-center z-10 touch-pan-y my-2 md:my-0"
+          className="relative mx-auto w-[240px] xs:w-[270px] sm:w-[320px] md:w-[380px] lg:w-[420px] aspect-[9/16] max-h-[480px] sm:max-h-[540px] md:max-h-[600px] flex items-end justify-center z-10 touch-pan-y mt-2 md:mt-0 mb-0"
         >
           {/* Static High-Resolution Base Model Figure */}
           <img
             src="/nocta-stage/model-base.jpg"
             alt="Model base silhouette"
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none z-10"
+            className="absolute inset-0 w-full h-full object-contain object-bottom pointer-events-none select-none z-10"
             draggable="false"
           />
 
@@ -126,7 +126,7 @@ export default function EditorialBanner() {
               const isNear = Math.abs(diff) === 1;
 
               // Compute X shift percentage based on circular slot distance
-              const translateX = `${diff * 134}%`;
+              const translateX = `${diff * 115}%`;
               const opacity = isActive ? 1 : isNear ? 0.32 : 0;
               const scale = isActive ? 1 : 0.94;
 
@@ -134,7 +134,7 @@ export default function EditorialBanner() {
                 <div
                   key={slide.id || idx}
                   onClick={() => !isActive && setCurrentIndex(idx)}
-                  className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  className={`absolute inset-0 flex items-end justify-center transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                     isActive ? 'pointer-events-auto cursor-default' : 'pointer-events-auto cursor-pointer'
                   }`}
                   style={{
@@ -147,7 +147,7 @@ export default function EditorialBanner() {
                   <img
                     src={slide.garment}
                     alt={slide.name}
-                    className="w-full h-full object-contain select-none"
+                    className="w-full h-full object-contain object-bottom select-none"
                     draggable="false"
                   />
                 </div>
