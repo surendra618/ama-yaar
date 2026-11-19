@@ -62,7 +62,6 @@ const NAV_GROUPS = [
       { to: '/banners', label: 'Banners', icon: Image },
       { to: '/card-sliders', label: 'Card Sliders', icon: LayoutGrid },
       { to: '/reels', label: 'Reels Manager', icon: Video },
-      { to: '/editorial-looks', label: '3D Editorial Looks', icon: Shirt, badge: '3D', badgeColor: 'bg-amber-100 text-amber-800' },
       { to: '/blogs', label: 'Blog & Stories', icon: BookOpen },
     ],
   },

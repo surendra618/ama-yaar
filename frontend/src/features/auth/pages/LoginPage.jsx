@@ -521,7 +521,7 @@ export default function LoginPage() {
               disabled={
                 isSubmitting ||
                 otp.length < 4 ||
-                (!isExistingUser && (!name.trim() || !email.trim() || password.length < 6))
+                (!isExistingUser && (!name.trim() || password.length < 6))
               }
               className="af-btn cursor-pointer"
             >

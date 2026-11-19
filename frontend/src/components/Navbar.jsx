@@ -403,6 +403,12 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    const handleOpenAuth = () => setAuthModalOpen(true);
+    window.addEventListener("open-auth-modal", handleOpenAuth);
+    return () => window.removeEventListener("open-auth-modal", handleOpenAuth);
+  }, []);
+
+  useEffect(() => {
     if (!isAuthenticated && !sessionStorage.getItem("auth_popup_shown")) {
       const timer = setTimeout(() => {
         setAuthModalOpen(true);

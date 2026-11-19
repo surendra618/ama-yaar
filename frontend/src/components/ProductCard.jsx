@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Heart, ChevronLeft, ChevronRight, Star, ShoppingBag } from 'lucide-react';
 import { addToCart, openDrawer } from '../features/cart/cartSlice';
+import { toggleWishlist } from '../features/wishlist/wishlistSlice';
 import { getMediaUrl } from '../utils/mediaUrl';
 
 export default function ProductCard({ product }) {
@@ -10,7 +11,13 @@ export default function ProductCard({ product }) {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { items: wishlistItems = [] } = useSelector((state) => state.wishlist || {});
+  const { isAuthenticated } = useSelector((state) => state.auth || {});
+
+  const isWishlisted = wishlistItems.some(
+    (item) => (item._id || item) === product._id || (item.slug && item.slug === product.slug)
+  );
+
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -31,8 +38,8 @@ export default function ProductCard({ product }) {
   const discountPercent = product.discount > 0
     ? product.discount
     : (product.mrp && product.mrp > product.price)
-    ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
-    : 15;
+      ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+      : 15;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -107,15 +114,18 @@ export default function ProductCard({ product }) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setIsWishlisted((prev) => !prev);
+              if (!isAuthenticated) {
+                window.dispatchEvent(new CustomEvent('open-auth-modal'));
+                return;
+              }
+              dispatch(toggleWishlist(product._id));
             }}
             className="p-1 transition cursor-pointer text-neutral-800 hover:text-black drop-shadow-sm"
             aria-label="Save to wishlist"
           >
             <Heart
-              className={`h-5 w-5 transition-colors ${
-                isWishlisted ? 'fill-[#e62020] text-[#e62020]' : 'text-neutral-800 stroke-[1.8]'
-              }`}
+              className={`h-5 w-5 transition-colors ${isWishlisted ? 'fill-[#e62020] text-[#e62020]' : 'text-neutral-800 stroke-[1.8]'
+                }`}
             />
           </button>
         </div>
@@ -145,9 +155,8 @@ export default function ProductCard({ product }) {
               {images.map((_, dotIdx) => (
                 <div
                   key={dotIdx}
-                  className={`h-1.5 rounded-full transition-all ${
-                    displayImageIndex === dotIdx ? 'w-3.5 bg-white' : 'w-1.5 bg-white/50'
-                  }`}
+                  className={`h-1.5 rounded-full transition-all ${displayImageIndex === dotIdx ? 'w-3.5 bg-white' : 'w-1.5 bg-white/50'
+                    }`}
                 />
               ))}
             </div>

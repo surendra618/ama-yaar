@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Heart, ShoppingCart, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { fetchWishlist, toggleWishlist, moveWishlistItemToCart } from '../wishlistSlice';
 import Loader from '../../../components/Loader';
+import { getMediaUrl } from '../../../utils/mediaUrl';
 
 export default function WishlistPage() {
   const dispatch = useDispatch();
@@ -11,12 +12,16 @@ export default function WishlistPage() {
   const { isAuthenticated } = useSelector((state) => state.auth || {});
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Check if token or session exists
+    const hasToken = !!localStorage.getItem('ay_access_token');
+    if (isAuthenticated || hasToken) {
       dispatch(fetchWishlist());
     }
   }, [dispatch, isAuthenticated]);
 
-  if (!isAuthenticated) {
+  const hasStoredToken = !!localStorage.getItem('ay_access_token');
+
+  if (!isAuthenticated && !hasStoredToken) {
     return (
       <div className="rounded-xl border border-neutral-200/60 bg-white p-12 text-center shadow-sm">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-black mb-4 border border-neutral-200">
@@ -88,9 +93,13 @@ export default function WishlistPage() {
               {/* Product Image & Remove Button */}
               <Link to={`/products/${product.slug || product._id}`} className="relative aspect-square overflow-hidden bg-neutral-100">
                 <img
-                  src={product.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400'}
+                  src={getMediaUrl(product.images?.[0] || product.image, product.name || product.slug)}
                   alt={product.name}
                   className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400';
+                  }}
                 />
                 <button
                   type="button"

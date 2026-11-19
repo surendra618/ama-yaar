@@ -546,7 +546,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                     disabled={
                       isSubmitting ||
                       otp.length < 4 ||
-                      (!isExistingUser && (!name.trim() || !email.trim() || password.length < 6))
+                      (!isExistingUser && (!name.trim() || password.length < 6))
                     }
                     className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
