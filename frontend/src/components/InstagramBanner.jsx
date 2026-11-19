@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function InstagramBanner() {
   return (
-    <section className="w-full bg-black overflow-hidden mt-3 sm:mt-5 mb-0">
+    <section className="w-full bg-black overflow-hidden my-0">
       <a
         href="https://instagram.com/amayaar.in"
         target="_blank"

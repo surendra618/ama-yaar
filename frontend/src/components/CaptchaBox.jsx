@@ -123,11 +123,10 @@ export default function CaptchaBox({
           <button
             type="button"
             onClick={refreshCaptcha}
-            className={`flex h-[36px] sm:h-[38px] w-8 items-center justify-center transition border-l cursor-pointer ${
-              isDark
+            className={`flex h-[36px] sm:h-[38px] w-8 items-center justify-center transition border-l cursor-pointer ${isDark
                 ? 'border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-800'
                 : 'border-neutral-300 text-neutral-600 hover:text-black hover:bg-neutral-200'
-            }`}
+              }`}
             title="Refresh Captcha"
             aria-label="Refresh Captcha"
           >
@@ -145,11 +144,10 @@ export default function CaptchaBox({
           required
           autoComplete="off"
           spellCheck="false"
-          className={`flex-1 min-w-0 w-full rounded-lg px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-xs sm:text-sm font-black tracking-normal uppercase transition outline-none ${
-            isDark
+          className={`flex-1 min-w-0 w-full rounded-lg px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-xs sm:text-sm font-black tracking-normal uppercase transition outline-none ${isDark
               ? 'bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:border-white focus:ring-1 focus:ring-white'
               : 'bg-white border border-neutral-300 text-black placeholder-neutral-400 focus:border-black focus:ring-1 focus:ring-black'
-          } ${error ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+            } ${error ? 'border-red-500 ring-1 ring-red-500' : ''}`}
         />
       </div>
 

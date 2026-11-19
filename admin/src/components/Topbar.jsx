@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { logout } from '../features/auth/authSlice';
 import AdminLogo from './AdminLogo';
+import socket, { joinAdminRoom } from '../lib/socket';
 
 export default function Topbar({ onMenuClick }) {
   const dispatch = useDispatch();
@@ -27,8 +28,53 @@ export default function Topbar({ onMenuClick }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [notificationsList, setNotificationsList] = useState([
+    { id: 1, title: 'Real-time WebSocket connected', time: 'Just now', icon: Sparkles, unread: false },
+    { id: 2, title: 'Product stock monitored', time: '1h ago', icon: Package, unread: true },
+  ]);
+
   const menuRef = useRef(null);
   const notifRef = useRef(null);
+
+  useEffect(() => {
+    joinAdminRoom();
+
+    const handleNewOrder = (data) => {
+      setNotificationsList((prev) => [
+        {
+          id: Date.now(),
+          title: `New Order: #${data.orderNumber} (₹${data.total})`,
+          time: 'Just now',
+          icon: Package,
+          unread: true,
+        },
+        ...prev.slice(0, 9),
+      ]);
+    };
+
+    const handleAdminNotif = (data) => {
+      setNotificationsList((prev) => [
+        {
+          id: Date.now(),
+          title: data.title || 'New Admin Alert',
+          time: 'Just now',
+          icon: Sparkles,
+          unread: true,
+        },
+        ...prev.slice(0, 9),
+      ]);
+    };
+
+    socket.on('order_placed', handleNewOrder);
+    socket.on('new_admin_notification', handleAdminNotif);
+
+    return () => {
+      socket.off('order_placed', handleNewOrder);
+      socket.off('new_admin_notification', handleAdminNotif);
+    };
+  }, []);
+
+  const unreadCount = notificationsList.filter((n) => n.unread).length;
 
   useEffect(() => {
     const handler = (e) => {
@@ -127,15 +173,22 @@ export default function Topbar({ onMenuClick }) {
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 px-1">
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-bold text-slate-900">Notifications</h4>
-                  <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-extrabold text-indigo-600">
-                    2 New
-                  </span>
+                  {unreadCount > 0 && (
+                    <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-extrabold text-indigo-600">
+                      {unreadCount} New
+                    </span>
+                  )}
                 </div>
-                <button className="text-[11px] font-semibold text-indigo-600 hover:underline">Mark read</button>
+                <button
+                  onClick={() => setNotificationsList((prev) => prev.map((n) => ({ ...n, unread: false })))}
+                  className="text-[11px] font-semibold text-indigo-600 hover:underline cursor-pointer"
+                >
+                  Mark read
+                </button>
               </div>
 
               <div className="mt-2 space-y-1">
-                {SAMPLE_NOTIFICATIONS.map((n) => {
+                {notificationsList.map((n) => {
                   const IconComp = n.icon;
                   return (
                     <div

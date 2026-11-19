@@ -3,6 +3,7 @@ const User = require('../user/user.model');
 const Notification = require('./notification.model');
 const { sendEmail } = require('../../config/mailer');
 const env = require('../../config/env');
+const { emitAdminEvent } = require('../../config/socket');
 
 /**
  * Helper to fetch target recipient email addresses for admin notifications.
@@ -85,6 +86,16 @@ async function notifyAdmins({ event, subject, html, text }) {
       title: subject,
       message: text || subject,
     }).catch(() => {});
+
+    // Real-time WebSocket Push to all active Admin dashboards
+    try {
+      emitAdminEvent('new_admin_notification', {
+        event,
+        title: subject,
+        message: text || subject,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (_) {}
 
     // Collect recipient emails
     const recipients = await getAdminNotificationEmails(settings?.notifyAdminEmails);

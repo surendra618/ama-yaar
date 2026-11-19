@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ArrowRight,
   Truck,
+  Headphones,
 } from "lucide-react";
 import { logout, checkAuth } from "../features/auth/authSlice";
 import { fetchCart, openDrawer } from "../features/cart/cartSlice";
@@ -26,6 +27,7 @@ import {
   markNotificationRead,
 } from "../features/notifications/notificationsSlice";
 import AuthPopupModal from "./AuthPopupModal";
+import socket, { joinUserRoom } from "../lib/socket";
 
 // Social Media marks for navigation drawer
 const FacebookIcon = (props) => (
@@ -424,8 +426,22 @@ export default function Navbar() {
       dispatch(fetchCart());
       dispatch(fetchWishlist());
       dispatch(fetchNotifications());
+
+      if (user?._id) {
+        joinUserRoom(user._id);
+
+        const handleLiveOrderUpdate = () => {
+          dispatch(fetchNotifications());
+        };
+
+        socket.on('order_status_updated', handleLiveOrderUpdate);
+
+        return () => {
+          socket.off('order_status_updated', handleLiveOrderUpdate);
+        };
+      }
     }
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch, isAuthenticated, user?._id]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -805,6 +821,13 @@ export default function Navbar() {
                         >
                           <Truck className="h-4 w-4 text-amber-600" /> Track Order
                         </Link>
+                        <Link
+                          to="/customer-support"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
+                        >
+                          <Headphones className="h-4 w-4 text-neutral-600" /> Customer Support
+                        </Link>
                         <button
                           onClick={() => {
                             setUserMenuOpen(false);
@@ -837,9 +860,11 @@ export default function Navbar() {
                 title="Cart"
               >
                 <ShoppingBag className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black bg-white text-black shadow-xs">
-                  {itemCount || 0}
-                </span>
+                {itemCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black bg-white text-black shadow-xs">
+                    {itemCount}
+                  </span>
+                )}
               </button>
 
               
@@ -951,6 +976,13 @@ export default function Navbar() {
                   className="flex items-center gap-2 py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-amber-700 hover:text-black border-b border-neutral-100 transition"
                 >
                   <Truck className="h-4 w-4 text-amber-600" /> TRACK ORDER
+                </Link>
+                <Link
+                  to="/customer-support"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-black hover:text-neutral-500 border-b border-neutral-100 transition"
+                >
+                  <Headphones className="h-4 w-4 text-neutral-700" /> CUSTOMER SUPPORT
                 </Link>
               </div>
 

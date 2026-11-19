@@ -13,6 +13,7 @@ const settingService = require('../setting/setting.service');
 const shiprocketService = require('../shiprocket/shiprocket.service');
 const { notifyAdmins } = require('../notification/adminNotifier');
 const { newOrderTemplate } = require('../../utils/emailTemplates');
+const { emitAdminEvent, emitUserEvent, emitOrderEvent } = require('../../config/socket');
 
 async function createOrder(userId, payload) {
   const { shippingAddressId, shippingAddress: directAddress, paymentProvider = 'cod', paymentMethod = 'Cash on Delivery', paymentId } = payload;
@@ -263,6 +264,18 @@ async function createOrder(userId, payload) {
     });
   }
 
+  // Real-time broadcast for Admin dashboard orders list & badge
+  try {
+    emitAdminEvent('order_placed', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      total,
+      paymentMethod,
+      customerName: finalAddress?.fullName || 'Customer',
+      createdAt: order.createdAt,
+    });
+  } catch (_) {}
+
   return order;
 }
 
@@ -381,6 +394,23 @@ async function updateStatus(id, { status, note, trackingNumber }) {
     title: `Order Status: ${status.replace(/_/g, ' ').toUpperCase()}`,
     message: `Your order #${order.orderNumber} is now ${status.replace(/_/g, ' ')}. ${note || ''}`,
   }).catch(() => {});
+
+  // Real-time Push to user & live tracking room
+  try {
+    emitUserEvent(String(order.user), 'order_status_updated', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      status,
+      note,
+      updatedAt: new Date().toISOString(),
+    });
+    emitOrderEvent(String(order._id), 'order_tracking_updated', {
+      orderId: order._id,
+      status,
+      note,
+      statusHistory: order.statusHistory,
+    });
+  } catch (_) {}
 
   // If status is updated to confirmed/processing/shipped/out_for_delivery and not yet in Shiprocket, auto-push
   if (['confirmed', 'processing', 'packed', 'shipped', 'out_for_delivery'].includes(status) && !order.shiprocket?.orderId) {
