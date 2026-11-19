@@ -1,6 +1,6 @@
-import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { User, MapPin, Package, Heart, ShieldCheck, LogOut, ChevronRight, ChevronLeft, Tag, RotateCcw, Bell, HelpCircle } from 'lucide-react';
+import { User, MapPin, Package, Heart, ShieldCheck, LogOut, ChevronRight, Tag, RotateCcw, Bell, HelpCircle } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../auth/authSlice';
 import { useNavigate } from 'react-router-dom';
@@ -17,11 +17,8 @@ const NAV_ITEMS = [
 
 export default function AccountLayout() {
   const { user } = useSelector((state) => state.auth);
-  const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const isHubPage = location.pathname === '/account' || location.pathname === '/account/';
 
   const handleLogout = () => {
     dispatch(logout());
@@ -32,34 +29,23 @@ export default function AccountLayout() {
     ? user.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
 
-  const currentItem = NAV_ITEMS.find((item) => item.to === location.pathname);
-
   return (
     <div className="min-h-screen bg-neutral-50/60">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
 
-        {/* Page Header (Desktop always, Mobile on Hub or with Back Button on subpages) */}
-        <div className="mb-6 sm:mb-8">
-          {!isHubPage && (
-            <Link
-              to="/account"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-600 hover:text-black mb-3 md:hidden transition"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span>Back to Account</span>
-            </Link>
-          )}
-          <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] text-neutral-400 block mb-1">
-            {isHubPage ? 'Account Overview' : currentItem?.label || 'Account Settings'}
+        {/* Page Header */}
+        <div className="mb-8">
+          <span className="text-[11px] font-black uppercase tracking-[0.25em] text-neutral-400 block mb-1">
+            Account Settings
           </span>
-          <h1 className="text-xl sm:text-3xl font-black text-black tracking-tight uppercase">
-            {isHubPage ? 'MY ACCOUNT' : currentItem?.label || 'ACCOUNT'}
+          <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight uppercase">
+            MY ACCOUNT
           </h1>
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-          {/* Sidebar: Visible on desktop; on mobile hidden so subpages open cleanly without scrolling past sidebar */}
-          <aside className="hidden md:block md:col-span-1">
+          {/* Sidebar */}
+          <aside className="md:col-span-1">
             <div className="rounded-xl border border-neutral-200/60 bg-white p-4 shadow-sm sticky top-24">
 
               {/* User Avatar & Info */}
