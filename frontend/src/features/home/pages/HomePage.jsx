@@ -1512,8 +1512,11 @@ export default function HomePage() {
         )}
       </section>
 
+      {/* 7. Instagram Banner */}
+      <InstagramBanner />
+
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
-        {/* 7. Customer reviews with AOS Animation & Functional Scroll */}
+        {/* 8. Customer reviews with AOS Animation & Functional Scroll */}
         <section className="pt-6 pb-4 sm:pt-8 sm:pb-6 overflow-hidden">
           <div
             data-aos="fade-up"
@@ -1649,9 +1652,6 @@ export default function HomePage() {
           </div>
         </section>
       </div>
-
-      {/* 8. Instagram Banner */}
-      <InstagramBanner />
 
       {/* 9. Newsletter floating card */}
       <section className="bg-white pt-2 pb-6 sm:pt-4 sm:pb-8 lg:py-8 px-3 sm:px-6 lg:px-12">
