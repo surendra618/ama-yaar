@@ -1436,7 +1436,7 @@ export default function HomePage() {
       <EditorialBanner />
 
       {/* 6. Instagram reel cards row — Exactly 5 cards in 1 row on desktop */}
-      <section className="w-full bg-[#0a0a0a] py-8 sm:py-10 mt-0 mb-0 overflow-hidden">
+      <section className="w-full bg-[#0a0a0a] pt-8 sm:pt-10 pb-0 mt-0 mb-0 overflow-hidden">
         {/* Stylish Modern Heading */}
         <div className="mb-10 text-center px-4 flex flex-col items-center justify-center">
           <div className="flex items-center gap-2 mb-1.5">
@@ -1517,7 +1517,7 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         {/* 8. Customer reviews with AOS Animation & Functional Scroll */}
-        <section className="pt-6 pb-4 sm:pt-8 sm:pb-6 overflow-hidden">
+        <section className="pt-4 pb-2 sm:pt-6 sm:pb-4 overflow-hidden">
           <div
             data-aos="fade-up"
             data-aos-duration="600"
