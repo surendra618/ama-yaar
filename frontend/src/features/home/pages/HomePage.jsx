@@ -1517,7 +1517,7 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         {/* 8. Customer reviews with AOS Animation & Functional Scroll */}
-        <section className="pt-4 pb-2 sm:pt-6 sm:pb-4 overflow-hidden">
+        <section className="pt-2 pb-0 sm:pt-4 sm:pb-2 overflow-hidden">
           <div
             data-aos="fade-up"
             data-aos-duration="600"
@@ -1654,7 +1654,7 @@ export default function HomePage() {
       </div>
 
       {/* 9. Newsletter floating card */}
-      <section className="bg-white pt-2 pb-6 sm:pt-4 sm:pb-8 lg:py-8 px-3 sm:px-6 lg:px-12">
+      <section className="bg-white pt-0 pb-6 sm:pt-2 sm:pb-8 lg:pb-8 px-3 sm:px-6 lg:px-12">
         <div className="mx-auto max-w-[1480px] bg-black rounded-xl sm:rounded-2xl p-4 sm:p-7 lg:px-14 lg:py-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-8 shadow-sm">
           {/* Left: heading */}
           <div className="text-white flex-1 text-center md:text-left">
