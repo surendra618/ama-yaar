@@ -48,7 +48,7 @@ export default function Footer() {
               covered.
             </p>
 
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-6 flex items-center justify-center md:justify-start gap-3">
               <a
                 href="https://facebook.com"
                 target="_blank"
@@ -153,9 +153,12 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <span className="cursor-default select-none text-black/60">
+                  <Link
+                    to="/customer-support"
+                    className="hover:text-black transition"
+                  >
                     Customer support
-                  </span>
+                  </Link>
                 </li>
                 <li>
                   <Link to="/terms" className="hover:text-black transition">
