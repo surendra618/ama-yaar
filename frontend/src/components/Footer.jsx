@@ -32,16 +32,16 @@ export default function Footer() {
         {/* Main Grid */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
           {/* Brand Info Column */}
-          <div className="md:col-span-4 lg:col-span-4">
+          <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center md:items-start text-center md:text-left">
             <Link to="/" className="inline-block leading-none group">
               <img
                 src="/logo-black.png"
                 alt="AMA YAAR"
-                className="h-16 sm:h-20 w-auto object-contain transition-opacity group-hover:opacity-90"
+                className="h-16 sm:h-20 w-auto object-contain transition-opacity group-hover:opacity-90 mx-auto md:mx-0"
               />
             </Link>
 
-            <p className="mt-5 max-w-md text-xs sm:text-sm leading-relaxed text-black/60">
+            <p className="mt-5 max-w-md text-xs sm:text-sm leading-relaxed text-black/60 text-center md:text-left">
               At AMAYAAR, style is more than just what you wear — it's how you
               express yourself. Our clothing and footwear are designed to match
               your individuality and confidence. Style ka lafda? AMAYAAR has you
@@ -80,12 +80,13 @@ export default function Footer() {
           </div>
 
           {/* Spacing / Column items */}
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 md:col-span-8 lg:col-span-8 md:pl-4">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 md:col-span-8 lg:col-span-8 md:pl-4 text-center md:text-left">
             {/* SHOP FITS */}
             <div
               data-aos="fade-up"
               data-aos-delay="100"
               data-aos-duration="600"
+              className="flex flex-col items-center md:items-start"
             >
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">
                 SHOP FITS
@@ -139,6 +140,7 @@ export default function Footer() {
               data-aos="fade-up"
               data-aos-delay="150"
               data-aos-duration="600"
+              className="flex flex-col items-center md:items-start"
             >
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">
                 HELP
@@ -186,6 +188,7 @@ export default function Footer() {
               data-aos="fade-up"
               data-aos-delay="200"
               data-aos-duration="600"
+              className="flex flex-col items-center md:items-start"
             >
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">
                 FAQ &amp; ACCOUNT
@@ -233,6 +236,7 @@ export default function Footer() {
               data-aos="fade-up"
               data-aos-delay="250"
               data-aos-duration="600"
+              className="flex flex-col items-center md:items-start"
             >
               <h4 className="text-xs font-bold uppercase tracking-widest text-black mb-4">
                 COMPANY
