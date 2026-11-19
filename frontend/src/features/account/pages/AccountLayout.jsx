@@ -1,9 +1,8 @@
-import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import { NavLink, Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import { User, MapPin, Package, Heart, ShieldCheck, LogOut, ChevronRight, ChevronLeft, Tag, RotateCcw, Bell, HelpCircle } from 'lucide-react';
-import { useDispatch } from 'react-redux';
 import { logout } from '../../auth/authSlice';
-import { useNavigate } from 'react-router-dom';
 
 const NAV_ITEMS = [
   { to: '/account/profile',        label: 'My Profile',    icon: User },
@@ -25,6 +24,13 @@ export default function AccountLayout() {
   const isRootAccount = location.pathname === '/account' || location.pathname === '/account/';
   const currentItem = NAV_ITEMS.find((item) => item.to === location.pathname);
 
+  // On desktop, navigating to /account automatically displays /account/profile on the right side
+  useEffect(() => {
+    if (isRootAccount && typeof window !== 'undefined' && window.innerWidth >= 768) {
+      navigate('/account/profile', { replace: true });
+    }
+  }, [isRootAccount, navigate]);
+
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
@@ -35,11 +41,11 @@ export default function AccountLayout() {
     : 'U';
 
   return (
-    <div className="min-h-screen bg-neutral-50/60">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 sm:px-6 lg:px-8">
+    <div className="bg-neutral-50/60 pb-4 sm:pb-12 md:min-h-screen">
+      <div className="mx-auto max-w-6xl px-4 pt-4 pb-2 sm:py-10 sm:px-6 lg:px-8">
 
         {/* Page Header */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-8">
           {/* Back button visible only on mobile when inside a subpage */}
           {!isRootAccount && (
             <Link

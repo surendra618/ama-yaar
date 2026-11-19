@@ -8,6 +8,7 @@ import ProductDetailsPage from '../features/productDetails/pages/ProductDetailsP
 import CartPage from '../features/cart/pages/CartPage';
 import CheckoutPage from '../features/checkout/pages/CheckoutPage';
 import AccountLayout from '../features/account/pages/AccountLayout';
+import AccountMenuPage from '../features/account/pages/AccountMenuPage';
 import ProfilePage from '../features/account/pages/ProfilePage';
 import AddressesPage from '../features/account/pages/AddressesPage';
 import MyOrdersPage from '../features/orders/pages/MyOrdersPage';
@@ -63,7 +64,7 @@ export const router = createBrowserRouter([
         path: '/account',
         element: <AccountLayout />,
         children: [
-          { index: true, element: <Navigate to="/account/profile" replace /> },
+          { index: true,           element: <AccountMenuPage /> },
           { path: 'profile',       element: <ProfilePage /> },
           { path: 'addresses',     element: <AddressesPage /> },
           { path: 'orders',        element: <MyOrdersPage /> },

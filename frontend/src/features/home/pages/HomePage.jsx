@@ -225,19 +225,20 @@ function ReelCard({ item, onOpenModal }) {
 
   useEffect(() => {
     if (!isInstagram && videoRef.current) {
-      videoRef.current.muted = isMuted;
-      const promise = videoRef.current.play();
-      if (promise !== undefined) {
-        promise.catch(() => {
+      videoRef.current.muted = true;
+      videoRef.current.defaultMuted = true;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Autoplay prevented on reel card, retrying muted:', err);
           if (videoRef.current) {
             videoRef.current.muted = true;
-            setIsMuted(true);
-            videoRef.current.play().catch(() => setHasError(true));
+            videoRef.current.play().catch(() => {});
           }
         });
       }
     }
-  }, [isMuted, isInstagram]);
+  }, [item.video, isInstagram]);
 
   const handleProductNavigate = (e) => {
     e.stopPropagation();
@@ -277,16 +278,15 @@ function ReelCard({ item, onOpenModal }) {
       ) : (
         <video
           ref={videoRef}
+          src={item.video}
           autoPlay
           loop
-          muted={isMuted}
+          muted
           playsInline
+          preload="auto"
           onError={() => setHasError(true)}
           className="h-full w-full object-cover"
-        >
-          <source src={item.video} type="video/mp4" />
-          <source src={item.altVideo} type="video/mp4" />
-        </video>
+        />
       )}
 
       {/* Subtle Gradient for contrast */}
@@ -373,9 +373,20 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
   useEffect(() => {
     if (!isInstagram && modalVideoRef.current) {
       modalVideoRef.current.muted = isMuted;
-      modalVideoRef.current.play().catch(() => { });
+      modalVideoRef.current.defaultMuted = isMuted;
+      const playPromise = modalVideoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Autoplay prevented on reel modal, falling back to muted play:', err);
+          if (modalVideoRef.current) {
+            modalVideoRef.current.muted = true;
+            setIsMuted(true);
+            modalVideoRef.current.play().catch(() => {});
+          }
+        });
+      }
     }
-  }, [reel, isMuted, isInstagram]);
+  }, [reel?.video, isMuted, isInstagram]);
 
   if (!reel) return null;
 
@@ -442,15 +453,14 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
           ) : (
             <video
               ref={modalVideoRef}
+              src={reel.video || reel.altVideo}
               autoPlay
               loop
               muted={isMuted}
               playsInline
+              preload="auto"
               className="h-full w-full object-cover"
-            >
-              <source src={reel.video} type="video/mp4" />
-              <source src={reel.altVideo} type="video/mp4" />
-            </video>
+            />
           )}
         </div>
 

@@ -193,61 +193,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Quick Access Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <Link
-          to="/account/orders"
-          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
-              My Orders
-            </span>
-            <Package className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
-          </div>
-          <p className="text-xl font-black text-black mt-2">{orderCount}</p>
-        </Link>
-
-        <Link
-          to="/account/addresses"
-          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
-              Addresses
-            </span>
-            <MapPin className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
-          </div>
-          <p className="text-xl font-black text-black mt-2">{addressCount}</p>
-        </Link>
-
-        <Link
-          to="/account/wishlist"
-          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
-              Wishlist
-            </span>
-            <Heart className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
-          </div>
-          <p className="text-xl font-black text-black mt-2">{wishlistItems.length}</p>
-        </Link>
-
-        <Link
-          to="/account/coupons"
-          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
-              Coupons
-            </span>
-            <Tag className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
-          </div>
-          <p className="text-xl font-black text-black mt-2">Active</p>
-        </Link>
-      </div>
-
       {/* Alerts */}
       {error && (
         <div className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-xs font-bold text-rose-700 flex items-center gap-2">
@@ -262,7 +207,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Personal Information Card */}
+      {/* Personal Information Card (Shown UP on mobile view before quick stat links) */}
       <div className="rounded-2xl border border-neutral-200/80 bg-white shadow-xs p-6">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-100">
           <div>
@@ -393,6 +338,61 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Quick Access Stat Cards (My Orders, Addresses, Wishlist, Coupons) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <Link
+          to="/account/orders"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+              My Orders
+            </span>
+            <Package className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
+          </div>
+          <p className="text-xl font-black text-black mt-2">{orderCount}</p>
+        </Link>
+
+        <Link
+          to="/account/addresses"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+              Addresses
+            </span>
+            <MapPin className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
+          </div>
+          <p className="text-xl font-black text-black mt-2">{addressCount}</p>
+        </Link>
+
+        <Link
+          to="/account/wishlist"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+              Wishlist
+            </span>
+            <Heart className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
+          </div>
+          <p className="text-xl font-black text-black mt-2">{wishlistItems.length}</p>
+        </Link>
+
+        <Link
+          to="/account/coupons"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+              Coupons
+            </span>
+            <Tag className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
+          </div>
+          <p className="text-xl font-black text-black mt-2">Active</p>
+        </Link>
       </div>
 
       {/* Account Security Card */}

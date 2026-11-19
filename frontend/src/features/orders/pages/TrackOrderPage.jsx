@@ -88,7 +88,7 @@ export default function TrackOrderPage() {
             <Truck className="h-3.5 w-3.5" />
             <span>Shiprocket Live Dispatch Network</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-neutral-900 font-display">
+          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-neutral-900">
             Track Your Package
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 font-medium max-w-md mx-auto">
