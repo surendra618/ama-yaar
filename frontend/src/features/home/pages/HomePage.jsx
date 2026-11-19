@@ -1434,7 +1434,7 @@ export default function HomePage() {
       <EditorialBanner />
 
       {/* 6. Instagram reel cards row — Exactly 5 cards in 1 row on desktop */}
-      <section className="w-full bg-[#0a0a0a] pt-8 sm:pt-10 pb-0 mt-0 mb-0 overflow-hidden">
+      <section className="w-full bg-[#0a0a0a] pt-8 sm:pt-10 pb-4 sm:pb-6 mt-0 mb-0 overflow-hidden">
         {/* Stylish Modern Heading */}
         <div className="mb-10 text-center px-4 flex flex-col items-center justify-center">
           <div className="flex items-center gap-2 mb-1.5">
