@@ -153,12 +153,9 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    to="/account/profile"
-                    className="hover:text-black transition"
-                  >
+                  <span className="cursor-default select-none text-black/60">
                     Customer support
-                  </Link>
+                  </span>
                 </li>
                 <li>
                   <Link to="/terms" className="hover:text-black transition">
