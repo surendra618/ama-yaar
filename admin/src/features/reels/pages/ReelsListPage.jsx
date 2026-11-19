@@ -71,8 +71,10 @@ export default function ReelsListPage() {
 
   const [posterFile, setPosterFile] = useState(null);
   const [altPosterFile, setAltPosterFile] = useState(null);
+  const [videoFile, setVideoFile] = useState(null);
   const [posterPreview, setPosterPreview] = useState('');
   const [altPosterPreview, setAltPosterPreview] = useState('');
+  const [videoPreview, setVideoPreview] = useState('');
 
   const [displayCount, setDisplayCount] = useState(() => {
     return Number(localStorage.getItem('reels_display_count')) || 4;
@@ -133,8 +135,10 @@ export default function ReelsListPage() {
     });
     setPosterFile(null);
     setAltPosterFile(null);
+    setVideoFile(null);
     setPosterPreview('');
     setAltPosterPreview('');
+    setVideoPreview('');
     setSearchQuery1('');
     setSearchQuery2('');
     setModalOpen(true);
@@ -160,8 +164,10 @@ export default function ReelsListPage() {
 
     setPosterFile(null);
     setAltPosterFile(null);
+    setVideoFile(null);
     setPosterPreview(reel.poster || '');
     setAltPosterPreview(reel.altPoster || '');
+    setVideoPreview(reel.video || '');
     setModalOpen(true);
   };
 
@@ -175,6 +181,9 @@ export default function ReelsListPage() {
     } else if (type === 'altPoster') {
       setAltPosterFile(file);
       setAltPosterPreview(URL.createObjectURL(file));
+    } else if (type === 'video') {
+      setVideoFile(file);
+      setVideoPreview(URL.createObjectURL(file));
     }
   };
 
@@ -193,8 +202,8 @@ export default function ReelsListPage() {
       return;
     }
 
-    if (!formData.video || !formData.video.trim()) {
-      alert('Please enter an Instagram Reel URL (e.g., https://www.instagram.com/reel/...)');
+    if (!videoFile && (!formData.video || !formData.video.trim())) {
+      alert('Please select a video file to upload or enter a video / Instagram Reel URL');
       return;
     }
 
@@ -202,6 +211,7 @@ export default function ReelsListPage() {
       setUploadingMedia(true);
       let uploadedPoster = formData.poster;
       let uploadedAltPoster = formData.altPoster;
+      let uploadedVideo = formData.video;
 
       // Upload Poster Image if file selected
       if (posterFile) {
@@ -221,6 +231,16 @@ export default function ReelsListPage() {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         uploadedAltPoster = data.data.url;
+      }
+
+      // Upload Video file if file selected
+      if (videoFile) {
+        const body = new FormData();
+        body.append('file', videoFile);
+        const { data } = await api.post('/upload/single', body, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        uploadedVideo = data.data.url;
       }
 
       if (!uploadedPoster) {
@@ -244,7 +264,7 @@ export default function ReelsListPage() {
         product2: cleanProduct2,
         poster: uploadedPoster,
         altPoster: uploadedAltPoster || '',
-        video: formData.video.trim(),
+        video: (uploadedVideo || '').trim(),
       };
 
       if (editingReelId) {
@@ -322,8 +342,9 @@ export default function ReelsListPage() {
 
   const currentPosterPreview = resolveMediaPreview(posterFile, formData.poster, posterPreview);
   const currentAltPosterPreview = resolveMediaPreview(altPosterFile, formData.altPoster, altPosterPreview);
-  const isCurrentInsta = isInstagramUrl(formData.video);
-  const currentShortcode = getInstagramShortcode(formData.video);
+  const currentVideoPreview = resolveMediaPreview(videoFile, formData.video, videoPreview);
+  const isCurrentInsta = !videoFile && isInstagramUrl(formData.video);
+  const currentShortcode = isCurrentInsta ? getInstagramShortcode(formData.video) : null;
 
   const safeReels = Array.isArray(reels) ? reels : [];
 
@@ -936,52 +957,140 @@ export default function ReelsListPage() {
                     )}
                   </div>
 
-                  {/* Instagram Reel URL Section (No Video File Upload) */}
-                  <div className="space-y-2 pt-2 border-t border-slate-200">
+                  {/* Video / Reel Section: Direct Video File Upload OR URL / Instagram Reel Link */}
+                  <div className="space-y-3 pt-2 border-t border-slate-200">
                     <label className="block text-xs font-bold text-slate-800 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-xs">
-                          <InstagramIcon className="h-3.5 w-3.5" />
+                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-indigo-600 text-white shadow-xs">
+                          <Video className="h-3.5 w-3.5" />
                         </span>
-                        <span className="font-bold text-slate-900">Instagram Reel Link</span>
+                        <span className="font-bold text-slate-900">Reel Video Source</span>
                         <span className="text-rose-500">*</span>
                       </span>
-                      {isCurrentInsta && (
+                      {isCurrentInsta ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pink-700 bg-pink-50 px-2 py-0.5 rounded-md border border-pink-200">
+                          <InstagramIcon className="h-3 w-3 text-pink-600" />
+                          <span>Instagram Reel ({currentShortcode})</span>
+                        </span>
+                      ) : videoFile ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                          <Check className="h-3 w-3 text-indigo-600" />
+                          <span>Video File Ready</span>
+                        </span>
+                      ) : formData.video ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                           <Check className="h-3 w-3 text-emerald-600" />
-                          <span>Valid Reel ({currentShortcode})</span>
+                          <span>Video URL Set</span>
                         </span>
-                      )}
+                      ) : null}
                     </label>
 
-                    <div className="relative flex items-center bg-white border border-slate-300 rounded-md shadow-xs focus-within:border-pink-500 focus-within:ring-1 focus-within:ring-pink-500">
-                      <div className="pl-3 pr-2 text-slate-400">
-                        <LinkIcon className="h-4 w-4 text-pink-500" />
+                    {/* Option A: Direct Video File Upload */}
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
+                        <Upload className="h-3.5 w-3.5 text-indigo-600" /> Option A: Upload Video File from Computer (MP4, WebM, MOV)
+                      </span>
+                      <label className="relative flex flex-col items-center justify-center rounded-md border border-dashed border-indigo-300 bg-indigo-50/40 p-3 text-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition">
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => handleFileChange(e, 'video')}
+                          className="hidden"
+                        />
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-100 text-indigo-700">
+                            <Video className="h-4 w-4" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-xs font-bold text-slate-800">
+                              Choose Video File <span className="text-indigo-600 font-semibold underline">or browse</span>
+                            </p>
+                            <p className="text-[10px] text-slate-500 font-normal">
+                              Supports standard video reels up to 50MB
+                            </p>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+
+                    {/* Divider OR */}
+                    <div className="relative flex items-center justify-center my-1">
+                      <div className="w-full border-t border-slate-200" />
+                      <span className="absolute bg-white px-2.5 text-[10px] font-bold text-slate-400">OR</span>
+                    </div>
+
+                    {/* Option B: Video Link / Instagram Reel URL */}
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
+                        <LinkIcon className="h-3.5 w-3.5 text-slate-700" /> Option B: Enter Video URL or Instagram Reel Link
+                      </span>
+                      <div className="relative flex items-center bg-white border border-slate-300 rounded-md shadow-xs focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+                        <div className="pl-3 pr-2 text-slate-400">
+                          <LinkIcon className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <input
+                          type="url"
+                          name="video"
+                          value={formData.video}
+                          onChange={(e) => {
+                            setFormData({ ...formData, video: e.target.value.trim() });
+                            if (videoFile) {
+                              setVideoFile(null);
+                              setVideoPreview('');
+                            }
+                          }}
+                          placeholder="e.g. /video/video1.mp4, https://.../reel.mp4 or https://instagram.com/reel/..."
+                          className="w-full bg-transparent py-2 pr-8 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                        />
+                        {formData.video && (
+                          <button
+                            type="button"
+                            onClick={() => setFormData((f) => ({ ...f, video: '' }))}
+                            className="absolute right-2 text-slate-400 hover:text-slate-600 p-1"
+                            title="Clear link"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
-                      <input
-                        type="url"
-                        name="video"
-                        value={formData.video}
-                        onChange={(e) => setFormData({ ...formData, video: e.target.value.trim() })}
-                        placeholder="https://www.instagram.com/reel/C_xyz123... or https://instagram.com/p/..."
-                        className="w-full bg-transparent py-2 pr-8 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                      />
-                      {formData.video && (
+                    </div>
+
+                    {/* Video File / URL Preview Box */}
+                    {currentVideoPreview && !isCurrentInsta && (
+                      <div className="relative overflow-hidden rounded-md border border-slate-300 bg-slate-950 h-28 mt-2 shadow-xs flex items-center justify-between p-2">
+                        <div className="flex items-center gap-3">
+                          <video
+                            src={getMediaUrl(currentVideoPreview)}
+                            muted
+                            loop
+                            autoPlay
+                            playsInline
+                            className="h-24 w-16 object-cover rounded-md border border-slate-700 bg-black"
+                          />
+                          <div>
+                            <span className="inline-flex items-center gap-1 bg-indigo-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
+                              <Check className="h-3 w-3" /> {videoFile ? 'Uploaded Video File Ready' : 'Video URL Loaded'}
+                            </span>
+                            <p className="text-[10px] text-slate-300 font-mono mt-1 truncate max-w-[220px]">
+                              {videoFile ? videoFile.name : formData.video}
+                            </p>
+                          </div>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => setFormData((f) => ({ ...f, video: '' }))}
-                          className="absolute right-2 text-slate-400 hover:text-slate-600 p-1"
-                          title="Clear link"
+                          onClick={() => {
+                            setVideoFile(null);
+                            setVideoPreview('');
+                            setFormData((f) => ({ ...f, video: '' }));
+                          }}
+                          className="flex items-center gap-1 rounded-md bg-rose-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition"
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <X className="h-3 w-3" /> Remove
                         </button>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      Paste the link of any public Instagram Reel. No video file upload required.
-                    </p>
+                      </div>
+                    )}
 
-                    {/* Live Instagram Reel Preview Embed */}
+                    {/* Live Instagram Reel Preview Embed if Instagram link is entered */}
                     {isCurrentInsta && (
                       <div className="mt-3 rounded-lg border border-pink-200 bg-gradient-to-br from-pink-50/50 via-purple-50/30 to-indigo-50/40 p-3 shadow-xs">
                         <div className="flex items-center justify-between pb-2 mb-2 border-b border-pink-100">
@@ -1015,36 +1124,6 @@ export default function ReelsListPage() {
                             title="Instagram Reel Preview"
                           />
                         </div>
-                      </div>
-                    )}
-
-                    {/* Fallback preview for direct MP4 URL */}
-                    {!isCurrentInsta && formData.video && (
-                      <div className="relative overflow-hidden rounded-md border border-slate-300 bg-slate-950 h-28 mt-2 shadow-xs flex items-center justify-between p-2">
-                        <div className="flex items-center gap-3">
-                          <video
-                            src={formData.video}
-                            muted
-                            loop
-                            autoPlay
-                            className="h-24 w-16 object-cover rounded-md border border-slate-700"
-                          />
-                          <div>
-                            <span className="inline-flex items-center gap-1 bg-indigo-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
-                              <Check className="h-3 w-3" /> Video URL Loaded
-                            </span>
-                            <p className="text-[10px] text-slate-400 mt-1 truncate max-w-[200px]">
-                              {formData.video}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setFormData((f) => ({ ...f, video: '' }))}
-                          className="flex items-center gap-1 rounded-md bg-rose-600 px-2 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition"
-                        >
-                          <X className="h-3 w-3" /> Remove
-                        </button>
                       </div>
                     )}
                   </div>

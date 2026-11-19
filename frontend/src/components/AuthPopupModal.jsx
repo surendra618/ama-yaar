@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import {
-  X,
-  CheckCircle2,
-  Phone,
-  User,
-  KeyRound,
-  Sparkles,
-  ArrowLeft,
-  RefreshCw,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+import { X, CheckCircle2, Phone, User, KeyRound, Sparkles, ArrowLeft, RefreshCw, Mail } from 'lucide-react';
 import { setCredentials } from '../features/auth/authSlice';
 import CaptchaBox from './CaptchaBox';
 import api from '../lib/axios';
@@ -24,13 +11,10 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   // Step state: 'phone' | 'otp'
   const [step, setStep] = useState('phone');
 
-  // Form state
+  // Form states
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isExistingUser, setIsExistingUser] = useState(false);
   const [otp, setOtp] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [isAutoFilled, setIsAutoFilled] = useState(false);
@@ -53,9 +37,6 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       setPhone('');
       setName('');
       setEmail('');
-      setPassword('');
-      setShowPassword(false);
-      setIsExistingUser(false);
       setOtp('');
       setGeneratedOtp('');
       setIsAutoFilled(false);
@@ -107,8 +88,6 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       }
 
       const randomOtp = serverData?.otp || Math.floor(1000 + Math.random() * 9000).toString();
-      const existing = !!serverData?.isExisting;
-      setIsExistingUser(existing);
       if (serverData?.name) setName(serverData.name);
       if (serverData?.email) setEmail(serverData.email);
 
@@ -149,7 +128,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // Handle Step 2: Verify OTP & Sign In / Register
+  // Handle Step 2: Verify OTP & Sign In
   const handleVerifyAndSignIn = async (e) => {
     e.preventDefault();
     setError('');
@@ -167,22 +146,15 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     }
 
     const cleanName = name.trim();
-    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanName) {
+      setError('Please enter your full name to complete sign in');
+      return;
+    }
 
-    // On registration (new user), name and password are required; email is optional
-    if (!isExistingUser) {
-      if (!cleanName) {
-        setError('Please enter your full name');
-        return;
-      }
-      if (cleanEmail && (!cleanEmail.includes('@') || !cleanEmail.includes('.'))) {
-        setError('Please enter a valid email address');
-        return;
-      }
-      if (!password || password.length < 6) {
-        setError('Password must be at least 6 characters');
-        return;
-      }
+    const cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail && (!cleanEmail.includes('@') || !cleanEmail.includes('.'))) {
+      setError('Please enter a valid email address');
+      return;
     }
 
     setIsSubmitting(true);
@@ -195,9 +167,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         const { data } = await api.post('/auth/verify-otp', {
           phone: cleanPhone,
           otp: cleanOtp,
-          name: cleanName || undefined,
+          name: cleanName,
           email: cleanEmail || undefined,
-          password: password || undefined,
         });
         resData = data.data;
       } catch (verifyErr) {
@@ -205,9 +176,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         try {
           const { data } = await api.post('/auth/quick-login', {
             phone: cleanPhone,
-            name: cleanName || undefined,
+            name: cleanName,
             email: cleanEmail || undefined,
-            password: password || undefined,
           });
           resData = data.data;
         } catch (quickErr) {
@@ -217,7 +187,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
 
       const userObj = resData?.user || {
         _id: 'user_' + Date.now(),
-        name: cleanName || 'Customer',
+        name: cleanName,
         phone: cleanPhone,
         email: cleanEmail || `${cleanPhone}@mobile.ama-yaar.com`,
         role: 'customer',
@@ -259,7 +229,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[840px] max-h-[92vh] overflow-y-auto rounded-[26px] bg-black text-white p-6 sm:p-10 border border-neutral-800 shadow-2xl"
+        className="relative w-full max-w-[840px] overflow-hidden rounded-[26px] bg-black text-white p-6 sm:p-10 border border-neutral-800 shadow-2xl"
       >
         {/* Close Button on Top Right */}
         <button
@@ -271,101 +241,93 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          {/* LEFT COLUMN: AMAYAAR branding & Welcome message */}
+          {/* LEFT COLUMN: AMAYAAR + KwikPass branding & Welcome message */}
           <div className="flex flex-col justify-between py-2 sm:py-4">
-            {/* Brand Header */}
-            <div>
-              <span className="font-sans text-2xl sm:text-3xl font-black uppercase tracking-tight text-white block leading-none">
-                AMAYAAR
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-black tracking-[0.25em] uppercase text-neutral-400 block mt-1">
-                STYLE KA LAFDA
-              </span>
+            {/* Brand Header with Divider & KwikPass */}
+            <div className="flex items-center gap-3">
+              <div>
+                <span className="font-sans text-2xl sm:text-3xl font-black uppercase tracking-tight text-white block leading-none">
+                  AMAYAAR
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-black tracking-[0.25em] uppercase text-neutral-400 block mt-1">
+                  STYLE KA LAFDA
+                </span>
+              </div>
+              <div className="h-8 w-[1.5px] bg-neutral-700 mx-1.5" />
+              <div className="flex items-center gap-1.5 text-white font-bold text-sm tracking-wide">
+                <span className="text-white font-black text-sm sm:text-base">Kwik</span>
+                <span className="text-[#facc15] text-base leading-none font-black">⚡</span>
+                <span className="text-white font-black text-sm sm:text-base">Pass</span>
+              </div>
             </div>
 
             {/* Welcome Tagline */}
-            <div className="mt-8 sm:mt-12">
+            <div className="mt-8 sm:mt-14">
               <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.28em] text-neutral-400 block mb-2">
-                {step === 'phone'
-                  ? 'WELCOME,'
-                  : isExistingUser
-                  ? 'WELCOME BACK,'
-                  : 'CREATE ACCOUNT,'}
+                FAST &amp; SECURE SIGN IN
               </span>
               <h2 className="text-2xl sm:text-3xl lg:text-[32px] font-black tracking-tight text-white leading-[1.18]">
-                {step === 'phone'
-                  ? 'Sign in or Register in seconds!'
-                  : isExistingUser
-                  ? 'Verify OTP & Sign In'
-                  : 'Complete Registration'}
+                Unlock instant access to exclusive fits!
               </h2>
               <p className="mt-3 text-xs text-neutral-400 leading-relaxed font-normal hidden sm:block">
-                {step === 'phone'
-                  ? 'Enter your mobile number, solve the quick captcha verification, and get instant access with auto-filled OTP.'
-                  : isExistingUser
-                  ? 'We auto-filled the OTP code sent to your phone. Click verify to jump back in!'
-                  : 'Provide your name, email, and password to complete registration.'}
+                Enter your mobile number to get instant OTP. No complicated passwords required.
               </p>
-            </div>
-
-            {/* Step Indicators */}
-            <div className="mt-8 hidden sm:flex items-center gap-2">
-              <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 'phone' ? 'w-8 bg-white' : 'w-4 bg-emerald-500'}`} />
-              <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 'otp' ? 'w-8 bg-white' : 'w-4 bg-neutral-700'}`} />
             </div>
           </div>
 
           {/* RIGHT COLUMN: White Card Container */}
-          <div className="rounded-[22px] bg-white p-6 sm:p-8 text-neutral-900 shadow-xl flex flex-col justify-center min-h-[360px]">
+          <div className="rounded-[22px] bg-white p-6 sm:p-8 text-neutral-900 shadow-xl flex flex-col justify-center min-h-[380px]">
             {success ? (
               <div className="flex flex-col items-center justify-center py-6 text-center">
                 <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-4 animate-bounce">
                   <CheckCircle2 className="h-9 w-9 stroke-[2.5]" />
                 </div>
-                <h3 className="text-xl font-black text-neutral-900">
-                  Welcome, {verifiedUser?.name || 'Shopper'}!
+                <h3 className="text-xl font-black text-neutral-900 tracking-tight">
+                  Welcome to AMA YAAR!
                 </h3>
-                <p className="text-xs text-neutral-500 mt-1.5 font-medium">
-                  Mobile verified successfully. Logging you in...
+                <p className="text-xs text-neutral-500 font-medium mt-1">
+                  {verifiedUser?.name ? `Signed in as ${verifiedUser.name}` : 'You are now signed in'}
                 </p>
+                <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-neutral-600 bg-neutral-100 px-3 py-1.5 rounded-full">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                  Exclusive member deals activated
+                </div>
               </div>
             ) : step === 'phone' ? (
-              /* STEP 1: MOBILE + CAPTCHA */
+              /* STEP 1: MOBILE NUMBER + CAPTCHA */
               <div>
-                <div className="mb-4">
-                  <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
-                    Enter Mobile Number
-                  </h3>
-                  <p className="text-xs text-neutral-500 font-medium mt-1">
-                    Sign in or create account with instant OTP
-                  </p>
-                </div>
+                <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
+                  Enter Mobile Number
+                </h3>
+                <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                  Sign in or create account with instant OTP
+                </p>
 
                 {error && (
-                  <div className="mb-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
+                  <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
                     {error}
                   </div>
                 )}
 
-                <form onSubmit={handleSendOtp} className="space-y-4">
-                  {/* Mobile Input */}
+                <form onSubmit={handleSendOtp} className="mt-4 space-y-3.5">
+                  {/* Phone Input with +91 prefix */}
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
                       Mobile Number
                     </label>
-                    <div className="flex items-center rounded-xl border border-neutral-300 overflow-hidden focus-within:border-black focus-within:ring-1 focus-within:ring-black transition">
-                      <span className="flex items-center gap-1 bg-neutral-100 px-3 py-3 text-xs font-black text-neutral-700 border-r border-neutral-200 shrink-0">
-                        🇮🇳 +91
-                      </span>
+                    <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black focus-within:ring-1 focus-within:ring-black transition overflow-hidden">
+                      <div className="bg-neutral-100 px-3 py-2.5 text-xs font-black text-neutral-700 border-r border-neutral-200 shrink-0">
+                        IN +91
+                      </div>
                       <input
                         type="tel"
                         maxLength={10}
                         placeholder="98765 43210"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-3.5 py-3 text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
-                        autoFocus
+                        className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
                         required
+                        autoFocus
                       />
                     </div>
                   </div>
@@ -373,34 +335,23 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Captcha Verification */}
                   <CaptchaBox
                     value={captchaInput}
-                    onChange={(val) => {
-                      setCaptchaInput(val);
-                      if (captchaError) setCaptchaError('');
-                    }}
-                    onCodeChange={setCaptchaCode}
+                    onChange={setCaptchaInput}
+                    onCodeGenerated={setCaptchaCode}
                     error={captchaError}
-                    isDark={false}
                   />
 
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting || phone.length !== 10 || !captchaInput}
-                    className="w-full rounded-xl bg-black py-3.5 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    disabled={isSubmitting || phone.length !== 10 || captchaInput.length < 5}
+                    className="w-full rounded-xl bg-black py-3.5 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? (
-                      'Sending OTP...'
-                    ) : (
-                      <>
-                        <span>Get OTP</span>
-                        <span className="text-base">&rarr;</span>
-                      </>
-                    )}
+                    {isSubmitting ? 'Sending OTP...' : 'GET OTP →'}
                   </button>
                 </form>
               </div>
             ) : (
-              /* STEP 2: AUTO-FILLED OTP + FULL NAME */
+              /* STEP 2: AUTO-FILLED OTP + FULL NAME + OPTIONAL EMAIL */
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <button
@@ -421,12 +372,10 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
 
                 <div className="mb-3">
                   <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
-                    {isExistingUser ? 'Verify & Sign In' : 'Create Account'}
+                    Verify &amp; Sign In
                   </h3>
                   <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                    {isExistingUser
-                      ? 'We sent a 4-digit code to your phone'
-                      : 'Provide your email & password to enable email sign-in'}
+                    We sent a 4-digit code to your phone
                   </p>
                 </div>
                 {error && (
@@ -459,7 +408,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Full Name Input */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Full Name {!isExistingUser && <span className="text-rose-500">*</span>}
+                      Full Name
                     </label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
@@ -469,57 +418,27 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
-                        required={!isExistingUser}
+                        required
                       />
                     </div>
                   </div>
 
                   {/* Email Input (Optional) */}
-                  {!isExistingUser && (
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                        Email Address <span className="text-neutral-400 font-normal">(Optional)</span>
-                      </label>
-                      <div className="relative">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                        <input
-                          type="email"
-                          placeholder="you@example.com (optional)"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
-                        />
-                      </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
+                      Email Address <span className="text-neutral-400 font-normal">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                      <input
+                        type="email"
+                        placeholder="you@example.com (optional)"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
+                      />
                     </div>
-                  )}
-
-                  {/* Password Input (Required when registering so user can log in with Email + Password!) */}
-                  {!isExistingUser && (
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                        Password (Min 6 chars) <span className="text-rose-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="Create account password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full rounded-xl border border-neutral-300 pl-10 pr-10 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
-                          required
-                          minLength={6}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition cursor-pointer"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  </div>
 
                   {/* Resend Link */}
                   <div className="flex items-center justify-between text-[11px] pt-0.5">
@@ -543,18 +462,10 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={
-                      isSubmitting ||
-                      otp.length < 4 ||
-                      (!isExistingUser && (!name.trim() || password.length < 6))
-                    }
+                    disabled={isSubmitting || otp.length < 4 || !name.trim()}
                     className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting
-                      ? 'Processing...'
-                      : isExistingUser
-                      ? 'VERIFY & SIGN IN'
-                      : 'VERIFY & CREATE ACCOUNT'}
+                    {isSubmitting ? 'Verifying...' : 'VERIFY & SIGN IN'}
                   </button>
                 </form>
               </div>
