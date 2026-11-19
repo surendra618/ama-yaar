@@ -189,6 +189,12 @@ export default function CheckoutPage() {
   const [checkingShipping, setCheckingShipping] = useState(false);
 
   useEffect(() => {
+    if (step === 3) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+  }, [step]);
+
+  useEffect(() => {
     if (selectedAddr?.pincode && String(selectedAddr.pincode).trim().length === 6) {
       setCheckingShipping(true);
       api
@@ -392,6 +398,7 @@ export default function CheckoutPage() {
       dispatch(resetCart());
       dispatch(clearCart());
       setStep(3); // Direct COD success
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       return;
     }
 
@@ -443,6 +450,7 @@ export default function CheckoutPage() {
           dispatch(resetCart());
           dispatch(clearCart());
           setStep(3);
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         },
         prefill: {
           name: selectedAddr?.fullName || user?.name || '',
