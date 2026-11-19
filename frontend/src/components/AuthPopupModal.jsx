@@ -335,7 +335,11 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Captcha Verification */}
                   <CaptchaBox
                     value={captchaInput}
-                    onChange={setCaptchaInput}
+                    onChange={(val) => {
+                      setCaptchaInput(val);
+                      setCaptchaError('');
+                    }}
+                    onCodeChange={setCaptchaCode}
                     onCodeGenerated={setCaptchaCode}
                     error={captchaError}
                   />

@@ -15,12 +15,18 @@ export default function CaptchaBox({
   value = '',
   onChange,
   onCodeChange,
+  onCodeGenerated,
   isDark = false,
   error = '',
 }) {
   const canvasRef = useRef(null);
   const [code, setCode] = useState(() => generateRandomCode(5));
   const [isRotating, setIsRotating] = useState(false);
+
+  const notifyCode = useCallback((newCode) => {
+    if (onCodeChange) onCodeChange(newCode);
+    if (onCodeGenerated) onCodeGenerated(newCode);
+  }, [onCodeChange, onCodeGenerated]);
 
   const drawCaptcha = useCallback((text) => {
     const canvas = canvasRef.current;
@@ -91,14 +97,14 @@ export default function CaptchaBox({
     setIsRotating(true);
     const newCode = generateRandomCode(5);
     setCode(newCode);
-    if (onCodeChange) onCodeChange(newCode);
+    notifyCode(newCode);
     setTimeout(() => setIsRotating(false), 400);
-  }, [onCodeChange]);
+  }, [notifyCode]);
 
   useEffect(() => {
     drawCaptcha(code);
-    if (onCodeChange) onCodeChange(code);
-  }, [code, drawCaptcha, onCodeChange]);
+    notifyCode(code);
+  }, [code, drawCaptcha, notifyCode]);
 
   return (
     <div className="space-y-1.5 w-full">
