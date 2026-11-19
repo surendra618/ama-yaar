@@ -165,7 +165,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    if (!isExistingUser && (!password || password.length < 6)) {
+    if (password && password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
@@ -460,32 +460,29 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   </div>
 
                   {/* Password Input */}
-                  {!isExistingUser && (
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                        Password (Min 6 chars) <span className="text-rose-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="Create account password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full rounded-xl border border-neutral-300 pl-10 pr-10 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
-                          required
-                          minLength={6}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition cursor-pointer"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
+                      Password (Min 6 chars) <span className="text-neutral-400 font-normal">(Optional for Sign In)</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter or create password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-10 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
-                  )}
+                  </div>
 
                   {/* Resend Link */}
                   <div className="flex items-center justify-between text-[11px] pt-0.5">
@@ -513,7 +510,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                       isSubmitting ||
                       otp.length < 4 ||
                       !name.trim() ||
-                      (!isExistingUser && (!password || password.length < 6))
+                      (password && password.length < 6)
                     }
                     className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >

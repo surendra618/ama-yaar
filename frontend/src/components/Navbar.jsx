@@ -1012,7 +1012,7 @@ export default function Navbar() {
                 {isAuthenticated ? (
                   <div className="space-y-2">
                     <Link
-                      to="/account/profile"
+                      to="/account"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-neutral-800 bg-white border border-neutral-200 hover:border-black transition"
                     >
