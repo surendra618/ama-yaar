@@ -373,7 +373,7 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
   useEffect(() => {
     if (!isInstagram && modalVideoRef.current) {
       modalVideoRef.current.muted = isMuted;
-      modalVideoRef.current.play().catch(() => {});
+      modalVideoRef.current.play().catch(() => { });
     }
   }, [reel, isMuted, isInstagram]);
 
@@ -883,7 +883,7 @@ export default function HomePage() {
           );
         }
       };
-    } catch (_) {}
+    } catch (_) { }
 
     window.addEventListener("reels_setting_changed", handleSettingChange);
     window.addEventListener("storage", handleSettingChange);
@@ -915,7 +915,7 @@ export default function HomePage() {
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     loadReels();
@@ -929,22 +929,22 @@ export default function HomePage() {
   const displayReels =
     dbReels.length > 0
       ? dbReels.map((r, idx) => ({
-          id: r._id || idx,
-          productId: r.product?._id || r.product || null,
-          product2Id: r.product2?._id || r.product2 || null,
-          product2Title: r.product2?.name || "",
-          title: r.product?.name || r.title,
-          price: r.product?.price || r.price,
-          mrp: r.product?.mrp || r.mrp,
-          discount: r.discount || "50% OFF",
-          views: r.views || "15.2K views",
-          badge: r.badge || "Top Selling",
-          poster: r.poster ? getMediaUrl(r.poster) : r.product?.images?.[0] || r.poster,
-          altPoster: r.altPoster
-            ? getMediaUrl(r.altPoster)
-            : r.product2?.images?.[0] || r.altPoster || "/model04.png",
-          video: r.video ? getMediaUrl(r.video) : r.video,
-        }))
+        id: r._id || idx,
+        productId: r.product?._id || r.product || null,
+        product2Id: r.product2?._id || r.product2 || null,
+        product2Title: r.product2?.name || "",
+        title: r.product?.name || r.title,
+        price: r.product?.price || r.price,
+        mrp: r.product?.mrp || r.mrp,
+        discount: r.discount || "50% OFF",
+        views: r.views || "15.2K views",
+        badge: r.badge || "Top Selling",
+        poster: r.poster ? getMediaUrl(r.poster) : r.product?.images?.[0] || r.poster,
+        altPoster: r.altPoster
+          ? getMediaUrl(r.altPoster)
+          : r.product2?.images?.[0] || r.altPoster || "/model04.png",
+        video: r.video ? getMediaUrl(r.video) : r.video,
+      }))
       : REEL_ITEMS;
 
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -958,17 +958,17 @@ export default function HomePage() {
   const displaySlides =
     activeBanners.length > 0
       ? activeBanners.map((b) => ({
-          bgImage: b.image ? getMediaUrl(b.image) : HERO_SLIDES[0].bgImage,
-          eyebrow: b.badge || "Featured Collection 2026",
-          title1: b.title || "GEAR UP",
-          title2: "",
-          titleHighlight: "",
-          subtitle:
-            b.subtitle || "Discover premium fits crafted for everyday impact.",
-          accentColor: "#facc15",
-          link: b.link || "/products",
-          buttonText: b.buttonText || "SHOP NOW",
-        }))
+        bgImage: b.image ? getMediaUrl(b.image) : HERO_SLIDES[0].bgImage,
+        eyebrow: b.badge || "Featured Collection 2026",
+        title1: b.title || "GEAR UP",
+        title2: "",
+        titleHighlight: "",
+        subtitle:
+          b.subtitle || "Discover premium fits crafted for everyday impact.",
+        accentColor: "#facc15",
+        link: b.link || "/products",
+        buttonText: b.buttonText || "SHOP NOW",
+      }))
       : HERO_SLIDES;
 
   const activeSlide =
@@ -1089,26 +1089,26 @@ export default function HomePage() {
 
   const displayCardSliders = (cardSliders && cardSliders.length > 0)
     ? cardSliders.map((c, idx) => {
-        const cardImg = c.image
-          ? getMediaUrl(c.image)
-          : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
-        return {
-          id: c._id || idx,
-          name: c.title || c.name || 'Category',
-          subtitle: c.subtitle,
-          image: cardImg,
-          fallback: CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.fallback || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80',
-          link: c.link || (c.slug ? `/products?category=${c.slug}` : '/products'),
-          badge: c.badge,
-          cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
-        };
-      })
-    : displayCategories.map((item, idx) => ({
-        ...item,
-        id: item._id || item.slug || idx,
-        link: item.link || `/products?category=${item.slug || ''}`,
+      const cardImg = c.image
+        ? getMediaUrl(c.image)
+        : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
+      return {
+        id: c._id || idx,
+        name: c.title || c.name || 'Category',
+        subtitle: c.subtitle,
+        image: cardImg,
+        fallback: CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.fallback || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80',
+        link: c.link || (c.slug ? `/products?category=${c.slug}` : '/products'),
+        badge: c.badge,
         cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
-      }));
+      };
+    })
+    : displayCategories.map((item, idx) => ({
+      ...item,
+      id: item._id || item.slug || idx,
+      link: item.link || `/products?category=${item.slug || ''}`,
+      cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
+    }));
 
   useEffect(() => {
     AOS.refresh();
@@ -1125,9 +1125,8 @@ export default function HomePage() {
               key={slide.bgImage || sIdx}
               src={slide.bgImage}
               alt={slide.title1 || "Hero slide"}
-              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ease-in-out ${
-                isActive ? "opacity-100 z-0" : "opacity-0 pointer-events-none"
-              }`}
+              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ease-in-out ${isActive ? "opacity-100 z-0" : "opacity-0 pointer-events-none"
+                }`}
             />
           );
         })}
@@ -1191,11 +1190,10 @@ export default function HomePage() {
                   <button
                     key={sIdx}
                     onClick={() => setCurrentSlide(sIdx)}
-                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                      isActive
-                        ? "w-7 bg-white shadow-xs"
-                        : "w-2 bg-white/40 hover:bg-white/70"
-                    }`}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${isActive
+                      ? "w-7 bg-white shadow-xs"
+                      : "w-2 bg-white/40 hover:bg-white/70"
+                      }`}
                     aria-label={`Go to slide ${sIdx + 1}`}
                   />
                 );
@@ -1367,34 +1365,34 @@ export default function HomePage() {
 
               const productItem = p?._id
                 ? {
-                    ...p,
-                    images:
-                      p.images && p.images.length > 0
-                        ? p.images
-                        : [
-                            localImages[i % localImages.length],
-                            localImages[(i + 1) % localImages.length],
-                          ],
-                  }
+                  ...p,
+                  images:
+                    p.images && p.images.length > 0
+                      ? p.images
+                      : [
+                        localImages[i % localImages.length],
+                        localImages[(i + 1) % localImages.length],
+                      ],
+                }
                 : {
-                    _id: `sample-${i + 1}`,
-                    name: sampleNames[i % sampleNames.length],
-                    price: [
-                      499, 999, 599, 699, 1299, 549, 649, 1799, 1199, 450, 699,
-                      799, 599, 999, 899,
-                    ][i % 15],
-                    mrp: [
-                      999, 1999, 1199, 1399, 2499, 1099, 1299, 3499, 2399, 899,
-                      1399, 1599, 1199, 1999, 1799,
-                    ][i % 15],
-                    discount: 50,
-                    brand: "AMA YAAR",
-                    category: { name: "OVERSIZED FIT" },
-                    images: [
-                      localImages[i % localImages.length],
-                      localImages[(i + 1) % localImages.length],
-                    ],
-                  };
+                  _id: `sample-${i + 1}`,
+                  name: sampleNames[i % sampleNames.length],
+                  price: [
+                    499, 999, 599, 699, 1299, 549, 649, 1799, 1199, 450, 699,
+                    799, 599, 999, 899,
+                  ][i % 15],
+                  mrp: [
+                    999, 1999, 1199, 1399, 2499, 1099, 1299, 3499, 2399, 899,
+                    1399, 1599, 1199, 1999, 1799,
+                  ][i % 15],
+                  discount: 50,
+                  brand: "AMA YAAR",
+                  category: { name: "OVERSIZED FIT" },
+                  images: [
+                    localImages[i % localImages.length],
+                    localImages[(i + 1) % localImages.length],
+                  ],
+                };
 
               return (
                 <motion.div
@@ -1517,11 +1515,11 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         {/* 8. Customer reviews with AOS Animation & Functional Scroll */}
-        <section className="pt-8 pb-4 sm:pt-10 sm:pb-6 overflow-hidden">
+        <section className="pt-8 pb-3 sm:pt-8 sm:pb-4 overflow-hidden">
           <div
             data-aos="fade-up"
             data-aos-duration="600"
-            className="mb-8 flex items-center justify-between gap-4"
+            className="mb-4 flex items-center justify-between gap-4"
           >
             <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
               <h2 className="text-xl sm:text-2xl lg:text-[28px] font-black uppercase tracking-tight text-black font-sans leading-none">
@@ -1557,7 +1555,7 @@ export default function HomePage() {
 
           <div
             id="customer-reviews-rail"
-            className="flex gap-5 overflow-x-auto pt-3 pb-6 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth items-stretch"
+            className="flex gap-5 overflow-x-auto pt-2 pb-3 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth items-stretch"
           >
             {REVIEWS.map((r, idx) => (
               <motion.div
@@ -1654,7 +1652,7 @@ export default function HomePage() {
       </div>
 
       {/* 9. Newsletter floating card */}
-      <section className="bg-white pt-0 pb-6 sm:pt-2 sm:pb-8 lg:pb-8 px-3 sm:px-6 lg:px-12">
+      <section className="bg-white pt-6 pb-8 sm:pt-8 sm:pb-10 lg:pt-10 lg:pb-12 px-3 sm:px-6 lg:px-12">
         <div className="mx-auto max-w-[1480px] bg-black rounded-xl sm:rounded-2xl p-4 sm:p-7 lg:px-14 lg:py-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-8 shadow-sm">
           {/* Left: heading */}
           <div className="text-white flex-1 text-center md:text-left">
