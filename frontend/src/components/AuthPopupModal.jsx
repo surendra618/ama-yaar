@@ -165,7 +165,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    if (password && password.length < 6) {
+    if (!password || password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
@@ -462,16 +462,17 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Password Input */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Password (Min 6 chars) <span className="text-neutral-400 font-normal">(Optional for Sign In)</span>
+                      Password (Min 6 chars) <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                       <input
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Enter or create password"
+                        placeholder="Enter password (min 6 characters)"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full rounded-xl border border-neutral-300 pl-10 pr-10 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
+                        required
                         minLength={6}
                       />
                       <button
@@ -510,15 +511,12 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                       isSubmitting ||
                       otp.length < 4 ||
                       !name.trim() ||
-                      (password && password.length < 6)
+                      !password ||
+                      password.length < 6
                     }
                     className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting
-                      ? 'Processing...'
-                      : isExistingUser
-                      ? 'VERIFY & SIGN IN'
-                      : 'VERIFY & CREATE ACCOUNT'}
+                    {isSubmitting ? 'Processing...' : 'VERIFY & SIGN IN'}
                   </button>
                 </form>
               </div>

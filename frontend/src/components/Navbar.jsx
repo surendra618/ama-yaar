@@ -567,15 +567,15 @@ export default function Navbar() {
               items:
                 children.length > 0
                   ? children.map((ch) => ({
-                      name: ch.name,
-                      to: `/products?category=${ch.slug}`,
-                    }))
+                    name: ch.name,
+                    to: `/products?category=${ch.slug}`,
+                  }))
                   : [
-                      {
-                        name: `Explore ${root.name}`,
-                        to: `/products?category=${root.slug}`,
-                      },
-                    ],
+                    {
+                      name: `Explore ${root.name}`,
+                      to: `/products?category=${root.slug}`,
+                    },
+                  ],
             });
           }
         });
@@ -666,11 +666,10 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`z-50 w-full transition-all duration-300 ${
-          isHome
+        className={`z-50 w-full transition-all duration-300 ${isHome
             ? "fixed top-0 inset-x-0 bg-black/10 backdrop-blur-[1px] text-white border-b border-transparent shadow-none"
             : "sticky top-0 bg-neutral-950 text-white border-b border-transparent shadow-xs"
-        }`}
+          }`}
       >
         {/* Main Nav Bar with container padding */}
         <nav className="relative">
@@ -715,7 +714,7 @@ export default function Navbar() {
               >
                 <Search className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
               </button>
-              
+
 
               {/* Notifications */}
               {isAuthenticated && (
@@ -873,7 +872,7 @@ export default function Navbar() {
                 )}
               </button>
 
-              
+
             </div>
           </div>
         </nav>
@@ -1081,7 +1080,7 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      
+
       {/* Right-Side Search Sidebar Drawer (Bonkers Corner Style) */}
       <AnimatePresence>
         {searchOpen && (

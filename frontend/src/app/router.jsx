@@ -52,7 +52,7 @@ export const router = createBrowserRouter([
       { path: '/blog', element: <BlogPage /> },
       { path: '/blogs', element: <BlogPage /> },
       { path: '/stories', element: <BlogPage /> },
-      
+
       // Redirects for direct navigation or old URLs
       { path: '/orders', element: <Navigate to="/account/orders" replace /> },
       { path: '/wishlist', element: <Navigate to="/account/wishlist" replace /> },
@@ -64,14 +64,14 @@ export const router = createBrowserRouter([
         path: '/account',
         element: <AccountLayout />,
         children: [
-          { index: true,           element: <AccountHubPage /> },
-          { path: 'profile',       element: <ProfilePage /> },
-          { path: 'addresses',     element: <AddressesPage /> },
-          { path: 'orders',        element: <MyOrdersPage /> },
-          { path: 'wishlist',      element: <WishlistPage /> },
-          { path: 'coupons',       element: <CouponsPage /> },
+          { index: true, element: <AccountHubPage /> },
+          { path: 'profile', element: <ProfilePage /> },
+          { path: 'addresses', element: <AddressesPage /> },
+          { path: 'orders', element: <MyOrdersPage /> },
+          { path: 'wishlist', element: <WishlistPage /> },
+          { path: 'coupons', element: <CouponsPage /> },
           { path: 'notifications', element: <NotificationsPage /> },
-          { path: 'returns',       element: <ReturnRequestPage /> },
+          { path: 'returns', element: <ReturnRequestPage /> },
         ],
       },
     ],
@@ -79,10 +79,10 @@ export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: '/login',            element: <LoginPage /> },
-      { path: '/register',         element: <RegisterPage /> },
-      { path: '/forgot-password',  element: <ForgotPasswordPage /> },
-      { path: '/reset-password',   element: <ResetPasswordPage /> },
+      { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
     ],
   },
 ]);
