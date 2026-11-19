@@ -50,7 +50,7 @@ export default function Footer() {
 
             <div className="mt-6 flex items-center justify-center md:justify-start gap-3">
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/profile.php?id=61593692763954"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
@@ -59,7 +59,7 @@ export default function Footer() {
                 <FacebookIcon className="h-4 w-4" />
               </a>
               <a
-                href="https://instagram.com/amayaar.in"
+                href="https://www.instagram.com/amayaar.in"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
@@ -68,7 +68,7 @@ export default function Footer() {
                 <InstagramIcon className="h-4 w-4" />
               </a>
               <a
-                href="https://youtube.com"
+                href="https://www.youtube.com/@Amayaarofficial"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="YouTube"
