@@ -169,13 +169,13 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
 
-    // On registration (new user), name, email and password are required
+    // On registration (new user), name and password are required; email is optional
     if (!isExistingUser) {
       if (!cleanName) {
         setError('Please enter your full name');
         return;
       }
-      if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      if (cleanEmail && (!cleanEmail.includes('@') || !cleanEmail.includes('.'))) {
         setError('Please enter a valid email address');
         return;
       }
@@ -474,21 +474,20 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                     </div>
                   </div>
 
-                  {/* Email Input (Required when registering!) */}
+                  {/* Email Input (Optional) */}
                   {!isExistingUser && (
                     <div>
                       <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                        Email Address <span className="text-rose-500">*</span>
+                        Email Address <span className="text-neutral-400 font-normal">(Optional)</span>
                       </label>
                       <div className="relative">
                         <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                         <input
                           type="email"
-                          placeholder="you@example.com"
+                          placeholder="you@example.com (optional)"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
-                          required
                         />
                       </div>
                     </div>
