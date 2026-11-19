@@ -29,6 +29,7 @@ import {
 import { fetchAddresses } from '../../account/accountSlice';
 import AuthPopupModal from '../../../components/AuthPopupModal';
 import { getMediaUrl, getFallbackForName } from '../../../utils/mediaUrl';
+import api from '../../../lib/axios';
 
 export default function ZeptoCartDrawer() {
   const dispatch = useDispatch();
@@ -51,6 +52,19 @@ export default function ZeptoCartDrawer() {
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [activeCoupons, setActiveCoupons] = useState([]);
+
+  useEffect(() => {
+    if (isDrawerOpen) {
+      api
+        .get('/coupons/active')
+        .then((res) => {
+          const list = res.data?.data || res.data || [];
+          setActiveCoupons(Array.isArray(list) ? list : []);
+        })
+        .catch(() => {});
+    }
+  }, [isDrawerOpen]);
 
   useEffect(() => {
     if (isDrawerOpen && isAuthenticated) {
@@ -365,18 +379,35 @@ export default function ZeptoCartDrawer() {
                       </button>
                     </div>
 
-                    {/* Quick 1-click active coupons */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {['WELCOME50', 'FREESHIP', 'AMA20'].map((code) => (
-                        <button
-                          key={code}
-                          onClick={() => handleApplyCoupon(code)}
-                          className="rounded-md border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-black hover:border-black transition"
-                        >
-                          +{code}
-                        </button>
-                      ))}
-                    </div>
+                    {/* Quick 1-click active coupons from live database */}
+                    {activeCoupons.length > 0 && (
+                      <div className="space-y-1.5 pt-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
+                          Available Coupons ({activeCoupons.length}):
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {activeCoupons.map((c) => (
+                            <button
+                              key={c._id || c.code}
+                              onClick={() => handleApplyCoupon(c.code)}
+                              className="rounded-md border border-neutral-200 bg-neutral-100 hover:bg-neutral-200/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-black hover:border-black transition active:scale-95 flex items-center gap-1 shadow-2xs"
+                              title={
+                                c.discountType === 'percentage'
+                                  ? `${c.discountValue}% OFF (Min: ₹${c.minOrderValue || 0})`
+                                  : c.discountType === 'fixed'
+                                  ? `₹${c.discountValue} OFF (Min: ₹${c.minOrderValue || 0})`
+                                  : 'Free Delivery'
+                              }
+                            >
+                              <span>+{c.code}</span>
+                              <span className="text-[9px] text-neutral-500 font-medium">
+                                ({c.discountType === 'percentage' ? `${c.discountValue}%` : c.discountType === 'fixed' ? `₹${c.discountValue}` : 'Free Ship'})
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {couponError && (
                       <p className="text-[11px] font-bold text-rose-600 mt-1">

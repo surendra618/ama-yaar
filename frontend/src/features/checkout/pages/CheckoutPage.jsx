@@ -21,6 +21,7 @@ import {
   LocateFixed,
   Loader2,
   Search,
+  Tag,
 } from 'lucide-react';
 import api from '../../../lib/axios';
 import { INDIA_STATES_CITIES, ALL_INDIAN_STATES } from '../../../data/indiaLocations';
@@ -31,7 +32,7 @@ import {
   deleteAddress,
   setDefaultAddress,
 } from '../../account/accountSlice';
-import { fetchCart, resetCart, clearCart, closeDrawer } from '../../cart/cartSlice';
+import { fetchCart, resetCart, clearCart, closeDrawer, applyCoupon, removeCoupon } from '../../cart/cartSlice';
 import { createOrder } from '../../orders/ordersSlice';
 import Loader from '../../../components/Loader';
 import AuthPopupModal from '../../../components/AuthPopupModal';
@@ -42,7 +43,7 @@ export default function CheckoutPage() {
   const dispatch = useDispatch();
 
   const { addresses = [] } = useSelector((state) => state.account || {});
-  const { items = [], summary = {} } = useSelector((state) => state.cart || {});
+  const { items = [], summary = {}, coupon, couponError, actionLoading } = useSelector((state) => state.cart || {});
   const { currentOrder, orderPlacing } = useSelector((state) => state.orders || {});
   const { isAuthenticated, user } = useSelector((state) => state.auth || {});
 
@@ -53,7 +54,19 @@ export default function CheckoutPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [activeCoupons, setActiveCoupons] = useState([]);
   const selectedAddr = addresses.find((a) => a._id === selectedAddressId) || addresses[0];
+
+  useEffect(() => {
+    api
+      .get('/coupons/active')
+      .then((res) => {
+        const list = res.data?.data || res.data || [];
+        setActiveCoupons(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {});
+  }, []);
 
   // Address Form State
   const [addressForm, setAddressForm] = useState({
@@ -950,6 +963,97 @@ export default function CheckoutPage() {
                   <span className="font-black text-black shrink-0 text-xs">₹{(i.price * i.quantity).toLocaleString('en-IN')}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Coupons & Promo Widget */}
+            <div className="my-4 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-3.5 space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-black">
+                <Tag className="h-3.5 w-3.5 text-black" />
+                <span>Promo Coupon</span>
+              </div>
+
+              {coupon ? (
+                <div className="flex items-center justify-between rounded-lg bg-emerald-50 p-2.5 border border-emerald-200">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <div>
+                      <span className="text-xs font-black uppercase text-emerald-900 tracking-wider">
+                        {coupon.code} Applied
+                      </span>
+                      <p className="text-[10px] text-emerald-700 font-medium">
+                        You saved ₹{summary.couponDiscount} on this order!
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => dispatch(removeCoupon())}
+                    className="text-[11px] font-black uppercase text-rose-600 hover:underline cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCodeInput}
+                      onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                      placeholder="ENTER COUPON CODE"
+                      className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-bold uppercase placeholder:text-neutral-400 focus:border-black focus:outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        if (couponCodeInput.trim()) {
+                          dispatch(applyCoupon(couponCodeInput.trim().toUpperCase()));
+                          setCouponCodeInput('');
+                        }
+                      }}
+                      disabled={actionLoading || !couponCodeInput.trim()}
+                      className="rounded-lg bg-black px-3.5 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition disabled:opacity-40 cursor-pointer"
+                    >
+                      Apply
+                    </button>
+                  </div>
+
+                  {/* Active Coupons List */}
+                  {activeCoupons.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
+                        Tap to Apply Active Coupon ({activeCoupons.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activeCoupons.map((c) => (
+                          <button
+                            key={c._id || c.code}
+                            type="button"
+                            onClick={() => dispatch(applyCoupon(c.code))}
+                            className="rounded-md border border-neutral-200 bg-white hover:bg-neutral-100 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-black hover:border-black transition active:scale-95 flex items-center gap-1 shadow-2xs cursor-pointer"
+                            title={
+                              c.discountType === 'percentage'
+                                ? `${c.discountValue}% OFF (Min: ₹${c.minOrderValue || 0})`
+                                : c.discountType === 'fixed'
+                                ? `₹${c.discountValue} OFF (Min: ₹${c.minOrderValue || 0})`
+                                : 'Free Delivery'
+                            }
+                          >
+                            <span>+{c.code}</span>
+                            <span className="text-[9px] text-neutral-500 font-medium">
+                              ({c.discountType === 'percentage' ? `${c.discountValue}%` : c.discountType === 'fixed' ? `₹${c.discountValue}` : 'Free Ship'})
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {couponError && (
+                    <p className="text-[11px] font-bold text-rose-600 mt-1">
+                      {couponError}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2.5 text-xs text-neutral-600 font-semibold pt-3 border-t border-neutral-100">
