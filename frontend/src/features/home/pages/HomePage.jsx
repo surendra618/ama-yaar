@@ -1517,17 +1517,17 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
         {/* 8. Customer reviews with AOS Animation & Functional Scroll */}
-        <section className="pt-2 pb-0 sm:pt-4 sm:pb-2 overflow-hidden">
+        <section className="pt-8 pb-4 sm:pt-10 sm:pb-6 overflow-hidden">
           <div
             data-aos="fade-up"
             data-aos-duration="600"
-            className="mb-8 flex items-end justify-between gap-4"
+            className="mb-8 flex items-center justify-between gap-4"
           >
-            <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
               <h2 className="text-xl sm:text-2xl lg:text-[28px] font-black uppercase tracking-tight text-black font-sans leading-none">
                 OUR HAPPY
               </h2>
-              <span className="font-script italic text-2xl sm:text-3xl lg:text-[34px] font-normal text-black leading-none self-baseline">
+              <span className="font-script italic text-2xl sm:text-3xl lg:text-[34px] font-normal text-black leading-none">
                 Customers
               </span>
             </div>
