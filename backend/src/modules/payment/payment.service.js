@@ -152,7 +152,7 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
         if (item.product) {
           await Product.findByIdAndUpdate(item.product, {
             $inc: { stock: -item.quantity },
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }
 
@@ -162,7 +162,7 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
         type: 'order',
         title: 'Payment Successful & Order Confirmed!',
         message: `Your payment of ₹${order.total} for order #${order.orderNumber || order._id} was successful.`,
-      }).catch(() => {});
+      }).catch(() => { });
 
       // Notify Admins
       notifyAdmins({
@@ -179,7 +179,7 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
           address: `${order.shippingAddress?.line1 || ''}, ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} - ${order.shippingAddress?.pincode || order.shippingAddress?.postalCode || ''}`,
         }),
         text: `New paid order #${order.orderNumber || order._id} (₹${order.total}) verified via Razorpay`,
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 
