@@ -3,7 +3,9 @@ import api from '../../lib/axios';
 
 export const fetchProducts = createAsyncThunk('products/fetch', async (params, { rejectWithValue }) => {
   try {
-    const { data } = await api.get('/products', { params });
+    const { data } = await api.get('/products', {
+      params: { includeInactive: 'true', ...params },
+    });
     return data.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || err.message);
@@ -12,7 +14,7 @@ export const fetchProducts = createAsyncThunk('products/fetch', async (params, {
 
 export const fetchCategoriesForSelect = createAsyncThunk('products/fetchCategories', async (_, { rejectWithValue }) => {
   try {
-    const { data } = await api.get('/categories');
+    const { data } = await api.get('/categories', { params: { activeOnly: 'false' } });
     return data.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || err.message);
@@ -21,7 +23,7 @@ export const fetchCategoriesForSelect = createAsyncThunk('products/fetchCategori
 
 export const fetchProductById = createAsyncThunk('products/fetchById', async (id, { rejectWithValue }) => {
   try {
-    const { data } = await api.get(`/products/${id}`);
+    const { data } = await api.get(`/products/${id}`, { params: { includeInactive: 'true' } });
     return data.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || err.message);

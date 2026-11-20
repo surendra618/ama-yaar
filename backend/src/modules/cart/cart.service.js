@@ -4,6 +4,21 @@ const Coupon = require('../coupon/coupon.model');
 const ApiError = require('../../utils/ApiError');
 const settingService = require('../setting/setting.service');
 
+function getAvailableStock(product, variant = {}) {
+  if (!product) return 0;
+  if (variant && (variant.size || variant.color) && Array.isArray(product.variants) && product.variants.length > 0) {
+    const matched = product.variants.find((v) => {
+      const matchSize = !variant.size || String(v.size || '').trim().toUpperCase() === String(variant.size || '').trim().toUpperCase();
+      const matchColor = !variant.color || String(v.color || '').trim().toLowerCase() === String(variant.color || '').trim().toLowerCase();
+      return matchSize && matchColor;
+    });
+    if (matched && matched.stock !== undefined) {
+      return Math.max(0, Number(matched.stock) || 0);
+    }
+  }
+  return Math.max(0, Number(product.stock) || 0);
+}
+
 async function calculateSummary(cart, customSettings) {
   let subtotal = 0;
   let mrpTotal = 0;
@@ -14,6 +29,7 @@ async function calculateSummary(cart, customSettings) {
       const p = item.product;
       const price = item.price || p.price;
       const mrp = p.mrp || price;
+      const availableStock = getAvailableStock(p, item.variant);
       const itemSubtotal = price * item.quantity;
       const itemMrpTotal = mrp * item.quantity;
 
@@ -31,9 +47,11 @@ async function calculateSummary(cart, customSettings) {
           mrp: p.mrp,
           stock: p.stock,
           brand: p.brand,
+          variants: p.variants,
         },
         variant: item.variant,
         quantity: item.quantity,
+        maxStock: availableStock,
         price,
         itemSubtotal,
       };
@@ -124,6 +142,13 @@ async function addItem(userId, { productId, quantity = 1, variant = {} }) {
     throw new ApiError(404, 'Product not available');
   }
 
+  const requestedQty = Math.max(1, Number(quantity) || 1);
+  const maxStock = getAvailableStock(product, variant);
+
+  if (maxStock <= 0) {
+    throw new ApiError(400, `Sorry, "${product.name}" is currently out of stock`);
+  }
+
   let cart = await Cart.findOne({ user: userId });
   if (!cart) {
     cart = await Cart.create({ user: userId, items: [] });
@@ -137,13 +162,26 @@ async function addItem(userId, { productId, quantity = 1, variant = {} }) {
   );
 
   if (existingIndex > -1) {
-    cart.items[existingIndex].quantity += Number(quantity);
+    const newTotalQty = cart.items[existingIndex].quantity + requestedQty;
+    if (newTotalQty > maxStock) {
+      throw new ApiError(
+        400,
+        `Cannot add more items. Only ${maxStock} in stock for "${product.name}"${variant.size ? ` (Size: ${variant.size})` : ''}.`
+      );
+    }
+    cart.items[existingIndex].quantity = newTotalQty;
     cart.items[existingIndex].price = product.price;
   } else {
+    if (requestedQty > maxStock) {
+      throw new ApiError(
+        400,
+        `Cannot add ${requestedQty} items. Only ${maxStock} in stock for "${product.name}"${variant.size ? ` (Size: ${variant.size})` : ''}.`
+      );
+    }
     cart.items.push({
       product: productId,
       variant,
-      quantity: Number(quantity),
+      quantity: requestedQty,
       price: product.price,
     });
   }
@@ -156,12 +194,28 @@ async function updateItem(userId, { itemId, quantity }) {
   const cart = await Cart.findOne({ user: userId });
   if (!cart) throw new ApiError(404, 'Cart not found');
 
-  if (Number(quantity) <= 0) {
+  const targetQty = Number(quantity);
+
+  if (targetQty <= 0) {
     cart.items = cart.items.filter((item) => item._id.toString() !== itemId);
   } else {
     const item = cart.items.id(itemId);
     if (!item) throw new ApiError(404, 'Item not found in cart');
-    item.quantity = Number(quantity);
+
+    const product = await Product.findById(item.product);
+    if (!product || !product.isActive) {
+      throw new ApiError(400, 'This product is no longer available');
+    }
+
+    const maxStock = getAvailableStock(product, item.variant);
+    if (targetQty > maxStock) {
+      throw new ApiError(
+        400,
+        `Maximum available stock is ${maxStock} for "${product.name}"${item.variant?.size ? ` (Size: ${item.variant.size})` : ''}`
+      );
+    }
+
+    item.quantity = targetQty;
   }
 
   await cart.save();

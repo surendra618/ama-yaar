@@ -152,7 +152,7 @@ export default function ContactPage() {
           <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#facc15]">
             <Headphones className="h-4 w-4" /> 24/7 CUSTOMER SUPPORT &amp; HELP DESK
           </span>
-          <h1 className="mt-4 font-display text-4xl sm:text-6xl font-black italic uppercase tracking-tight text-white leading-none">
+          <h1 className="mt-4 font-sans text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-tight">
             CONTACT <span className="text-[#facc15]">AMA YAAR</span> SUPPORT
           </h1>
           <p className="mt-4 text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto font-medium uppercase tracking-wider leading-relaxed">

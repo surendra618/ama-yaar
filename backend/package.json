@@ -29,6 +29,7 @@
     "nodemailer": "^6.10.1",
     "razorpay": "^2.9.8",
     "socket.io": "^4.8.4",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {

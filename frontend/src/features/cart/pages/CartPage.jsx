@@ -19,6 +19,7 @@ import {
   applyCoupon,
   removeCoupon,
   clearCouponError,
+  getAvailableStock,
 } from '../cartSlice';
 import { fetchActiveCoupons } from '../../coupons/couponsSlice';
 import Loader from '../../../components/Loader';
@@ -29,7 +30,7 @@ export default function CartPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { items = [], summary = {}, coupon, loading, actionLoading, couponError } = useSelector(
+  const { items = [], summary = {}, coupon, loading, actionLoading, couponError, error: cartError } = useSelector(
     (state) => state.cart || {}
   );
   const { coupons: availableCoupons = [] } = useSelector((state) => state.coupons || {});
@@ -37,6 +38,7 @@ export default function CartPage() {
 
   const [couponInput, setCouponInput] = useState('');
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [stockNotice, setStockNotice] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -136,6 +138,17 @@ export default function CartPage() {
           
           {/* Cart Items List */}
           <div className="lg:col-span-8 space-y-4">
+            {(stockNotice || cartError) && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3.5 text-xs font-bold text-amber-900 flex items-center justify-between shadow-xs">
+                <span>{stockNotice || cartError}</span>
+                <button
+                  onClick={() => setStockNotice(null)}
+                  className="text-xs uppercase font-black text-amber-700 hover:text-amber-950 ml-3 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             {items.map((item) => (
               <div
                 key={item._id}
@@ -192,23 +205,56 @@ export default function CartPage() {
 
                 {/* Quantity Controls & Delete */}
                 <div className="flex items-center justify-between w-full sm:w-auto gap-6 sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-neutral-100">
-                  <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 p-1">
-                    <button
-                      disabled={actionLoading}
-                      onClick={() => dispatch(updateCartItem({ itemId: item._id, quantity: item.quantity - 1 }))}
-                      className="h-7 w-7 rounded-md bg-white text-xs font-black text-black shadow-2xs hover:bg-neutral-200 flex items-center justify-center disabled:opacity-50 transition"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="w-8 text-center text-xs font-black text-black">{item.quantity}</span>
-                    <button
-                      disabled={actionLoading}
-                      onClick={() => dispatch(updateCartItem({ itemId: item._id, quantity: item.quantity + 1 }))}
-                      className="h-7 w-7 rounded-md bg-white text-xs font-black text-black shadow-2xs hover:bg-neutral-200 flex items-center justify-center disabled:opacity-50 transition"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  </div>
+                  {(() => {
+                    const maxStock = item.maxStock ?? getAvailableStock(item.product, item.variant);
+                    const isMaxReached = item.quantity >= maxStock;
+
+                    const handleQty = (delta) => {
+                      setStockNotice(null);
+                      const newQty = item.quantity + delta;
+                      if (newQty <= 0) {
+                        dispatch(removeCartItem(item._id));
+                        return;
+                      }
+                      if (delta > 0 && newQty > maxStock) {
+                        setStockNotice(`Only ${maxStock} items available in stock for ${item.product?.name || 'this item'}.`);
+                        return;
+                      }
+                      dispatch(updateCartItem({ itemId: item._id, quantity: newQty }))
+                        .unwrap()
+                        .catch((err) => {
+                          setStockNotice(typeof err === 'string' ? err : 'Unable to update quantity');
+                        });
+                    };
+
+                    return (
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 p-1">
+                          <button
+                            disabled={actionLoading}
+                            onClick={() => handleQty(-1)}
+                            className="h-7 w-7 rounded-md bg-white text-xs font-black text-black shadow-2xs hover:bg-neutral-200 flex items-center justify-center disabled:opacity-50 transition"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="w-8 text-center text-xs font-black text-black">{item.quantity}</span>
+                          <button
+                            disabled={actionLoading || isMaxReached}
+                            onClick={() => handleQty(1)}
+                            title={isMaxReached ? `Max stock (${maxStock}) reached` : 'Increase quantity'}
+                            className="h-7 w-7 rounded-md bg-white text-xs font-black text-black shadow-2xs hover:bg-neutral-200 flex items-center justify-center disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                        {isMaxReached && (
+                          <span className="text-[10px] font-bold text-amber-600">
+                            Max {maxStock} in stock
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <span className="text-sm font-black text-black min-w-[70px] text-right">
                     ₹{(item.price * item.quantity).toLocaleString('en-IN')}

@@ -178,7 +178,7 @@ export default function BlogPage() {
           <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#e11d48]">
             <BookOpen className="h-4 w-4" /> AMA YAAR JOURNAL &amp; LOOKBOOKS
           </span>
-          <h1 className="mt-4 font-display text-4xl sm:text-6xl font-black italic uppercase tracking-tight text-white leading-none">
+          <h1 className="mt-4 font-sans text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-tight">
             STREETWEAR <span className="text-[#e11d48]">STORIES &amp; CULTURE</span>
           </h1>
           <p className="mt-4 text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto font-medium uppercase tracking-wider leading-relaxed">

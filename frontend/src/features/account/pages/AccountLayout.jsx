@@ -1,17 +1,25 @@
 import { useEffect } from 'react';
-import { NavLink, Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, Link, useNavigate, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { User, MapPin, Package, Heart, ShieldCheck, LogOut, ChevronRight, ChevronLeft, Tag, RotateCcw, Bell, HelpCircle } from 'lucide-react';
 import { logout } from '../../auth/authSlice';
 
+export function AccountIndex() {
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+  if (isDesktop) {
+    return <Navigate to="/account/profile" replace />;
+  }
+  return null;
+}
+
 const NAV_ITEMS = [
-  { to: '/account/profile',        label: 'My Profile',    icon: User },
-  { to: '/account/addresses',      label: 'My Addresses',  icon: MapPin },
-  { to: '/account/orders',         label: 'My Orders',     icon: Package },
-  { to: '/account/wishlist',       label: 'My Wishlist',   icon: Heart },
-  { to: '/account/coupons',        label: 'My Coupons',    icon: Tag },
-  { to: '/account/returns',        label: 'Returns',       icon: RotateCcw },
-  { to: '/account/notifications',  label: 'Notifications', icon: Bell },
+  { to: '/account/profile', label: 'My Profile', icon: User },
+  { to: '/account/addresses', label: 'My Addresses', icon: MapPin },
+  { to: '/account/orders', label: 'My Orders', icon: Package },
+  { to: '/account/wishlist', label: 'My Wishlist', icon: Heart },
+  { to: '/account/coupons', label: 'My Coupons', icon: Tag },
+  { to: '/account/returns', label: 'Returns', icon: RotateCcw },
+  { to: '/account/notifications', label: 'Notifications', icon: Bell },
 ];
 
 export default function AccountLayout() {
@@ -41,8 +49,8 @@ export default function AccountLayout() {
     : 'U';
 
   return (
-    <div className="bg-neutral-50/60 pb-4 sm:pb-12 md:min-h-screen">
-      <div className="mx-auto max-w-6xl px-4 pt-4 pb-2 sm:py-10 sm:px-6 lg:px-8">
+    <div className="bg-neutral-50/60 pb-3 sm:pb-6">
+      <div className="mx-auto max-w-6xl px-4 pt-4 pb-2 sm:pt-6 sm:pb-4 sm:px-6 lg:px-8">
 
         {/* Page Header */}
         <div className="mb-4 sm:mb-8">
@@ -75,7 +83,7 @@ export default function AccountLayout() {
 
               {/* User Avatar & Info */}
               <div className="flex items-center gap-3 border-b border-neutral-100 pb-4 mb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black text-sm font-black shadow-md shrink-0" style={{color:'#ffffff', letterSpacing:'0.08em'}}>
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black text-sm font-black shadow-md shrink-0" style={{ color: '#ffffff', letterSpacing: '0.08em' }}>
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -97,10 +105,9 @@ export default function AccountLayout() {
                     key={to}
                     to={to}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-150 group ${
-                        isActive
-                          ? 'bg-black text-white shadow-sm'
-                          : 'text-neutral-700 hover:bg-neutral-100'
+                      `flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-150 group ${isActive
+                        ? 'bg-black text-white shadow-sm'
+                        : 'text-neutral-700 hover:bg-neutral-100'
                       }`
                     }
                   >

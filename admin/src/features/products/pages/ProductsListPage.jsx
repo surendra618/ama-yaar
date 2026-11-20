@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Plus, Search, Pencil, Trash2, Star, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Star, CheckCircle2, FileSpreadsheet } from 'lucide-react';
 import { fetchProducts, updateProduct, deleteProduct } from '../productsSlice';
 import DataTable from '../../../components/DataTable';
 import Pagination from '../../../components/Pagination';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import BulkImportModal from '../components/BulkImportModal';
 import getMediaUrl from '../../../utils/mediaUrl';
 
 export default function ProductsListPage() {
@@ -16,6 +17,7 @@ export default function ProductsListPage() {
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   useEffect(() => {
     dispatch(fetchProducts({ search, page, limit: 10 }));
@@ -158,12 +160,23 @@ export default function ProductsListPage() {
           <h1 className="text-xl font-extrabold tracking-tight text-slate-900">Products</h1>
           <p className="text-sm font-medium text-slate-500">Manage your product catalog</p>
         </div>
-        <Link
-          to="/products/new"
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-amber-400 px-4 py-2 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-amber-300 hover:scale-105 active:scale-95"
-        >
-          <Plus className="h-4 w-4" /> Add Product
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setImportModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 hover:scale-105 active:scale-95"
+            title="Upload products in bulk using Excel or CSV"
+          >
+            <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+            <span>Import Excel / CSV</span>
+          </button>
+          <Link
+            to="/products/new"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-amber-400 px-4 py-2 text-sm font-bold text-slate-900 shadow-xs transition hover:bg-amber-300 hover:scale-105 active:scale-95"
+          >
+            <Plus className="h-4 w-4" /> Add Product
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -194,6 +207,12 @@ export default function ProductsListPage() {
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setToDelete(null)}
+      />
+
+      <BulkImportModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onSuccess={() => dispatch(fetchProducts({ search, page: 1, limit: 10 }))}
       />
     </div>
   );

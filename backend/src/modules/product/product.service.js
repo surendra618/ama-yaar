@@ -107,12 +107,21 @@ async function list(query = {}) {
       sort = 'newest',
       page = 1,
       limit = 12,
-      activeOnly = 'false',
+      activeOnly,
+      includeInactive = 'false',
     } = query;
 
     const filter = {};
 
-    if (activeOnly === 'true') filter.isActive = true;
+    // By default, only active products are returned to public/users.
+    // Inactive products are only included if caller explicitly passes activeOnly='false' or includeInactive='true'.
+    const shouldFilterActive =
+      activeOnly === 'true' ||
+      (activeOnly !== 'false' && includeInactive !== 'true');
+
+    if (shouldFilterActive) {
+      filter.isActive = true;
+    }
 
     if (search) {
       filter.$or = [
@@ -186,13 +195,28 @@ async function list(query = {}) {
       .skip(skip)
       .limit(limitNum);
 
+    const hasFilter = Boolean(
+      search ||
+      category ||
+      subCategory ||
+      brand ||
+      minPrice !== undefined && minPrice !== '' ||
+      maxPrice !== undefined && maxPrice !== '' ||
+      minRating ||
+      minDiscount ||
+      inStock
+    );
+
+    // Only use fallback dummy products if DB has 0 products in total AND no specific search/filter was applied
+    const returnFallback = products.length === 0 && !hasFilter && (await Product.countDocuments({})) === 0;
+
     return {
-      products: products.length > 0 ? products : fallbackProducts,
+      products: returnFallback ? fallbackProducts : products,
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: total || fallbackProducts.length,
-        pages: Math.ceil((total || fallbackProducts.length) / limitNum),
+        total: returnFallback ? fallbackProducts.length : total,
+        pages: Math.ceil((returnFallback ? fallbackProducts.length : total) / limitNum) || 1,
       },
     };
   } catch (err) {
@@ -204,8 +228,9 @@ async function list(query = {}) {
   }
 }
 
-async function getByIdOrSlug(idOrSlug) {
+async function getByIdOrSlug(idOrSlug, query = {}) {
   try {
+    const { includeInactive = 'false' } = query;
     let doc;
     if (idOrSlug.match(/^[0-9a-fA-F]{24}$/)) {
       doc = await Product.findById(idOrSlug)
@@ -219,18 +244,60 @@ async function getByIdOrSlug(idOrSlug) {
     }
     if (!doc) return fallbackProducts[0];
 
-    const related = await Product.find({
-      category: doc.category?._id || doc.category,
-      _id: { $ne: doc._id },
-      isActive: true,
-    })
-      .limit(4)
-      .populate('category', 'name slug');
+    // If product is disabled and inactive items are not explicitly allowed, do not expose to public
+    if (!doc.isActive && includeInactive !== 'true' && includeInactive !== true) {
+      throw new ApiError(404, 'Product not found or unavailable');
+    }
+
+    const catId = doc.category?._id || doc.category;
+    const subCatId = doc.subCategory?._id || doc.subCategory;
+
+    // 1. Fetch related products from same sub-category / category first
+    let related = [];
+    if (subCatId) {
+      related = await Product.find({
+        subCategory: subCatId,
+        _id: { $ne: doc._id },
+        isActive: true,
+      })
+        .limit(8)
+        .populate('category', 'name slug')
+        .populate('subCategory', 'name slug');
+    }
+
+    if (related.length < 8 && catId) {
+      const existingIds = [doc._id, ...related.map((p) => p._id)];
+      const moreFromCat = await Product.find({
+        category: catId,
+        _id: { $nin: existingIds },
+        isActive: true,
+      })
+        .limit(8 - related.length)
+        .populate('category', 'name slug')
+        .populate('subCategory', 'name slug');
+      related = [...related, ...moreFromCat];
+    }
+
+    // 2. If this category does not have enough products ("if the product is not much more"),
+    // fetch real products from other categories so customers always get full recommendations!
+    if (related.length < 8) {
+      const existingIds = [doc._id, ...related.map((p) => p._id)];
+      const otherCatProducts = await Product.find({
+        _id: { $nin: existingIds },
+        isActive: true,
+      })
+        .sort({ isFeatured: -1, rating: -1, createdAt: -1 })
+        .limit(8 - related.length)
+        .populate('category', 'name slug')
+        .populate('subCategory', 'name slug');
+      related = [...related, ...otherCatProducts];
+    }
 
     const docObj = doc.toObject();
     docObj.related = related;
     return docObj;
   } catch (err) {
+    if (err instanceof ApiError) throw err;
     return fallbackProducts[0];
   }
 }
@@ -291,6 +358,15 @@ async function update(id, data) {
   }
   if (data.subCategory !== undefined && (!data.subCategory || data.subCategory === '')) {
     data.subCategory = null;
+  }
+  if (data.price !== undefined && data.mrp !== undefined) {
+    const numPrice = Number(data.price);
+    const numMrp = Number(data.mrp);
+    if (numMrp > numPrice && numMrp > 0) {
+      data.discount = Math.round(((numMrp - numPrice) / numMrp) * 100);
+    } else {
+      data.discount = 0;
+    }
   }
   if (data.keyFeatures && (!data.highlights || !data.highlights.length)) {
     data.highlights = data.keyFeatures;

@@ -25,6 +25,7 @@ import {
   applyCoupon,
   removeCoupon,
   fetchCart,
+  getAvailableStock,
 } from '../cartSlice';
 import { fetchAddresses } from '../../account/accountSlice';
 import AuthPopupModal from '../../../components/AuthPopupModal';
@@ -42,6 +43,7 @@ export default function ZeptoCartDrawer() {
     isDrawerOpen,
     actionLoading,
     couponError,
+    error: cartError,
   } = useSelector((state) => state.cart || {});
 
   const { user, isAuthenticated } = useSelector((state) => state.auth || {});
@@ -53,6 +55,7 @@ export default function ZeptoCartDrawer() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [activeCoupons, setActiveCoupons] = useState([]);
+  const [stockNotice, setStockNotice] = useState(null);
 
   useEffect(() => {
     if (isDrawerOpen) {
@@ -104,13 +107,25 @@ export default function ZeptoCartDrawer() {
   const amountToFree = Math.max(0, freeThreshold - (summary.subtotal || 0));
   const progressPercent = Math.min(100, Math.round(((summary.subtotal || 0) / freeThreshold) * 100));
 
-  const handleUpdateQty = (itemId, currentQty, delta) => {
-    const newQty = currentQty + delta;
+  const handleUpdateQty = (item, delta) => {
+    setStockNotice(null);
+    const newQty = item.quantity + delta;
     if (newQty <= 0) {
-      dispatch(removeCartItem(itemId));
-    } else {
-      dispatch(updateCartItem({ itemId, quantity: newQty }));
+      dispatch(removeCartItem(item._id));
+      return;
     }
+
+    const maxStock = item.maxStock ?? getAvailableStock(item.product, item.variant);
+    if (delta > 0 && newQty > maxStock) {
+      setStockNotice(`Only ${maxStock} in stock for ${item.product?.name || 'this product'}${item.variant?.size ? ` (${item.variant.size})` : ''}.`);
+      return;
+    }
+
+    dispatch(updateCartItem({ itemId: item._id, quantity: newQty }))
+      .unwrap()
+      .catch((err) => {
+        setStockNotice(typeof err === 'string' ? err : 'Unable to update quantity');
+      });
   };
 
   const handleApplyCoupon = (codeToApply) => {
@@ -224,6 +239,17 @@ export default function ZeptoCartDrawer() {
 
         {/* 3. Items List / Empty State */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {(stockNotice || cartError) && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200/90 p-3 text-xs font-bold text-amber-900 flex items-center justify-between shadow-2xs">
+              <span>{stockNotice || cartError}</span>
+              <button
+                onClick={() => setStockNotice(null)}
+                className="text-[11px] uppercase font-black text-amber-700 hover:text-amber-950 ml-2"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center p-8">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 mb-4">
@@ -302,25 +328,40 @@ export default function ZeptoCartDrawer() {
 
                       {/* Zepto Stepper: [-] [qty] [+] */}
                       <div className="flex flex-col items-end gap-2 shrink-0">
-                        <div className="flex items-center rounded-lg border border-black bg-black text-white shadow-2xs overflow-hidden">
-                          <button
-                            onClick={() => handleUpdateQty(item._id, item.quantity, -1)}
-                            disabled={actionLoading}
-                            className="flex h-7 w-7 items-center justify-center hover:bg-neutral-800 transition active:scale-95"
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="flex h-7 min-w-[1.75rem] items-center justify-center text-xs font-black px-1">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => handleUpdateQty(item._id, item.quantity, 1)}
-                            disabled={actionLoading}
-                            className="flex h-7 w-7 items-center justify-center hover:bg-neutral-800 transition active:scale-95"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                        {(() => {
+                          const maxStock = item.maxStock ?? getAvailableStock(item.product, item.variant);
+                          const isMaxReached = item.quantity >= maxStock;
+
+                          return (
+                            <>
+                              <div className="flex items-center rounded-lg border border-black bg-black text-white shadow-2xs overflow-hidden">
+                                <button
+                                  onClick={() => handleUpdateQty(item, -1)}
+                                  disabled={actionLoading}
+                                  className="flex h-7 w-7 items-center justify-center hover:bg-neutral-800 transition active:scale-95"
+                                >
+                                  <Minus className="h-3.5 w-3.5" />
+                                </button>
+                                <span className="flex h-7 min-w-[1.75rem] items-center justify-center text-xs font-black px-1">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() => handleUpdateQty(item, 1)}
+                                  disabled={actionLoading || isMaxReached}
+                                  title={isMaxReached ? `Max stock (${maxStock}) reached` : 'Increase quantity'}
+                                  className="flex h-7 w-7 items-center justify-center hover:bg-neutral-800 transition active:scale-95 disabled:opacity-40 disabled:hover:bg-black cursor-pointer disabled:cursor-not-allowed"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                              {isMaxReached && (
+                                <span className="text-[9.5px] font-bold text-amber-600">
+                                  Max stock ({maxStock})
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
 
                         <span className="text-[11px] font-bold text-black">
                           ₹{(item.price || p.price || 0) * item.quantity}
