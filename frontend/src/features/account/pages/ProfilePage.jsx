@@ -21,6 +21,8 @@ import {
   AlertCircle,
   ShieldCheck,
   Check,
+  RotateCcw,
+  Bell,
 } from 'lucide-react';
 import { updateProfile } from '../../auth/authSlice';
 import api from '../../../lib/axios';
@@ -340,58 +342,84 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Quick Access Stat Cards (My Orders, Addresses, Wishlist, Coupons) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* Quick Access Stat Cards (My Orders, Addresses, Wishlist, Coupons, Returns, Notifications) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Link
           to="/account/orders"
-          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:border-black transition"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+            <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
               My Orders
             </span>
             <Package className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
           </div>
-          <p className="text-xl font-black text-black mt-2">{orderCount}</p>
+          <p className="text-lg sm:text-xl font-black text-black mt-2">{orderCount}</p>
         </Link>
 
         <Link
           to="/account/addresses"
-          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:border-black transition"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+            <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
               Addresses
             </span>
             <MapPin className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
           </div>
-          <p className="text-xl font-black text-black mt-2">{addressCount}</p>
+          <p className="text-lg sm:text-xl font-black text-black mt-2">{addressCount}</p>
         </Link>
 
         <Link
           to="/account/wishlist"
-          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:border-black transition"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+            <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
               Wishlist
             </span>
             <Heart className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
           </div>
-          <p className="text-xl font-black text-black mt-2">{wishlistItems.length}</p>
+          <p className="text-lg sm:text-xl font-black text-black mt-2">{wishlistItems.length}</p>
         </Link>
 
         <Link
           to="/account/coupons"
-          className="group rounded-xl border border-neutral-200/80 bg-white p-4 shadow-xs hover:border-black transition"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:border-black transition"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+            <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
               Coupons
             </span>
             <Tag className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
           </div>
-          <p className="text-xl font-black text-black mt-2">Active</p>
+          <p className="text-lg sm:text-xl font-black text-black mt-2">Active</p>
+        </Link>
+
+        <Link
+          to="/account/returns"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:border-black transition"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+              Returns
+            </span>
+            <RotateCcw className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
+          </div>
+          <p className="text-lg sm:text-xl font-black text-black mt-2">Request</p>
+        </Link>
+
+        <Link
+          to="/account/notifications"
+          className="group rounded-xl border border-neutral-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:border-black transition"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-neutral-400 group-hover:text-black transition">
+              Alerts
+            </span>
+            <Bell className="h-4 w-4 text-neutral-400 group-hover:text-black transition" />
+          </div>
+          <p className="text-lg sm:text-xl font-black text-black mt-2">Inbox</p>
         </Link>
       </div>
 

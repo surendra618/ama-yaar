@@ -77,8 +77,12 @@ async function createOrder(userId, payload) {
         throw new ApiError(400, `Product "${product?.name || 'Unknown'}" is no longer available`);
       }
 
-      if (product.stock < item.quantity) {
-        throw new ApiError(400, `Not enough stock available for "${product.name}"`);
+      const maxStock = product.variants?.length > 0 && item.variant?.size
+        ? (product.variants.find((v) => String(v.size || '').trim().toUpperCase() === String(item.variant.size || '').trim().toUpperCase())?.stock ?? product.stock)
+        : product.stock;
+
+      if (maxStock < item.quantity) {
+        throw new ApiError(400, `Not enough stock available for "${product.name}"${item.variant?.size ? ` (Size: ${item.variant.size})` : ''}. Only ${maxStock} left in stock.`);
       }
 
       const price = item.price || product.price;
@@ -209,9 +213,18 @@ async function createOrder(userId, payload) {
   if (!isOnlinePayment) {
     for (const item of orderItems) {
       if (item.product) {
+        // Decrement overall product stock
         await Product.findByIdAndUpdate(item.product, {
           $inc: { stock: -item.quantity },
         }).catch(() => {});
+
+        // If item has a specific size variant, also decrement that variant's stock
+        if (item.variant?.size) {
+          await Product.updateOne(
+            { _id: item.product, 'variants.size': item.variant.size },
+            { $inc: { 'variants.$.stock': -item.quantity } }
+          ).catch(() => {});
+        }
       }
     }
   }
@@ -449,6 +462,12 @@ async function cancelOrder(id, user, { reason = 'Cancelled by user' }) {
     await Product.findByIdAndUpdate(item.product, {
       $inc: { stock: item.quantity },
     });
+    if (item.variant?.size) {
+      await Product.updateOne(
+        { _id: item.product, 'variants.size': item.variant.size },
+        { $inc: { 'variants.$.stock': item.quantity } }
+      ).catch(() => {});
+    }
   }
 
   await order.save();

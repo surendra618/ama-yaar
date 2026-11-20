@@ -18,6 +18,7 @@ import {
 import { logout } from '../features/auth/authSlice';
 import AdminLogo from './AdminLogo';
 import socket, { joinAdminRoom } from '../lib/socket';
+import api from '../lib/axios';
 
 export default function Topbar({ onMenuClick }) {
   const dispatch = useDispatch();
@@ -28,13 +29,45 @@ export default function Topbar({ onMenuClick }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [notificationsList, setNotificationsList] = useState([
-    { id: 1, title: 'Real-time WebSocket connected', time: 'Just now', icon: Sparkles, unread: false },
-    { id: 2, title: 'Product stock monitored', time: '1h ago', icon: Package, unread: true },
-  ]);
+  const [notificationsList, setNotificationsList] = useState([]);
 
   const menuRef = useRef(null);
   const notifRef = useRef(null);
+
+  // Load real notifications from backend on mount
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await api.get('/notifications');
+        const list = res.data?.data?.notifications || [];
+        if (list.length > 0) {
+          setNotificationsList(
+            list.map((n) => ({
+              id: n._id,
+              title: n.title,
+              message: n.message,
+              time: formatRelativeTime(n.createdAt),
+              icon: n.type === 'newOrder' || n.type === 'order' ? Package : Sparkles,
+              unread: !n.isRead,
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn('Failed to fetch admin notifications:', err.message);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
+  const formatRelativeTime = (dateStr) => {
+    if (!dateStr) return 'Just now';
+    const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  };
 
   useEffect(() => {
     joinAdminRoom();
@@ -44,11 +77,12 @@ export default function Topbar({ onMenuClick }) {
         {
           id: Date.now(),
           title: `New Order: #${data.orderNumber} (₹${data.total})`,
+          message: `${data.customerName || 'Customer'} placed an order`,
           time: 'Just now',
           icon: Package,
           unread: true,
         },
-        ...prev.slice(0, 9),
+        ...prev.slice(0, 19),
       ]);
     };
 
@@ -57,11 +91,12 @@ export default function Topbar({ onMenuClick }) {
         {
           id: Date.now(),
           title: data.title || 'New Admin Alert',
+          message: data.message || '',
           time: 'Just now',
           icon: Sparkles,
           unread: true,
         },
-        ...prev.slice(0, 9),
+        ...prev.slice(0, 19),
       ]);
     };
 
@@ -180,7 +215,12 @@ export default function Topbar({ onMenuClick }) {
                   )}
                 </div>
                 <button
-                  onClick={() => setNotificationsList((prev) => prev.map((n) => ({ ...n, unread: false })))}
+                  onClick={async () => {
+                    try {
+                      await api.patch('/notifications/all/read');
+                    } catch (_) {}
+                    setNotificationsList((prev) => prev.map((n) => ({ ...n, unread: false })));
+                  }}
                   className="text-[11px] font-semibold text-indigo-600 hover:underline cursor-pointer"
                 >
                   Mark read

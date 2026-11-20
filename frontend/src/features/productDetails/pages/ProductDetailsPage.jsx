@@ -28,7 +28,7 @@ import {
   submitProductReview,
   clearProductDetails,
 } from "../productDetailsSlice";
-import { addToCart, openDrawer, closeDrawer } from "../../cart/cartSlice";
+import { addToCart, openDrawer, closeDrawer, getAvailableStock } from "../../cart/cartSlice";
 import { toggleWishlist } from "../../wishlist/wishlistSlice";
 import ProductCard from "../../../components/ProductCard";
 import Loader from "../../../components/Loader";
@@ -260,15 +260,20 @@ export default function ProductDetailsPage() {
       ? Array.from(new Set(product.variants.map((v) => v.size).filter(Boolean)))
       : ["S", "M", "L", "XL"];
 
+  const currentSizeToUse = selectedSize || availableSizes[0] || "M";
+  const selectedSizeStock = getAvailableStock(product, { size: currentSizeToUse, color: selectedColor });
+  const isOutOfStock = selectedSizeStock <= 0;
+
   const handleAddToCart = async () => {
-    const sizeToUse = selectedSize || availableSizes[0] || "M";
+    const sizeToUse = currentSizeToUse;
+    if (selectedSizeStock <= 0) return;
     setIsAddingToCart(true);
     try {
       await dispatch(
         addToCart({
           productId: product._id,
           product,
-          quantity,
+          quantity: Math.min(quantity, selectedSizeStock),
           variant: { size: sizeToUse, color: selectedColor },
         }),
       );
@@ -281,14 +286,15 @@ export default function ProductDetailsPage() {
   };
 
   const handleBuyNow = async () => {
-    const sizeToUse = selectedSize || availableSizes[0] || "M";
+    const sizeToUse = currentSizeToUse;
+    if (selectedSizeStock <= 0) return;
     setIsBuyingNow(true);
     try {
       await dispatch(
         addToCart({
           productId: product._id,
           product,
-          quantity,
+          quantity: Math.min(quantity, selectedSizeStock),
           variant: { size: sizeToUse, color: selectedColor },
         }),
       );
@@ -349,6 +355,23 @@ export default function ProductDetailsPage() {
             <h1 className="text-xl sm:text-2xl lg:text-[27px] font-bold tracking-tight text-neutral-900 leading-[1.2]">
               {product.name || "Men's Oversized Puffer Winter Bubble Jacket"}
             </h1>
+
+            {/* Price & MRP Row */}
+            <div className="mt-2.5 flex items-baseline gap-2.5 flex-wrap">
+              <span className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+                ₹{Number(product.price || 0).toLocaleString("en-IN")}
+              </span>
+              {product.mrp && Number(product.mrp) > Number(product.price) && (
+                <span className="text-sm text-neutral-400 line-through font-normal">
+                  ₹{Number(product.mrp).toLocaleString("en-IN")}
+                </span>
+              )}
+              {product.mrp && Number(product.mrp) > Number(product.price) && (
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-sm">
+                  {product.discount || Math.round(((Number(product.mrp) - Number(product.price)) / Number(product.mrp)) * 100)}% OFF
+                </span>
+              )}
+            </div>
 
             <p className="mt-3 text-xs sm:text-[13px] text-neutral-600 leading-[1.55] font-normal whitespace-pre-line">
               {product.description ||
@@ -500,24 +523,38 @@ export default function ProductDetailsPage() {
           <div className="lg:col-span-3 flex flex-col justify-start order-3 pl-0 lg:pl-2 space-y-4 pt-0 sm:pt-1">
             {/* Size Selector */}
             <div>
-              <span className="block text-xs font-medium text-neutral-500 mb-2">
-                Size
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="block text-xs font-medium text-neutral-500">
+                  Size
+                </span>
+                {selectedSizeStock <= 5 && (
+                  <span className={`text-[11px] font-bold ${isOutOfStock ? 'text-rose-600' : 'text-amber-600'}`}>
+                    {isOutOfStock ? 'Out of Stock' : `Only ${selectedSizeStock} left!`}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {(availableSizes.length > 0 ? availableSizes : ["M", "L", "XL"]).map((sz) => (
-                  <button
-                    key={sz}
-                    type="button"
-                    onClick={() => setSelectedSize(sz)}
-                    className={`h-9 w-10 sm:h-10 sm:w-11 text-xs font-semibold flex items-center justify-center border transition-all cursor-pointer ${
-                      selectedSize === sz
-                        ? "border-neutral-800 bg-white text-neutral-950 font-bold"
-                        : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"
-                    }`}
-                  >
-                    {sz}
-                  </button>
-                ))}
+                {(availableSizes.length > 0 ? availableSizes : ["M", "L", "XL"]).map((sz) => {
+                  const szStock = getAvailableStock(product, { size: sz, color: selectedColor });
+                  const szDisabled = szStock <= 0;
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      disabled={szDisabled}
+                      onClick={() => setSelectedSize(sz)}
+                      className={`h-9 w-10 sm:h-10 sm:w-11 text-xs font-semibold flex items-center justify-center border transition-all cursor-pointer relative ${
+                        selectedSize === sz
+                          ? "border-neutral-800 bg-white text-neutral-950 font-bold shadow-xs"
+                          : szDisabled
+                          ? "border-neutral-200 bg-neutral-100 text-neutral-300 cursor-not-allowed line-through"
+                          : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"
+                      }`}
+                    >
+                      {sz}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -528,14 +565,16 @@ export default function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={product.stock <= 0 || isAddingToCart}
-                  className="w-full h-10 sm:h-10.5 bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 hover:border-neutral-400 text-xs font-bold uppercase tracking-wider px-4 rounded-sm transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99]"
+                  disabled={isOutOfStock || isAddingToCart}
+                  className="w-full h-10 sm:h-10.5 bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 hover:border-neutral-400 text-xs font-bold uppercase tracking-wider px-4 rounded-sm transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99] disabled:cursor-not-allowed"
                 >
                   {isAddingToCart ? (
                     <>
                       <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-neutral-800 border-t-transparent" />
                       <span>Adding to Bag...</span>
                     </>
+                  ) : isOutOfStock ? (
+                    <span>OUT OF STOCK</span>
                   ) : added ? (
                     <>
                       <Check className="h-4 w-4 text-emerald-600" />
@@ -553,8 +592,8 @@ export default function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={handleBuyNow}
-                  disabled={product.stock <= 0 || isBuyingNow}
-                  className="w-full h-10 sm:h-10.5 bg-[#141414] hover:bg-black text-white text-xs font-bold uppercase tracking-wider px-4 rounded-sm transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-2 border border-neutral-900 hover:border-black disabled:opacity-50 active:scale-[0.99] group"
+                  disabled={isOutOfStock || isBuyingNow}
+                  className="w-full h-10 sm:h-10.5 bg-[#141414] hover:bg-black text-white text-xs font-bold uppercase tracking-wider px-4 rounded-sm transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-2 border border-neutral-900 hover:border-black disabled:opacity-50 active:scale-[0.99] group disabled:cursor-not-allowed"
                 >
                   {isBuyingNow ? (
                     <>
@@ -1113,9 +1152,9 @@ export default function ProductDetailsPage() {
           ];
 
           const displayRelated =
-            related && related.length >= 12
-              ? related
-              : [...(related || []), ...FEATURED_RECOMMENDATIONS].slice(0, 12);
+            related && related.length > 0
+              ? related.slice(0, 8)
+              : FEATURED_RECOMMENDATIONS.slice(0, 8);
 
           return (
             <div className="mt-14 pt-8 border-t border-neutral-200">

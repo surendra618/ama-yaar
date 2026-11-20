@@ -32,7 +32,7 @@ import getMediaUrl from '../../../utils/mediaUrl';
 
 const emptyForm = {
   name: '',
-  brand: 'AMA-YAAR',
+  brand: 'AMAYAAR',
   category: '',
   description: '',
   detailedDescription: '',
@@ -50,6 +50,7 @@ const emptyForm = {
   price: '',
   mrp: '',
   stock: '',
+  variants: [],
   images: [],
   isFeatured: false,
   isActive: true,
@@ -91,7 +92,7 @@ export default function ProductFormPage() {
     if (isEdit && current) {
       setForm({
         name: current.name || '',
-        brand: current.brand || 'AMA-YAAR',
+        brand: current.brand || 'AMAYAAR',
         category: current.category?._id || current.category || '',
         description: current.description || '',
         detailedDescription: current.detailedDescription || '',
@@ -99,8 +100,8 @@ export default function ProductFormPage() {
           Array.isArray(current.keyFeatures) && current.keyFeatures.length
             ? current.keyFeatures
             : Array.isArray(current.highlights) && current.highlights.length
-            ? current.highlights
-            : [],
+              ? current.highlights
+              : [],
         fabric: current.fabric || '',
         gsm: current.gsm || '',
         fit: current.fit || '',
@@ -114,6 +115,13 @@ export default function ProductFormPage() {
         price: current.price ?? '',
         mrp: current.mrp ?? '',
         stock: current.stock ?? '',
+        variants: current.variants?.length
+          ? current.variants.map((v) => ({
+            size: v.size || 'M',
+            stock: v.stock ?? 0,
+            price: v.price || current.price || 0,
+          }))
+          : [],
         images: current.images?.length ? current.images : [],
         isFeatured: !!current.isFeatured,
         isActive: current.isActive !== false,
@@ -200,12 +208,19 @@ export default function ProductFormPage() {
 
     const cleanFeatures = form.keyFeatures.filter((f) => f && f.trim());
 
+    const calculatedDiscount =
+      form.mrp && form.price && Number(form.mrp) > Number(form.price)
+        ? Math.round(((Number(form.mrp) - Number(form.price)) / Number(form.mrp)) * 100)
+        : 0;
+
     const payload = {
       ...form,
       category: form.category || null,
       price: Number(form.price),
       mrp: Number(form.mrp),
+      discount: calculatedDiscount,
       stock: Number(form.stock),
+      variants: form.variants || [],
       exchangeDays: form.exchangeDays ? Number(form.exchangeDays) : 7,
       keyFeatures: cleanFeatures,
       highlights: cleanFeatures,
@@ -240,11 +255,10 @@ export default function ProductFormPage() {
 
         <div className="flex items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${
-              form.isActive
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : 'bg-slate-100 text-slate-600 border border-slate-200'
-            }`}
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${form.isActive
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-slate-100 text-slate-600 border border-slate-200'
+              }`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${form.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
             {form.isActive ? 'Active Status' : 'Draft / Hidden'}
@@ -255,7 +269,7 @@ export default function ProductFormPage() {
       <div className="border-b border-slate-200 pb-3">
         <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
           {isEdit ? 'Edit Product' : 'Add New Product'}
-          <Sparkles className="h-4 w-4 text-amber-500" />
+          {/*      <Sparkles className="h-4 w-4 text-amber-50 */}
         </h1>
         <p className="mt-0.5 text-xs text-slate-500 font-normal">
           {isEdit
@@ -308,7 +322,7 @@ export default function ProductFormPage() {
                   name="brand"
                   value={form.brand}
                   onChange={handleChange}
-                  placeholder="e.g. AMA-YAAR"
+                  placeholder="e.g. AMAYAAR"
                   className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
                 />
               </div>
@@ -324,11 +338,16 @@ export default function ProductFormPage() {
                   className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
                 >
                   <option value="">None / No Category (Optional)</option>
-                  {categories.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  {categories.map((c) => {
+                    const parentName =
+                      c.parent?.name ||
+                      (typeof c.parent === 'string' && categories.find((p) => p._id === c.parent)?.name);
+                    return (
+                      <option key={c._id} value={c._id}>
+                        {parentName ? `${parentName} → ${c.name}` : c.name}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
@@ -370,6 +389,11 @@ export default function ProductFormPage() {
                     {discountPercent}% OFF
                   </span>
                 )}
+                {form.mrp && form.price && Number(form.price) > Number(form.mrp) && (
+                  <span className="text-[10px] font-bold text-amber-600 mt-0.5 block">
+                    ⚠️ Selling Price is higher than MRP
+                  </span>
+                )}
               </div>
 
               <div>
@@ -387,6 +411,107 @@ export default function ProductFormPage() {
                   className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
                 />
               </div>
+            </div>
+
+            {/* Size Variants & Inventory Manager */}
+            <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800">
+                    Size Variants & Inventory <span className="text-[11px] font-normal text-slate-400">(XS, S, M, L, XL, XXL, Free Size, etc.)</span>
+                  </label>
+                  <p className="text-[11px] text-slate-500">
+                    Add or edit stock for each specific size. Customers will see these as selectable size pills.
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-slate-800 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 shrink-0">
+                  Total: {form.variants?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) || form.stock || 0} pcs
+                </span>
+              </div>
+
+              {/* Quick-add buttons */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-slate-500 font-semibold mr-1">Quick Add:</span>
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Free Size'].map((sz) => {
+                  const alreadyHas = form.variants?.some((v) => v.size?.toUpperCase() === sz.toUpperCase());
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      disabled={alreadyHas}
+                      onClick={() => {
+                        const next = [...(form.variants || []), { size: sz, stock: 10, price: Number(form.price) || 0 }];
+                        setForm((f) => ({
+                          ...f,
+                          variants: next,
+                          stock: next.reduce((sum, v) => sum + (Number(v.stock) || 0), 0),
+                        }));
+                      }}
+                      className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${alreadyHas
+                        ? 'bg-slate-100 text-slate-300 cursor-not-allowed border border-slate-200/50'
+                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 border border-slate-300 shadow-2xs'
+                        }`}
+                    >
+                      + {sz}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active size variants grid */}
+              {form.variants?.length > 0 ? (
+                <div className="flex flex-wrap gap-2.5 pt-1.5">
+                  {form.variants.map((v, vIdx) => (
+                    <div
+                      key={vIdx}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-slate-50/60 pl-2 pr-1.5 py-1.5 shadow-2xs hover:border-slate-300 hover:bg-white transition"
+                    >
+                      <span className="flex h-6 min-w-7 px-1.5 items-center justify-center rounded-md bg-black text-[11px] font-black tracking-wide text-white shrink-0 select-none">
+                        {v.size}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="0"
+                          value={v.stock}
+                          onChange={(e) => {
+                            const updated = [...form.variants];
+                            updated[vIdx] = { ...updated[vIdx], stock: Number(e.target.value) || 0 };
+                            setForm((f) => ({
+                              ...f,
+                              variants: updated,
+                              stock: updated.reduce((sum, item) => sum + (Number(item.stock) || 0), 0),
+                            }));
+                          }}
+                          placeholder="0"
+                          className="w-12 h-6 rounded border border-slate-200 px-1 text-xs font-bold text-slate-800 bg-white focus:border-black focus:outline-none text-center"
+                          title="In-stock quantity"
+                        />
+                        <span className="text-[11px] text-slate-400 font-semibold select-none">pcs</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = form.variants.filter((_, idx) => idx !== vIdx);
+                          setForm((f) => ({
+                            ...f,
+                            variants: updated,
+                            stock: updated.reduce((sum, item) => sum + (Number(item.stock) || 0), 0),
+                          }));
+                        }}
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-100 transition"
+                        title="Remove size"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 italic">
+                  No individual size counts configured. Click a Quick Add button above to add sizes like XS, XXL, or Free Size.
+                </p>
+              )}
             </div>
           </div>
 
@@ -513,11 +638,10 @@ export default function ProductFormPage() {
                       type="button"
                       disabled={isAdded}
                       onClick={() => handleAddFeature(sug)}
-                      className={`text-[11px] rounded-md px-2.5 py-1 border transition flex items-center gap-1 ${
-                        isAdded
-                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default'
-                          : 'bg-white text-slate-700 border-slate-300 hover:border-black hover:bg-slate-50'
-                      }`}
+                      className={`text-[11px] rounded-md px-2.5 py-1 border transition flex items-center gap-1 ${isAdded
+                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default'
+                        : 'bg-white text-slate-700 border-slate-300 hover:border-black hover:bg-slate-50'
+                        }`}
                     >
                       <Plus className="h-3 w-3" /> {sug}
                     </button>
@@ -852,18 +976,16 @@ export default function ProductFormPage() {
                 <button
                   type="button"
                   onClick={() => setPreviewTab('card')}
-                  className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
-                    previewTab === 'card' ? 'bg-white text-black shadow-xs' : 'text-slate-600 hover:text-black'
-                  }`}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${previewTab === 'card' ? 'bg-white text-black shadow-xs' : 'text-slate-600 hover:text-black'
+                    }`}
                 >
                   Card Preview
                 </button>
                 <button
                   type="button"
                   onClick={() => setPreviewTab('details')}
-                  className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
-                    previewTab === 'details' ? 'bg-white text-black shadow-xs' : 'text-slate-600 hover:text-black'
-                  }`}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${previewTab === 'details' ? 'bg-white text-black shadow-xs' : 'text-slate-600 hover:text-black'
+                    }`}
                 >
                   Storefront Tabs Preview
                 </button>
@@ -933,9 +1055,8 @@ export default function ProductFormPage() {
                   <button
                     type="button"
                     onClick={() => setStorefrontActiveTab('description')}
-                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${
-                      storefrontActiveTab === 'description' ? 'text-black' : 'text-neutral-400 hover:text-black'
-                    }`}
+                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${storefrontActiveTab === 'description' ? 'text-black' : 'text-neutral-400 hover:text-black'
+                      }`}
                   >
                     Description
                     {storefrontActiveTab === 'description' && (
@@ -946,9 +1067,8 @@ export default function ProductFormPage() {
                   <button
                     type="button"
                     onClick={() => setStorefrontActiveTab('details')}
-                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${
-                      storefrontActiveTab === 'details' ? 'text-black' : 'text-neutral-400 hover:text-black'
-                    }`}
+                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${storefrontActiveTab === 'details' ? 'text-black' : 'text-neutral-400 hover:text-black'
+                      }`}
                   >
                     Details
                     {storefrontActiveTab === 'details' && (
@@ -959,9 +1079,8 @@ export default function ProductFormPage() {
                   <button
                     type="button"
                     onClick={() => setStorefrontActiveTab('exchange')}
-                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${
-                      storefrontActiveTab === 'exchange' ? 'text-black' : 'text-neutral-400 hover:text-black'
-                    }`}
+                    className={`pb-1 px-1.5 transition text-[11px] font-bold relative ${storefrontActiveTab === 'exchange' ? 'text-black' : 'text-neutral-400 hover:text-black'
+                      }`}
                   >
                     Exchange Policy
                     {storefrontActiveTab === 'exchange' && (

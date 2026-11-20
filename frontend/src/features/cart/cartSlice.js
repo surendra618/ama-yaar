@@ -1,6 +1,23 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../lib/axios';
 
+export const getAvailableStock = (product, variant = {}) => {
+  if (!product) return 99;
+  const vSize = typeof variant === 'object' ? variant?.size : variant;
+  const vColor = typeof variant === 'object' ? variant?.color : '';
+  if (vSize && Array.isArray(product.variants) && product.variants.length > 0) {
+    const matched = product.variants.find((v) => {
+      const matchSize = String(v.size || '').trim().toUpperCase() === String(vSize || '').trim().toUpperCase();
+      const matchColor = !vColor || String(v.color || '').trim().toLowerCase() === String(vColor || '').trim().toLowerCase();
+      return matchSize && matchColor;
+    });
+    if (matched && matched.stock !== undefined) {
+      return Math.max(0, Number(matched.stock) || 0);
+    }
+  }
+  return Number(product.stock) !== undefined ? Math.max(0, Number(product.stock) || 0) : 99;
+};
+
 const recalcLocalSummary = (state) => {
   const subtotal = state.items.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0);
   const mrpTotal = state.items.reduce((s, i) => s + (i.product?.mrp || i.price || 0) * (i.quantity || 1), 0);
@@ -65,14 +82,14 @@ export const fetchCart = createAsyncThunk('cart/fetch', async (_, { getState, re
 
 export const addToCart = createAsyncThunk(
   'cart/addItem',
-  async ({ productId, product, quantity = 1, variant }, { getState }) => {
+  async ({ productId, product, quantity = 1, variant }, { getState, rejectWithValue }) => {
     const { auth } = getState();
     if (auth?.isAuthenticated) {
       try {
         const { data } = await api.post('/cart/items', { productId, quantity, variant });
         return data.data;
       } catch (err) {
-        console.warn('Backend cart addItem notice, using local state:', err.message);
+        return rejectWithValue(err.response?.data?.message || err.message);
       }
     }
     return {
@@ -231,22 +248,27 @@ const cartSlice = createSlice({
       if (action.payload?.isLocal && action.payload.item) {
         const { product, productId, quantity, variant } = action.payload.item;
         const price = product?.price || 0;
+        const maxStock = getAvailableStock(product, variant);
         const existingIdx = state.items.findIndex(
           (i) =>
             (i.product?._id === productId || i.productId === productId) &&
             (!variant?.size || i.variant?.size === variant.size || i.variant === variant.size)
         );
         if (existingIdx > -1) {
-          state.items[existingIdx].quantity += Number(quantity);
+          const newQty = Math.min(maxStock, state.items[existingIdx].quantity + Number(quantity));
+          state.items[existingIdx].quantity = newQty;
+          state.items[existingIdx].maxStock = maxStock;
         } else {
+          const qty = Math.min(maxStock, Math.max(1, Number(quantity)));
           state.items.push({
             _id: 'guest_' + Date.now(),
-            product: product || { _id: productId, price, images: [] },
+            product: product || { _id: productId, price, images: [], stock: maxStock },
             productId,
             variant: typeof variant === 'object' ? variant : { size: variant },
-            quantity: Number(quantity),
+            quantity: qty,
+            maxStock,
             price,
-            itemSubtotal: price * Number(quantity),
+            itemSubtotal: price * qty,
           });
         }
         recalcLocalSummary(state);
@@ -254,8 +276,12 @@ const cartSlice = createSlice({
         const { itemId, quantity } = action.payload;
         const idx = state.items.findIndex((i) => i._id === itemId);
         if (idx > -1) {
-          state.items[idx].quantity = Number(quantity);
-          state.items[idx].itemSubtotal = (state.items[idx].price || 0) * Number(quantity);
+          const item = state.items[idx];
+          const maxStock = item.maxStock ?? getAvailableStock(item.product, item.variant);
+          const validQty = Math.min(maxStock, Number(quantity));
+          state.items[idx].quantity = validQty;
+          state.items[idx].maxStock = maxStock;
+          state.items[idx].itemSubtotal = (state.items[idx].price || 0) * validQty;
         }
         recalcLocalSummary(state);
       } else if (action.payload?.isLocalRemove) {
@@ -294,6 +320,10 @@ const cartSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(updateCartItem.fulfilled, handleCartData)
+      .addCase(updateCartItem.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
+      })
       .addCase(removeCartItem.fulfilled, handleCartData)
       .addCase(applyCoupon.pending, (state) => {
         state.actionLoading = true;

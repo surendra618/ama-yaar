@@ -63,6 +63,19 @@ export default function ProductListPage() {
     }
   };
 
+  const updateMultipleFilters = (entries) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(entries).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') {
+        next.delete(key);
+      } else {
+        next.set(key, String(value));
+      }
+    });
+    next.set('page', '1');
+    setSearchParams(next);
+  };
+
   const clearAllFilters = () => {
     setSearchParams(search ? { search } : {});
     setPriceRange({ min: '', max: '' });
@@ -445,10 +458,13 @@ export default function ProductListPage() {
                 </div>
                 <button
                   onClick={() => {
-                    updateFilter('minPrice', priceRange.min);
-                    updateFilter('maxPrice', priceRange.max);
+                    updateMultipleFilters({
+                      minPrice: priceRange.min,
+                      maxPrice: priceRange.max,
+                    });
+                    setFilterDrawerOpen(false);
                   }}
-                  className="w-full bg-black py-2 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition"
+                  className="w-full bg-black py-2.5 text-xs font-black text-white uppercase tracking-wider hover:bg-neutral-800 transition cursor-pointer active:scale-[0.99]"
                 >
                   Apply Price
                 </button>
