@@ -11,6 +11,9 @@ const bcrypt = require('bcryptjs');
 const ApiError = require('../../utils/ApiError');
 const settingService = require('../setting/setting.service');
 const shiprocketService = require('../shiprocket/shiprocket.service');
+const { notifyAdmins } = require('../notification/adminNotifier');
+const { newOrderTemplate } = require('../../utils/emailTemplates');
+const { emitAdminEvent, emitUserEvent, emitOrderEvent } = require('../../config/socket');
 
 async function createOrder(userId, payload) {
   const { shippingAddressId, shippingAddress: directAddress, paymentProvider = 'cod', paymentMethod = 'Cash on Delivery', paymentId } = payload;
@@ -160,7 +163,8 @@ async function createOrder(userId, payload) {
   const total = Math.max(0, Math.round(subtotal - couponDiscount + deliveryCharge + tax));
 
   const isOnlinePayment = paymentProvider !== 'cod';
-  const paymentStatus = isOnlinePayment ? 'paid' : 'pending';
+  const paymentStatus = 'pending';
+  const initialOrderStatus = isOnlinePayment ? 'pending' : 'placed';
 
   const order = await Order.create({
     user: finalUserId,
@@ -168,15 +172,15 @@ async function createOrder(userId, payload) {
     shippingAddress: finalAddress,
     paymentInfo: {
       provider: paymentProvider,
-      paymentId: paymentId || (isOnlinePayment ? `PAY-${Date.now()}` : undefined),
+      paymentId: paymentId || undefined,
       method: paymentMethod,
       status: paymentStatus,
     },
-    status: isOnlinePayment ? 'confirmed' : 'placed',
+    status: initialOrderStatus,
     statusHistory: [
       {
-        status: isOnlinePayment ? 'confirmed' : 'placed',
-        note: isOnlinePayment ? 'Order placed and payment verified' : 'Order placed via Cash on Delivery',
+        status: initialOrderStatus,
+        note: isOnlinePayment ? 'Order initiated, awaiting online payment confirmation' : 'Order placed via Cash on Delivery',
         at: new Date(),
       },
     ],
@@ -197,38 +201,61 @@ async function createOrder(userId, payload) {
     paymentId: order.paymentInfo.paymentId,
     method: paymentMethod,
     amount: total,
-    status: isOnlinePayment ? 'success' : 'pending',
+    status: 'pending',
   }).catch(() => {});
 
-  // Reduce product inventory
-  for (const item of orderItems) {
-    if (item.product) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity },
-      }).catch(() => {});
+  // Reduce product inventory only for confirmed COD orders immediately.
+  // For online payments, inventory is reduced upon verified payment.
+  if (!isOnlinePayment) {
+    for (const item of orderItems) {
+      if (item.product) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: -item.quantity },
+        }).catch(() => {});
+      }
     }
   }
 
-  // Clear cart
-  if (cart) {
-    cart.items = [];
-    cart.coupon = null;
-    await cart.save().catch(() => {});
-  }
-  if (finalUserId) {
-    await Cart.findOneAndUpdate(
-      { user: finalUserId },
-      { $set: { items: [], coupon: null } }
-    ).catch(() => {});
-  }
+  // Clear cart only if this was an immediate success (e.g. COD)
+  if (!isOnlinePayment) {
+    if (cart) {
+      cart.items = [];
+      cart.coupon = null;
+      await cart.save().catch(() => {});
+    }
+    if (finalUserId) {
+      await Cart.findOneAndUpdate(
+        { user: finalUserId },
+        { $set: { items: [], coupon: null } }
+      ).catch(() => {});
+    }
 
-  // Create user notification
-  await Notification.create({
-    user: finalUserId,
-    type: 'order',
-    title: 'Order Placed Successfully!',
-    message: `Your order #${order.orderNumber || order._id} for ₹${total} has been received.`,
-  }).catch(() => {});
+    // Create user notification for COD
+    await Notification.create({
+      user: finalUserId,
+      type: 'order',
+      title: 'Order Placed Successfully!',
+      message: `Your order #${order.orderNumber || order._id} for ₹${total} has been received.`,
+    }).catch(() => {});
+
+    // Notify Admins about new COD order
+    notifyAdmins({
+      event: 'newOrder',
+      subject: `New Order Placed: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()} (₹${total})`,
+      html: newOrderTemplate({
+        orderNumber: order.orderNumber || String(order._id).slice(-6).toUpperCase(),
+        customerName: finalAddress?.fullName || 'Customer',
+        customerPhone: finalAddress?.phone || 'No phone',
+        total,
+        itemCount: orderItems.length,
+        paymentMethod,
+        paymentStatus,
+        address: `${finalAddress?.line1 || ''}, ${finalAddress?.city || ''}, ${finalAddress?.state || ''} - ${finalAddress?.postalCode || ''}`,
+        viewUrl: `${process.env.ADMIN_URL || 'http://localhost:5174'}/orders/${order._id}`,
+      }),
+      text: `New COD order #${order.orderNumber || order._id} for ₹${total} by ${finalAddress?.fullName || 'Customer'}`,
+    }).catch(() => {});
+  }
 
   // Auto-push order to Shiprocket if enabled in settings
   if (deliverySettings?.shiprocketEnabled && deliverySettings?.shiprocketAutoCreateOrder) {
@@ -236,6 +263,18 @@ async function createOrder(userId, payload) {
       console.warn('Auto Shiprocket order creation error for order', order._id, err.message);
     });
   }
+
+  // Real-time broadcast for Admin dashboard orders list & badge
+  try {
+    emitAdminEvent('order_placed', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      total,
+      paymentMethod,
+      customerName: finalAddress?.fullName || 'Customer',
+      createdAt: order.createdAt,
+    });
+  } catch (_) {}
 
   return order;
 }
@@ -356,6 +395,23 @@ async function updateStatus(id, { status, note, trackingNumber }) {
     message: `Your order #${order.orderNumber} is now ${status.replace(/_/g, ' ')}. ${note || ''}`,
   }).catch(() => {});
 
+  // Real-time Push to user & live tracking room
+  try {
+    emitUserEvent(String(order.user), 'order_status_updated', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      status,
+      note,
+      updatedAt: new Date().toISOString(),
+    });
+    emitOrderEvent(String(order._id), 'order_tracking_updated', {
+      orderId: order._id,
+      status,
+      note,
+      statusHistory: order.statusHistory,
+    });
+  } catch (_) {}
+
   // If status is updated to confirmed/processing/shipped/out_for_delivery and not yet in Shiprocket, auto-push
   if (['confirmed', 'processing', 'packed', 'shipped', 'out_for_delivery'].includes(status) && !order.shiprocket?.orderId) {
     shiprocketService.createShiprocketOrder(order._id).catch((err) => {
@@ -404,12 +460,32 @@ async function cancelOrder(id, user, { reason = 'Cancelled by user' }) {
     });
   }
 
-  // Notify
+  // Notify User
   await Notification.create({
     user: order.user,
     type: 'order',
     title: 'Order Cancelled',
     message: `Your order #${order.orderNumber} has been cancelled.`,
+  }).catch(() => {});
+
+  // Notify Admins about cancelled order
+  notifyAdmins({
+    event: 'orderCancelled',
+    subject: `Order Cancelled: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:540px;margin:auto;border:1px solid #e2e8f0;border-radius:8px;padding:24px;background:#ffffff">
+        <h2 style="color:#e11d48;margin-top:0">⚠️ Order Cancelled</h2>
+        <div style="background:#fff1f2;border-left:4px solid #e11d48;padding:12px 16px;margin:16px 0;border-radius:4px">
+          <p style="margin:4px 0"><strong>Order Number:</strong> #${order.orderNumber || String(order._id).slice(-6).toUpperCase()}</p>
+          <p style="margin:4px 0"><strong>Reason:</strong> ${reason}</p>
+          <p style="margin:4px 0"><strong>Total Amount:</strong> ₹${(order.total || 0).toLocaleString('en-IN')}</p>
+        </div>
+        <a href="${process.env.ADMIN_URL || 'http://localhost:5174'}/orders/${order._id}" style="display:inline-block;padding:10px 18px;background:#e11d48;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:13px">
+          View Order
+        </a>
+      </div>
+    `,
+    text: `Order #${order.orderNumber || order._id} was cancelled. Reason: ${reason}`,
   }).catch(() => {});
 
   return order;

@@ -85,50 +85,59 @@ export default function CouponsListPage() {
     },
     {
       key: 'status',
-      header: 'Status',
-      render: (c) => (
-        <span
-          className={`rounded-md px-2.5 py-1 text-[11px] font-bold border ${
-            c.isActive && !isExpired(c)
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
-              : isExpired(c)
-              ? 'bg-rose-50 text-rose-600 border-rose-200/60'
-              : 'bg-slate-100 text-slate-500 border-slate-200/60'
-          }`}
-        >
-          {isExpired(c) ? 'Expired' : c.isActive ? 'Active' : 'Disabled'}
-        </span>
-      ),
+      header: 'Status & Toggle',
+      render: (c) => {
+        const active = c.isActive && !isExpired(c);
+        const isToggling = togglingId === c._id;
+        return (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleToggleActive(c)}
+              disabled={isToggling}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                c.isActive ? 'bg-emerald-600' : 'bg-slate-300'
+              } ${isToggling ? 'opacity-50 cursor-wait' : ''}`}
+              title={c.isActive ? 'Click to deactivate' : 'Click to activate'}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  c.isActive ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span
+              className={`rounded-md px-2 py-0.5 text-[11px] font-extrabold border ${
+                c.isActive && !isExpired(c)
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : isExpired(c)
+                  ? 'bg-rose-50 text-rose-600 border-rose-200'
+                  : 'bg-slate-100 text-slate-500 border-slate-200'
+              }`}
+            >
+              {isExpired(c) ? 'Expired' : c.isActive ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: 'actions',
-      header: '',
+      header: 'Actions',
       className: 'text-right',
       render: (c) => (
         <div className="flex justify-end gap-1.5">
-          <button
-            onClick={() => handleToggleActive(c)}
-            disabled={togglingId === c._id}
-            className={`inline-flex items-center justify-center rounded-md border p-1.5 transition hover:scale-105 active:scale-95 ${
-              c.isActive && !isExpired(c)
-                ? 'border-emerald-200/70 bg-emerald-50/80 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
-                : 'border-amber-200/70 bg-amber-50/80 text-amber-600 hover:bg-amber-100 hover:text-amber-700'
-            }`}
-            title={c.isActive && !isExpired(c) ? 'Active (Click to Disable)' : 'Click to Activate'}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-          </button>
           <Link
             to={`/coupons/${c._id}/edit`}
             className="inline-flex items-center justify-center rounded-md border border-indigo-200/70 bg-indigo-50/80 p-1.5 text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-700 hover:scale-105 active:scale-95"
-            title="Edit"
+            title="Edit Coupon"
           >
             <Pencil className="h-4 w-4" />
           </Link>
           <button
             onClick={() => setToDelete(c)}
             className="inline-flex items-center justify-center rounded-md border border-rose-200/70 bg-rose-50/80 p-1.5 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 hover:scale-105 active:scale-95"
-            title="Delete"
+            title="Delete Coupon"
           >
             <Trash2 className="h-4 w-4" />
           </button>

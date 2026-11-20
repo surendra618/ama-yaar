@@ -76,9 +76,22 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 
-// Serve static uploads and editorial looks
+// Serve static uploads, videos, and editorial looks
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use('/video', express.static(path.join(__dirname, '../public/video')));
 app.use('/editorial-looks', express.static(path.join(__dirname, '../public/editorial-looks')));
+
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'AMA YAAR API Server is running',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      api: '/api/v1'
+    }
+  });
+});
 
 app.get('/health', (req, res) => res.json({ status: 'ok', env: env.nodeEnv }));
 

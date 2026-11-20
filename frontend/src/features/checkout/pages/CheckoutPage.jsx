@@ -18,8 +18,13 @@ import {
   AlertCircle,
   Pencil,
   Trash2,
+  LocateFixed,
+  Loader2,
+  Search,
+  Tag,
 } from 'lucide-react';
 import api from '../../../lib/axios';
+import { INDIA_STATES_CITIES, ALL_INDIAN_STATES } from '../../../data/indiaLocations';
 import {
   fetchAddresses,
   addAddress,
@@ -27,17 +32,18 @@ import {
   deleteAddress,
   setDefaultAddress,
 } from '../../account/accountSlice';
-import { fetchCart, resetCart, clearCart, closeDrawer } from '../../cart/cartSlice';
+import { fetchCart, resetCart, clearCart, closeDrawer, applyCoupon, removeCoupon } from '../../cart/cartSlice';
 import { createOrder } from '../../orders/ordersSlice';
 import Loader from '../../../components/Loader';
 import AuthPopupModal from '../../../components/AuthPopupModal';
+import { getMediaUrl, getFallbackForName } from '../../../utils/mediaUrl';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const { addresses = [] } = useSelector((state) => state.account || {});
-  const { items = [], summary = {} } = useSelector((state) => state.cart || {});
+  const { items = [], summary = {}, coupon, couponError, actionLoading } = useSelector((state) => state.cart || {});
   const { currentOrder, orderPlacing } = useSelector((state) => state.orders || {});
   const { isAuthenticated, user } = useSelector((state) => state.auth || {});
 
@@ -48,7 +54,19 @@ export default function CheckoutPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [activeCoupons, setActiveCoupons] = useState([]);
   const selectedAddr = addresses.find((a) => a._id === selectedAddressId) || addresses[0];
+
+  useEffect(() => {
+    api
+      .get('/coupons/active')
+      .then((res) => {
+        const list = res.data?.data || res.data || [];
+        setActiveCoupons(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {});
+  }, []);
 
   // Address Form State
   const [addressForm, setAddressForm] = useState({
@@ -64,10 +82,130 @@ export default function CheckoutPage() {
   });
 
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Auto-search address suggestions when typing in Flat, House No, Street
+  useEffect(() => {
+    const query = addressForm.line1?.trim();
+    if (!query || query.length < 3 || !showSuggestions) {
+      setAddressSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingAddress(true);
+      try {
+        const fullQ = query + (addressForm.city ? (', ' + addressForm.city) : '') + ', India';
+        const enc = encodeURIComponent(fullQ);
+        const res = await fetch('https://nominatim.openstreetmap.org/search?q=' + enc + '&format=json&addressdetails=1&countrycodes=in&limit=5', {
+          headers: { 'Accept-Language': 'en' }
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAddressSuggestions(data);
+        }
+      } catch (err) {
+        console.warn('Address autocomplete error:', err);
+      } finally {
+        setIsSearchingAddress(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [addressForm.line1, showSuggestions]);
+
+  // Handle current location GPS auto-fill
+  const handleDetectCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+    setIsLocating(true);
+    setLocationError('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const res = await fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lon + '&format=json&addressdetails=1', {
+            headers: { 'Accept-Language': 'en' }
+          });
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            const houseOrRoad = [addr.house_number, addr.building, addr.road || addr.street || addr.pedestrian].filter(Boolean).join(', ');
+            const landmarkArea = [addr.neighbourhood, addr.suburb, addr.residential].filter(Boolean).join(', ');
+            const detectedCity = addr.city || addr.town || addr.municipality || addr.city_district || addr.district || addr.state_district || addr.suburb || addr.village || addr.county || '';
+            const detectedState = addr.state || '';
+            const detectedPincode = addr.postcode ? String(addr.postcode).replace(/[^0-9]/g, '').slice(0, 6) : '';
+
+            const matchedState = ALL_INDIAN_STATES.find(
+              (s) => s.toLowerCase() === detectedState.toLowerCase() || detectedState.toLowerCase().includes(s.toLowerCase())
+            ) || detectedState;
+
+            setAddressForm((prev) => ({
+              ...prev,
+              line1: houseOrRoad || prev.line1 || (data.display_name?.split(',')[0] || ''),
+              line2: landmarkArea || prev.line2,
+              city: detectedCity || prev.city,
+              state: matchedState || prev.state,
+              pincode: detectedPincode || prev.pincode,
+            }));
+            setShowSuggestions(false);
+          }
+        } catch (err) {
+          console.error('Reverse geocode error:', err);
+          setLocationError('Failed to fetch address details for your location');
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (err) => {
+        console.warn('Geolocation error:', err);
+        setLocationError('Location permission denied or unavailable');
+        setIsLocating(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  // Select suggestion from dropdown
+  const handleSelectSuggestion = (sug) => {
+    const addr = sug.address || {};
+    const streetPart = [addr.house_number, addr.building, addr.road || addr.suburb || addr.neighbourhood].filter(Boolean).join(', ') || sug.display_name?.split(',')[0] || '';
+    const landmarkPart = [addr.neighbourhood !== streetPart ? addr.neighbourhood : '', addr.suburb !== streetPart ? addr.suburb : ''].filter(Boolean).join(', ');
+    const detectedCity = addr.city || addr.town || addr.municipality || addr.city_district || addr.district || addr.state_district || addr.suburb || addr.village || addr.county || '';
+    const detectedState = addr.state || '';
+    const detectedPincode = addr.postcode ? String(addr.postcode).replace(/[^0-9]/g, '').slice(0, 6) : '';
+
+    const matchedState = ALL_INDIAN_STATES.find(
+      (s) => s.toLowerCase() === detectedState.toLowerCase() || detectedState.toLowerCase().includes(s.toLowerCase())
+    ) || detectedState;
+
+    setAddressForm((prev) => ({
+      ...prev,
+      line1: streetPart || prev.line1,
+      line2: landmarkPart || prev.line2,
+      city: detectedCity || prev.city,
+      state: matchedState || prev.state,
+      pincode: detectedPincode || prev.pincode,
+    }));
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+  };
 
   // Shiprocket live serviceability state
   const [shippingServiceability, setShippingServiceability] = useState(null);
   const [checkingShipping, setCheckingShipping] = useState(false);
+
+  useEffect(() => {
+    if (step === 3) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+  }, [step]);
 
   useEffect(() => {
     if (selectedAddr?.pincode && String(selectedAddr.pincode).trim().length === 6) {
@@ -273,6 +411,7 @@ export default function CheckoutPage() {
       dispatch(resetCart());
       dispatch(clearCart());
       setStep(3); // Direct COD success
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       return;
     }
 
@@ -292,17 +431,20 @@ export default function CheckoutPage() {
         });
         rzpData = rzpRes.data || rzpRes;
       } catch (payErr) {
-        console.warn('API create-order for payment failed, using local checkout config:', payErr);
-        rzpData = {
-          id: `rzp_sim_${Date.now()}`,
-          amount: Math.round(Number(createdOrder.total) * 100),
-          currency: 'INR',
-          keyId: 'rzp_test_S7lSvWtu89c6zD',
-        };
+        console.error('API create-order for payment failed:', payErr);
+        const errMsg = payErr.response?.data?.message || payErr.message || 'Payment gateway initialization failed';
+        setOrderError('Payment Gateway Error: ' + errMsg + '. Please select Cash on Delivery or contact support.');
+        return;
       }
 
+      if (!rzpData || !rzpData.id || !rzpData.id.startsWith('order_')) {
+        setOrderError('Unable to generate valid payment order from Razorpay. Please retry or choose Cash on Delivery.');
+        return;
+      }
+
+
       const options = {
-        key: rzpData.keyId || 'rzp_test_S7lSvWtu89c6zD',
+        key: rzpData.keyId || 'rzp_live_U00eTD8bUufKVi',
         amount: rzpData.amount,
         currency: rzpData.currency || 'INR',
         name: 'AMA YAAR',
@@ -321,6 +463,7 @@ export default function CheckoutPage() {
           dispatch(resetCart());
           dispatch(clearCart());
           setStep(3);
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         },
         prefill: {
           name: selectedAddr?.fullName || user?.name || '',
@@ -804,8 +947,12 @@ export default function CheckoutPage() {
                 <div key={i._id} className="py-3 flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-3 truncate">
                     <img
-                      src={i.product?.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'}
+                      src={getMediaUrl(i.product?.images?.[0] || i.product?.image, i.product?.name)}
                       alt=""
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getFallbackForName(i.product?.name);
+                      }}
                       className="h-11 w-11 shrink-0 rounded-lg object-cover bg-neutral-100 border border-neutral-200/60"
                     />
                     <div className="truncate">
@@ -816,6 +963,97 @@ export default function CheckoutPage() {
                   <span className="font-black text-black shrink-0 text-xs">₹{(i.price * i.quantity).toLocaleString('en-IN')}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Coupons & Promo Widget */}
+            <div className="my-4 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-3.5 space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-black">
+                <Tag className="h-3.5 w-3.5 text-black" />
+                <span>Promo Coupon</span>
+              </div>
+
+              {coupon ? (
+                <div className="flex items-center justify-between rounded-lg bg-emerald-50 p-2.5 border border-emerald-200">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <div>
+                      <span className="text-xs font-black uppercase text-emerald-900 tracking-wider">
+                        {coupon.code} Applied
+                      </span>
+                      <p className="text-[10px] text-emerald-700 font-medium">
+                        You saved ₹{summary.couponDiscount} on this order!
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => dispatch(removeCoupon())}
+                    className="text-[11px] font-black uppercase text-rose-600 hover:underline cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCodeInput}
+                      onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                      placeholder="ENTER COUPON CODE"
+                      className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-bold uppercase placeholder:text-neutral-400 focus:border-black focus:outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        if (couponCodeInput.trim()) {
+                          dispatch(applyCoupon(couponCodeInput.trim().toUpperCase()));
+                          setCouponCodeInput('');
+                        }
+                      }}
+                      disabled={actionLoading || !couponCodeInput.trim()}
+                      className="rounded-lg bg-black px-3.5 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition disabled:opacity-40 cursor-pointer"
+                    >
+                      Apply
+                    </button>
+                  </div>
+
+                  {/* Active Coupons List */}
+                  {activeCoupons.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
+                        Tap to Apply Active Coupon ({activeCoupons.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activeCoupons.map((c) => (
+                          <button
+                            key={c._id || c.code}
+                            type="button"
+                            onClick={() => dispatch(applyCoupon(c.code))}
+                            className="rounded-md border border-neutral-200 bg-white hover:bg-neutral-100 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-black hover:border-black transition active:scale-95 flex items-center gap-1 shadow-2xs cursor-pointer"
+                            title={
+                              c.discountType === 'percentage'
+                                ? `${c.discountValue}% OFF (Min: ₹${c.minOrderValue || 0})`
+                                : c.discountType === 'fixed'
+                                ? `₹${c.discountValue} OFF (Min: ₹${c.minOrderValue || 0})`
+                                : 'Free Delivery'
+                            }
+                          >
+                            <span>+{c.code}</span>
+                            <span className="text-[9px] text-neutral-500 font-medium">
+                              ({c.discountType === 'percentage' ? `${c.discountValue}%` : c.discountType === 'fixed' ? `₹${c.discountValue}` : 'Free Ship'})
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {couponError && (
+                    <p className="text-[11px] font-bold text-rose-600 mt-1">
+                      {couponError}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2.5 text-xs text-neutral-600 font-semibold pt-3 border-t border-neutral-100">
@@ -887,56 +1125,196 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">Flat, House No., Street</label>
-                <input
-                  required
-                  type="text"
-                  value={addressForm.line1}
-                  onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
-                  className="w-full rounded-lg border border-neutral-200 px-3.5 py-2.5 text-xs font-semibold text-black focus:border-black focus:outline-none"
-                />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-black">
+                    Flat, House No., Street
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleDetectCurrentLocation}
+                    disabled={isLocating}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-extrabold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition cursor-pointer disabled:opacity-50 border border-blue-200/80"
+                    title="Autofill address from Google Maps / GPS"
+                  >
+                    {isLocating ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>Locating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <LocateFixed className="h-3 w-3 text-blue-600" />
+                        <span>Use Current Location</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    required
+                    type="text"
+                    value={addressForm.line1}
+                    onFocus={() => {
+                      if (addressSuggestions.length > 0) setShowSuggestions(true);
+                    }}
+                    onChange={(e) => {
+                      setAddressForm({ ...addressForm, line1: e.target.value });
+                      setShowSuggestions(true);
+                    }}
+                    placeholder="Start typing address or use current location..."
+                    className="w-full rounded-lg border border-neutral-200 px-3.5 py-2.5 text-xs font-semibold text-black focus:border-black focus:outline-none"
+                  />
+                  {isSearchingAddress && (
+                    <div className="absolute right-3 top-3 text-neutral-400">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {locationError && (
+                  <p className="text-[11px] font-medium text-rose-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {locationError}
+                  </p>
+                )}
+
+                {/* Suggestions Dropdown */}
+                {showSuggestions && addressSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-neutral-200 rounded-xl shadow-xl max-h-56 overflow-y-auto divide-y divide-neutral-100">
+                    <div className="p-2 bg-neutral-50 text-[10px] font-black uppercase tracking-wider text-neutral-400 flex items-center justify-between">
+                      <span>Select Address Suggestion</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowSuggestions(false)}
+                        className="hover:text-black cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                    {addressSuggestions.map((sug, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => handleSelectSuggestion(sug)}
+                        className="p-2.5 text-xs hover:bg-blue-50/70 cursor-pointer transition flex items-start gap-2"
+                      >
+                        <MapPin className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-black truncate">
+                            {sug.address?.road || sug.address?.suburb || sug.display_name?.split(',')[0]}
+                          </p>
+                          <p className="text-[11px] text-neutral-500 truncate">
+                            {sug.display_name}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
-                <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">Landmark, Area (Optional)</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">
+                  Landmark, Area (Optional)
+                </label>
                 <input
                   type="text"
                   value={addressForm.line2}
                   onChange={(e) => setAddressForm({ ...addressForm, line2: e.target.value })}
+                  placeholder="Near temple, park, school etc."
                   className="w-full rounded-lg border border-neutral-200 px-3.5 py-2.5 text-xs font-semibold text-black focus:border-black focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
+                {/* State Dropdown with all States */}
                 <div>
-                  <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">City</label>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">
+                    State
+                  </label>
+                  <select
+                    required
+                    value={addressForm.state}
+                    onChange={(e) => {
+                      const newState = e.target.value;
+                      const validCities = INDIA_STATES_CITIES[newState] || [];
+                      setAddressForm({
+                        ...addressForm,
+                        state: newState,
+                        city: addressForm.city || validCities[0] || '',
+                      });
+                    }}
+                    className="w-full rounded-lg border border-neutral-200 px-2.5 py-2.5 text-xs font-semibold text-black bg-white focus:border-black focus:outline-none cursor-pointer"
+                  >
+                    <option value="">Select State</option>
+                    {ALL_INDIAN_STATES.map((st) => (
+                      <option key={st} value={st}>
+                        {st}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* City Input with Datalist Dropdown: Auto-filled by Google Map/GPS, with full dropdown suggestions and manual edit */}
+                <div className="relative">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">
+                    City
+                  </label>
                   <input
                     required
                     type="text"
+                    list="city-options-list"
+                    autoComplete="off"
+                    placeholder="Enter or select city"
                     value={addressForm.city}
                     onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-200 px-3.5 py-2.5 text-xs font-semibold text-black focus:border-black focus:outline-none"
+                    className="w-full rounded-lg border border-neutral-200 px-3 py-2.5 text-xs font-semibold text-black bg-white focus:border-black focus:outline-none"
                   />
+                  <datalist id="city-options-list">
+                    {(addressForm.state && INDIA_STATES_CITIES[addressForm.state]
+                      ? INDIA_STATES_CITIES[addressForm.state]
+                      : []
+                    ).map((ct) => (
+                      <option key={ct} value={ct} />
+                    ))}
+                  </datalist>
                 </div>
+
+                {/* Pincode Input with auto-city/state lookup */}
                 <div>
-                  <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">State</label>
-                  <input
-                    required
-                    type="text"
-                    value={addressForm.state}
-                    onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-200 px-3.5 py-2.5 text-xs font-semibold text-black focus:border-black focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">Pincode</label>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-black block mb-1.5">
+                    Pincode
+                  </label>
                   <input
                     required
                     type="text"
                     maxLength={6}
+                    placeholder="6-digit Pincode"
                     value={addressForm.pincode}
-                    onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setAddressForm((prev) => ({ ...prev, pincode: val }));
+                      if (val.length === 6) {
+                        fetch('https://api.postalpincode.in/pincode/' + val)
+                          .then((r) => r.json())
+                          .then((res) => {
+                            if (res && res[0]?.Status === 'Success' && res[0]?.PostOffice?.length > 0) {
+                              const po = res[0].PostOffice[0];
+                              const st = po.State;
+                              const dt = po.District || po.Block || '';
+                              const matchedState = ALL_INDIAN_STATES.find(
+                                (s) => s.toLowerCase() === st.toLowerCase() || st.toLowerCase().includes(s.toLowerCase())
+                              ) || st;
+                              setAddressForm((prev) => ({
+                                ...prev,
+                                state: matchedState || prev.state,
+                                city: dt || prev.city,
+                              }));
+                            }
+                          })
+                          .catch(() => {});
+                      }
+                    }}
                     className="w-full rounded-lg border border-neutral-200 px-3.5 py-2.5 text-xs font-semibold text-black focus:border-black focus:outline-none"
                   />
                 </div>

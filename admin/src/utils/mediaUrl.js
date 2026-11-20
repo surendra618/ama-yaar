@@ -6,10 +6,15 @@ export function getMediaUrl(path) {
     path.startsWith('http://') ||
     path.startsWith('https://') ||
     path.startsWith('data:') ||
-    path.startsWith('blob:') ||
-    path.startsWith('/editorial-looks/')
+    path.startsWith('blob:')
   ) {
     return path;
+  }
+  if (path.startsWith('/editorial-looks/') || path.startsWith('/video/')) {
+    return path;
+  }
+  if (path.startsWith('editorial-looks/') || path.startsWith('video/')) {
+    return `/${path}`;
   }
 
   const base =

@@ -2,20 +2,31 @@ const Order = require('../order/order.model');
 const User = require('../user/user.model');
 const Product = require('../product/product.model');
 const ReturnRequest = require('../returnRequest/returnRequest.model');
+const Category = require('../category/category.model');
+const Coupon = require('../coupon/coupon.model');
+const Banner = require('../banner/banner.model');
 
 async function getDashboardStats() {
   const [
     totalUsers,
     totalProducts,
+    totalCategories,
+    totalCoupons,
+    totalBanners,
     totalOrders,
     revenueAgg,
     statusCounts,
     pendingReturns,
     recentOrders,
     topProducts,
+    lowStockProducts,
+    paymentMethodAgg,
   ] = await Promise.all([
     User.countDocuments({ role: 'customer' }),
     Product.countDocuments(),
+    Category.countDocuments(),
+    Coupon.countDocuments(),
+    Banner.countDocuments(),
     Order.countDocuments(),
     Order.aggregate([
       { $match: { status: { $nin: ['cancelled'] } } },
@@ -26,13 +37,25 @@ async function getDashboardStats() {
     ]),
     ReturnRequest.countDocuments({ status: 'requested' }),
     Order.find()
-      .populate('user', 'name email')
+      .populate('user', 'name email phone')
       .sort({ createdAt: -1 })
       .limit(6),
     Product.find({ isActive: true })
       .sort({ rating: -1, numReviews: -1 })
       .limit(5)
       .select('name slug price images rating numReviews stock'),
+    Product.find({ stock: { $lte: 5 } })
+      .limit(5)
+      .select('name stock price'),
+    Order.aggregate([
+      {
+        $group: {
+          _id: '$paymentInfo.method',
+          count: { $sum: 1 },
+          amount: { $sum: '$total' },
+        },
+      },
+    ]),
   ]);
 
   const totalRevenue = revenueAgg[0]?.totalRevenue || 0;
@@ -94,14 +117,20 @@ async function getDashboardStats() {
       totalRevenue,
       totalOrders,
       totalProducts,
+      totalCategories,
+      totalCoupons,
+      totalBanners,
       totalUsers,
       pendingReturns,
       activeOrders: (orderStatusMap.placed || 0) + (orderStatusMap.confirmed || 0) + (orderStatusMap.processing || 0) + (orderStatusMap.shipped || 0),
+      avgOrderValue: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
     },
     orderStatusMap,
     chartData,
     recentOrders,
     topProducts,
+    lowStockProducts,
+    paymentMethodAgg,
   };
 }
 

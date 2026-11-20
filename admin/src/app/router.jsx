@@ -5,6 +5,8 @@ import AuthLayout from '../layouts/AuthLayout';
 import AdminLoginPage from '../features/auth/pages/AdminLoginPage';
 import DashboardPage from '../features/dashboard/pages/DashboardPage';
 import UsersListPage from '../features/users/pages/UsersListPage';
+import CustomersListPage from '../features/users/pages/CustomersListPage';
+import TeamAdminsPage from '../features/users/pages/TeamAdminsPage';
 import UserDetailsPage from '../features/users/pages/UserDetailsPage';
 import ProductsListPage from '../features/products/pages/ProductsListPage';
 import ProductFormPage from '../features/products/pages/ProductFormPage';
@@ -27,13 +29,16 @@ import ContactMessagesPage from '../features/contacts/pages/ContactMessagesPage'
 import CardSlidersListPage from '../features/cardSliders/pages/CardSlidersListPage';
 import CardSliderFormPage from '../features/cardSliders/pages/CardSliderFormPage';
 import DeliverySettingsPage from '../features/settings/pages/DeliverySettingsPage';
+import NotificationSettingsPage from '../features/settings/pages/NotificationSettingsPage';
 
 export const router = createBrowserRouter([
   {
     element: <DashboardLayout />,
     children: [
       { path: '/', element: <DashboardPage /> },
-      { path: '/users', element: <UsersListPage /> },
+      { path: '/team', element: <TeamAdminsPage /> },
+      { path: '/customers', element: <CustomersListPage /> },
+      { path: '/users', element: <CustomersListPage /> },
       { path: '/users/:id', element: <UserDetailsPage /> },
       { path: '/products', element: <ProductsListPage /> },
       { path: '/products/new', element: <ProductFormPage /> },
@@ -61,6 +66,7 @@ export const router = createBrowserRouter([
       { path: '/returns', element: <ReturnsListPage /> },
       { path: '/returns/:id', element: <ReturnDetailsPage /> },
       { path: '/reports', element: <ReportsPage /> },
+      { path: '/settings/notifications', element: <NotificationSettingsPage /> },
       { path: '/settings/delivery', element: <DeliverySettingsPage /> },
       { path: '/settings', element: <DeliverySettingsPage /> },
     ],

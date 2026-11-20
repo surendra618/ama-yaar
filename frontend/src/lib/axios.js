@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const defaultBaseUrl = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.MODE === 'production' 
-    ? 'https://ama-yaar.vercel.app/api/v1' 
-    : 'http://localhost:5005/api/v1');
+const defaultBaseUrl = import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.MODE === 'production'
+    ? 'https://ama-yaar.vercel.app/api/v1'
+    : 'http://192.168.1.12:5000/api/v1');
 
 const api = axios.create({
   baseURL: defaultBaseUrl,
@@ -69,7 +69,7 @@ api.interceptors.response.use(
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
               return api(originalRequest);
             }
-          } catch (_) {}
+          } catch (_) { }
         }
         return Promise.reject(error);
       }

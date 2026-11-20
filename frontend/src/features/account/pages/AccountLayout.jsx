@@ -1,9 +1,8 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { User, MapPin, Package, Heart, ShieldCheck, LogOut, ChevronRight, Tag, RotateCcw, Bell, HelpCircle } from 'lucide-react';
-import { useDispatch } from 'react-redux';
+import { useEffect } from 'react';
+import { NavLink, Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { User, MapPin, Package, Heart, ShieldCheck, LogOut, ChevronRight, ChevronLeft, Tag, RotateCcw, Bell, HelpCircle } from 'lucide-react';
 import { logout } from '../../auth/authSlice';
-import { useNavigate } from 'react-router-dom';
 
 const NAV_ITEMS = [
   { to: '/account/profile',        label: 'My Profile',    icon: User },
@@ -17,8 +16,20 @@ const NAV_ITEMS = [
 
 export default function AccountLayout() {
   const { user } = useSelector((state) => state.auth);
+  const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Check if user is currently on the root account hub or on a specific subpage
+  const isRootAccount = location.pathname === '/account' || location.pathname === '/account/';
+  const currentItem = NAV_ITEMS.find((item) => item.to === location.pathname);
+
+  // On desktop, navigating to /account automatically displays /account/profile on the right side
+  useEffect(() => {
+    if (isRootAccount && typeof window !== 'undefined' && window.innerWidth >= 768) {
+      navigate('/account/profile', { replace: true });
+    }
+  }, [isRootAccount, navigate]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -30,22 +41,36 @@ export default function AccountLayout() {
     : 'U';
 
   return (
-    <div className="min-h-screen bg-neutral-50/60">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="bg-neutral-50/60 pb-4 sm:pb-12 md:min-h-screen">
+      <div className="mx-auto max-w-6xl px-4 pt-4 pb-2 sm:py-10 sm:px-6 lg:px-8">
 
         {/* Page Header */}
-        <div className="mb-8">
-          <span className="text-[11px] font-black uppercase tracking-[0.25em] text-neutral-400 block mb-1">
-            Account Settings
+        <div className="mb-4 sm:mb-8">
+          {/* Back button visible only on mobile when inside a subpage */}
+          {!isRootAccount && (
+            <Link
+              to="/account"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-600 hover:text-black mb-3 md:hidden transition"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Back to Account</span>
+            </Link>
+          )}
+
+          <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] text-neutral-400 block mb-1">
+            {isRootAccount ? 'Account Overview' : currentItem?.label || 'Account Settings'}
           </span>
-          <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight uppercase">
-            MY ACCOUNT
+          <h1 className="text-xl sm:text-3xl font-black text-black tracking-tight uppercase">
+            {isRootAccount ? 'MY ACCOUNT' : currentItem?.label || 'ACCOUNT'}
           </h1>
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-          {/* Sidebar */}
-          <aside className="md:col-span-1">
+          {/* Sidebar / Menu:
+              - On Desktop (md:block): always visible on the left.
+              - On Mobile: visible when at /account, hidden when viewing a specific subpage like /account/addresses.
+          */}
+          <aside className={`${isRootAccount ? 'block' : 'hidden'} md:block md:col-span-1`}>
             <div className="rounded-xl border border-neutral-200/60 bg-white p-4 shadow-sm sticky top-24">
 
               {/* User Avatar & Info */}
@@ -96,7 +121,7 @@ export default function AccountLayout() {
               <div className="mt-4 pt-4 border-t border-neutral-100">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 w-full rounded-lg px-3.5 py-2.5 text-[13px] font-bold text-rose-600 hover:bg-rose-50 transition"
+                  className="flex items-center gap-3 w-full rounded-lg px-3.5 py-2.5 text-[13px] font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                 >
                   <LogOut className="h-4 w-4 shrink-0" />
                   Sign Out
@@ -105,8 +130,11 @@ export default function AccountLayout() {
             </div>
           </aside>
 
-          {/* Main Content */}
-          <div className="md:col-span-3">
+          {/* Main Content (Outlet):
+              - On Desktop (md:block): always visible on the right.
+              - On Mobile: visible when inside a subpage like /account/addresses; on /account, desktop will default to profile while mobile stays on the menu.
+          */}
+          <div className={`${isRootAccount ? 'hidden md:block' : 'block'} md:col-span-3`}>
             <Outlet />
           </div>
         </div>

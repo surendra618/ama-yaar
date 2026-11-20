@@ -117,4 +117,64 @@ async function changePassword(userId, { currentPassword, newPassword }) {
   return { message: 'Password changed successfully' };
 }
 
-module.exports = { list, getById, updateProfile, updateStatus, remove, changePassword };
+async function createAdminUser({ name, email, password, phone }) {
+  if (!name || !email || !password) {
+    throw new ApiError(400, 'Name, email and password are required');
+  }
+  if (password.length < 6) {
+    throw new ApiError(400, 'Password must be at least 6 characters long');
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const existing = await User.findOne({ email: cleanEmail });
+  if (existing) {
+    if (existing.role === 'admin') {
+      throw new ApiError(409, 'User with this email is already an Admin');
+    }
+    // Upgrade existing customer to admin
+    existing.role = 'admin';
+    if (name) existing.name = name;
+    if (phone) existing.phone = phone;
+    const salt = await bcrypt.genSalt(10);
+    existing.password = await bcrypt.hash(password, salt);
+    await existing.save();
+    const sanitized = existing.toObject();
+    delete sanitized.password;
+    return sanitized;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  const newAdmin = await User.create({
+    name,
+    email: cleanEmail,
+    password: hashedPassword,
+    phone,
+    role: 'admin',
+    isSuperAdmin: false,
+    status: 'active',
+  });
+
+  const sanitized = newAdmin.toObject();
+  delete sanitized.password;
+  return sanitized;
+}
+
+async function updateRole(userId, newRole) {
+  if (!['admin', 'customer'].includes(newRole)) {
+    throw new ApiError(400, 'Invalid role');
+  }
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, 'User not found');
+  if (user.isSuperAdmin) {
+    throw new ApiError(403, 'Cannot change role of Main Super Admin');
+  }
+  user.role = newRole;
+  await user.save();
+  const sanitized = user.toObject();
+  delete sanitized.password;
+  return sanitized;
+}
+
+module.exports = { list, getById, updateProfile, updateStatus, remove, changePassword, createAdminUser, updateRole };

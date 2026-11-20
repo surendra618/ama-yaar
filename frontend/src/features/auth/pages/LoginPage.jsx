@@ -81,7 +81,7 @@ export default function LoginPage() {
         const parsed = JSON.parse(pendingItem);
         dispatch(addToCart(parsed));
         sessionStorage.removeItem('pending_cart_item');
-      } catch (_) {}
+      } catch (_) { }
     }
 
     const searchParams = new URLSearchParams(location.search);
@@ -151,7 +151,7 @@ export default function LoginPage() {
     try {
       try {
         await api.post('/auth/send-otp', { phone: cleanPhone });
-      } catch (_) {}
+      } catch (_) { }
 
       setGeneratedOtp(newOtp);
       setOtp(newOtp);
@@ -188,7 +188,7 @@ export default function LoginPage() {
         setCustomError('Please enter your full name');
         return;
       }
-      if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      if (cleanEmail && (!cleanEmail.includes('@') || !cleanEmail.includes('.'))) {
         setCustomError('Please enter a valid email address');
         return;
       }
@@ -222,7 +222,7 @@ export default function LoginPage() {
             password: password || undefined,
           });
           resData = data.data;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       const userObj = resData?.user || {
@@ -289,11 +289,10 @@ export default function LoginPage() {
             setCustomError('');
             dispatch(clearError());
           }}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${
-            loginMode === 'otp'
-              ? 'bg-black text-white shadow-xs'
-              : 'text-neutral-600 hover:text-black'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${loginMode === 'otp'
+            ? 'bg-black text-white shadow-xs'
+            : 'text-neutral-600 hover:text-black'
+            }`}
         >
           <Smartphone size={14} />
           Mobile OTP
@@ -305,11 +304,10 @@ export default function LoginPage() {
             setCustomError('');
             dispatch(clearError());
           }}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${
-            loginMode === 'password'
-              ? 'bg-black text-white shadow-xs'
-              : 'text-neutral-600 hover:text-black'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${loginMode === 'password'
+            ? 'bg-black text-white shadow-xs'
+            : 'text-neutral-600 hover:text-black'
+            }`}
         >
           <Mail size={14} />
           Email &amp; Password
@@ -338,8 +336,7 @@ export default function LoginPage() {
             <div className={`af-field ${focused === 'phone' ? 'af-field--focus' : ''}`}>
               <label className="af-label">MOBILE NUMBER</label>
               <div className="af-input-box">
-                <Phone size={16} className="af-icon" />
-                <div className="text-xs font-black text-neutral-500 mr-2 border-r border-neutral-300 pr-2 shrink-0">
+                <div className="text-xs font-black text-neutral-500 mr-2 border-r border-neutral-300 pr-2 pl-4 shrink-0">
                   +91
                 </div>
                 <input
@@ -452,16 +449,15 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Email Address (Required for New Users) */}
+            {/* Email Address (Optional for New Users) */}
             {!isExistingUser && (
               <div className={`af-field ${focused === 'email_reg' ? 'af-field--focus' : ''}`}>
-                <label className="af-label">EMAIL ADDRESS <span className="text-rose-500">*</span></label>
+                <label className="af-label">EMAIL ADDRESS <span className="text-neutral-400 font-normal">(Optional)</span></label>
                 <div className="af-input-box">
                   <Mail size={16} className="af-icon" />
                   <input
                     type="email"
-                    required
-                    placeholder="you@example.com"
+                    placeholder="you@example.com (optional)"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onFocus={() => setFocused('email_reg')}
@@ -525,7 +521,7 @@ export default function LoginPage() {
               disabled={
                 isSubmitting ||
                 otp.length < 4 ||
-                (!isExistingUser && (!name.trim() || !email.trim() || password.length < 6))
+                (!isExistingUser && (!name.trim() || password.length < 6))
               }
               className="af-btn cursor-pointer"
             >

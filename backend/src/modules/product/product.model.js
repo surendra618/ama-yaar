@@ -32,6 +32,8 @@ const productSchema = new mongoose.Schema(
     ],
     highlights: [{ type: String }],
     keyFeatures: [{ type: String }],
+    modelInfo: { type: String },
+    bulletFeatures: [{ type: String }],
     // Fabric & Product Details
     fabric: { type: String },
     gsm: { type: String },

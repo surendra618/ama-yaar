@@ -15,12 +15,18 @@ export default function CaptchaBox({
   value = '',
   onChange,
   onCodeChange,
+  onCodeGenerated,
   isDark = false,
   error = '',
 }) {
   const canvasRef = useRef(null);
   const [code, setCode] = useState(() => generateRandomCode(5));
   const [isRotating, setIsRotating] = useState(false);
+
+  const notifyCode = useCallback((newCode) => {
+    if (onCodeChange) onCodeChange(newCode);
+    if (onCodeGenerated) onCodeGenerated(newCode);
+  }, [onCodeChange, onCodeGenerated]);
 
   const drawCaptcha = useCallback((text) => {
     const canvas = canvasRef.current;
@@ -91,14 +97,14 @@ export default function CaptchaBox({
     setIsRotating(true);
     const newCode = generateRandomCode(5);
     setCode(newCode);
-    if (onCodeChange) onCodeChange(newCode);
+    notifyCode(newCode);
     setTimeout(() => setIsRotating(false), 400);
-  }, [onCodeChange]);
+  }, [notifyCode]);
 
   useEffect(() => {
     drawCaptcha(code);
-    if (onCodeChange) onCodeChange(code);
-  }, [code, drawCaptcha, onCodeChange]);
+    notifyCode(code);
+  }, [code, drawCaptcha, notifyCode]);
 
   return (
     <div className="space-y-1.5 w-full">
@@ -110,28 +116,27 @@ export default function CaptchaBox({
         <span className="text-[10px] text-neutral-400 font-medium">Case-insensitive</span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Canvas Display with border */}
         <div className={`relative flex items-center rounded-lg border overflow-hidden shrink-0 select-none ${isDark ? 'border-neutral-700 bg-neutral-900' : 'border-neutral-300 bg-neutral-100'}`}>
           <canvas
             ref={canvasRef}
-            width={130}
-            height={42}
-            className="block"
+            width={112}
+            height={38}
+            className="block w-[100px] xs:w-[112px] h-[36px] sm:h-[38px]"
             title="Captcha Challenge"
           />
           <button
             type="button"
             onClick={refreshCaptcha}
-            className={`flex h-10 w-9 items-center justify-center transition border-l cursor-pointer ${
-              isDark
+            className={`flex h-[36px] sm:h-[38px] w-8 items-center justify-center transition border-l cursor-pointer ${isDark
                 ? 'border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-800'
                 : 'border-neutral-300 text-neutral-600 hover:text-black hover:bg-neutral-200'
-            }`}
+              }`}
             title="Refresh Captcha"
             aria-label="Refresh Captcha"
           >
-            <RotateCw className={`h-4 w-4 transition-transform duration-300 ${isRotating ? 'rotate-180' : ''}`} />
+            <RotateCw className={`h-3.5 w-3.5 transition-transform duration-300 ${isRotating ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
@@ -139,17 +144,16 @@ export default function CaptchaBox({
         <input
           type="text"
           value={value}
-          maxLength={6}
+          maxLength={5}
           onChange={(e) => onChange(e.target.value.toUpperCase())}
-          placeholder="Enter code"
+          placeholder="Code"
           required
           autoComplete="off"
           spellCheck="false"
-          className={`flex-1 min-w-0 rounded-lg px-3 py-2.5 text-xs font-black tracking-widest uppercase transition outline-none ${
-            isDark
+          className={`flex-1 min-w-0 w-full rounded-lg px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-xs sm:text-sm font-black tracking-normal uppercase transition outline-none ${isDark
               ? 'bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:border-white focus:ring-1 focus:ring-white'
               : 'bg-white border border-neutral-300 text-black placeholder-neutral-400 focus:border-black focus:ring-1 focus:ring-black'
-          } ${error ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+            } ${error ? 'border-red-500 ring-1 ring-red-500' : ''}`}
         />
       </div>
 

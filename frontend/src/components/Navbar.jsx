@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ArrowRight,
   Truck,
+  Headphones,
 } from "lucide-react";
 import { logout, checkAuth } from "../features/auth/authSlice";
 import { fetchCart, openDrawer } from "../features/cart/cartSlice";
@@ -26,6 +27,32 @@ import {
   markNotificationRead,
 } from "../features/notifications/notificationsSlice";
 import AuthPopupModal from "./AuthPopupModal";
+import socket, { joinUserRoom } from "../lib/socket";
+
+// Social Media marks for navigation drawer
+const FacebookIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.15 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.9h-2.34V22c4.78-.79 8.44-4.94 8.44-9.94Z" />
+  </svg>
+);
+const InstagramIcon = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    {...props}
+  >
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+const YoutubeIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M23 12s0-3.6-.46-5.3a2.9 2.9 0 0 0-2-2C18.9 4.2 12 4.2 12 4.2s-6.9 0-8.54.5a2.9 2.9 0 0 0-2 2C1 8.4 1 12 1 12s0 3.6.46 5.3a2.9 2.9 0 0 0 2 2c1.64.5 8.54.5 8.54.5s6.9 0 8.54-.5a2.9 2.9 0 0 0 2-2C23 15.6 23 12 23 12ZM9.8 15.5v-7l6 3.5-6 3.5Z" />
+  </svg>
+);
 
 const MEGA_MENU_DATA = {
   SHOP: {
@@ -376,6 +403,12 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    const handleOpenAuth = () => setAuthModalOpen(true);
+    window.addEventListener("open-auth-modal", handleOpenAuth);
+    return () => window.removeEventListener("open-auth-modal", handleOpenAuth);
+  }, []);
+
+  useEffect(() => {
     if (!isAuthenticated && !sessionStorage.getItem("auth_popup_shown")) {
       const timer = setTimeout(() => {
         setAuthModalOpen(true);
@@ -399,8 +432,22 @@ export default function Navbar() {
       dispatch(fetchCart());
       dispatch(fetchWishlist());
       dispatch(fetchNotifications());
+
+      if (user?._id) {
+        joinUserRoom(user._id);
+
+        const handleLiveOrderUpdate = () => {
+          dispatch(fetchNotifications());
+        };
+
+        socket.on('order_status_updated', handleLiveOrderUpdate);
+
+        return () => {
+          socket.off('order_status_updated', handleLiveOrderUpdate);
+        };
+      }
     }
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch, isAuthenticated, user?._id]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -520,15 +567,15 @@ export default function Navbar() {
               items:
                 children.length > 0
                   ? children.map((ch) => ({
-                      name: ch.name,
-                      to: `/products?category=${ch.slug}`,
-                    }))
+                    name: ch.name,
+                    to: `/products?category=${ch.slug}`,
+                  }))
                   : [
-                      {
-                        name: `Explore ${root.name}`,
-                        to: `/products?category=${root.slug}`,
-                      },
-                    ],
+                    {
+                      name: `Explore ${root.name}`,
+                      to: `/products?category=${root.slug}`,
+                    },
+                  ],
             });
           }
         });
@@ -619,11 +666,10 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`z-50 w-full transition-all duration-300 ${
-          isHome
-            ? "fixed top-0 inset-x-0 bg-black/15 backdrop-blur-md text-white border-b border-white/10 shadow-sm"
-            : "sticky top-0 bg-neutral-950/85 backdrop-blur-md text-white border-b border-white/10 shadow-xs"
-        }`}
+        className={`z-50 w-full transition-all duration-300 ${isHome
+            ? "fixed top-0 inset-x-0 bg-black/10 backdrop-blur-[1px] text-white border-b border-transparent shadow-none"
+            : "sticky top-0 bg-neutral-950 text-white border-b border-transparent shadow-xs"
+          }`}
       >
         {/* Main Nav Bar with container padding */}
         <nav className="relative">
@@ -632,7 +678,7 @@ export default function Navbar() {
             <div className="flex items-center z-20 shrink-0 sm:min-w-[140px] md:min-w-[160px]">
               <button
                 onClick={() => setMobileMenuOpen((v) => !v)}
-                className="rounded-full p-1.5 sm:p-2 transition cursor-pointer text-white hover:bg-white/10 drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)]"
+                className="rounded-full p-1.5 sm:p-2 transition cursor-pointer text-white hover:bg-white/10"
                 aria-label="Toggle navigation menu"
               >
                 {mobileMenuOpen ? (
@@ -652,26 +698,27 @@ export default function Navbar() {
                 <img
                   src="/logo.png"
                   alt="AMA YAAR"
-                  className="h-7 sm:h-11 max-w-[125px] sm:max-w-none w-auto object-contain transition-opacity group-hover:opacity-90 drop-shadow-[0_1px_3px_rgba(255,255,255,0.35)]"
+                  className="h-6 sm:h-10 md:h-11 max-w-[110px] sm:max-w-none w-auto object-contain transition-all group-hover:opacity-90"
                 />
               </Link>
             </div>
 
             {/* Right: Search, Notifications, User, Cart */}
-            <div className="flex items-center justify-end gap-1 sm:gap-2.5 md:gap-3.5 transition-colors text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.65)] z-20 shrink-0 sm:min-w-[140px] md:min-w-[160px]">
+            <div className="flex items-center justify-end gap-1 sm:gap-2.5 md:gap-3.5 transition-colors text-white z-20 shrink-0 sm:min-w-[140px] md:min-w-[160px]">
               {/* Search Toggle Button */}
               <button
                 onClick={() => setSearchOpen((v) => !v)}
-                className="p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                className="flex items-center p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 aria-label="Search"
                 title="Search fits"
               >
                 <Search className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
               </button>
 
+
               {/* Notifications */}
               {isAuthenticated && (
-                <div className="relative" ref={notifMenuRef}>
+                <div className="relative hidden sm:block" ref={notifMenuRef}>
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
@@ -734,7 +781,7 @@ export default function Navbar() {
 
               {/* User Profile / Phone OTP Login Popup */}
               {isAuthenticated ? (
-                <div className="relative" ref={userMenuRef}>
+                <div className="relative hidden sm:block" ref={userMenuRef}>
                   <button
                     onClick={() => {
                       setNotifMenuOpen(false);
@@ -779,6 +826,13 @@ export default function Navbar() {
                         >
                           <Truck className="h-4 w-4 text-amber-600" /> Track Order
                         </Link>
+                        <Link
+                          to="/customer-support"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
+                        >
+                          <Headphones className="h-4 w-4 text-neutral-600" /> Customer Support
+                        </Link>
                         <button
                           onClick={() => {
                             setUserMenuOpen(false);
@@ -795,7 +849,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => setAuthModalOpen(true)}
-                  className="p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                  className="hidden sm:inline-flex p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                   title="Sign In / Sign Up"
                   aria-label="Sign In"
                 >
@@ -807,7 +861,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => dispatch(openDrawer())}
-                className="relative p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
+                className="relative flex items-center p-1 sm:p-1.5 rounded-full transition cursor-pointer text-white hover:text-white/80 hover:bg-white/10"
                 title="Cart"
               >
                 <ShoppingBag className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2]" />
@@ -817,46 +871,10 @@ export default function Navbar() {
                   </span>
                 )}
               </button>
+
+
             </div>
           </div>
-
-          {/* Quick Search Strip */}
-          {searchOpen && (
-            <div className="px-4 py-3 border-t transition-colors bg-black/75 backdrop-blur-md border-white/10 animate-in fade-in duration-150">
-              <form
-                onSubmit={(e) => {
-                  handleSearch(e);
-                  setSearchOpen(false);
-                }}
-                className="mx-auto max-w-xl flex items-center gap-2"
-              >
-                <Search className="h-4 w-4 shrink-0 text-white/60" />
-                <input
-                  type="text"
-                  autoFocus
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search fits, collections, products..."
-                  className="flex-1 bg-transparent text-sm focus:outline-hidden text-white placeholder:text-neutral-400"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="text-neutral-400 hover:text-white cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="text-xs font-black uppercase tracking-wider px-3.5 py-1.5 transition text-black bg-white hover:bg-neutral-200 cursor-pointer rounded-xs"
-                >
-                  Search
-                </button>
-              </form>
-            </div>
-          )}
         </nav>
       </header>
 
@@ -964,6 +982,13 @@ export default function Navbar() {
                 >
                   <Truck className="h-4 w-4 text-amber-600" /> TRACK ORDER
                 </Link>
+                <Link
+                  to="/customer-support"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-black hover:text-neutral-500 border-b border-neutral-100 transition"
+                >
+                  <Headphones className="h-4 w-4 text-neutral-700" /> CUSTOMER SUPPORT
+                </Link>
               </div>
 
               {/* Drawer Bottom Auth & Wishlist */}
@@ -986,7 +1011,7 @@ export default function Navbar() {
                 {isAuthenticated ? (
                   <div className="space-y-2">
                     <Link
-                      to="/account/profile"
+                      to="/account"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-neutral-800 bg-white border border-neutral-200 hover:border-black transition"
                     >
@@ -1014,6 +1039,224 @@ export default function Navbar() {
                     <User className="h-4 w-4" /> Sign In / Sign Up
                   </button>
                 )}
+                {/* Social Media Links (Matching User Design) */}
+                <div className="pt-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2.5">
+                    Connect With Us
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="https://facebook.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877f2] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <FacebookIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://instagram.com/amayaar.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <InstagramIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://youtube.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="YouTube"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff0000] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <YoutubeIcon className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+
+      {/* Right-Side Search Sidebar Drawer (Bonkers Corner Style) */}
+      <AnimatePresence>
+        {searchOpen && (
+          <div className="fixed inset-0 z-[100] flex justify-end">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSearchOpen(false)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            />
+
+            {/* Right Side Drawer Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.28, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-md bg-white h-full flex flex-col shadow-2xl overflow-y-auto"
+            >
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 bg-white sticky top-0 z-20">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4.5 w-4.5 text-black" />
+                  <span className="text-xs font-black uppercase tracking-wider text-black">
+                    Search Fits
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(false)}
+                  className="p-1.5 text-neutral-500 hover:text-black rounded-full hover:bg-neutral-100 transition cursor-pointer"
+                  aria-label="Close search"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Search Form Input */}
+              <div className="p-5 border-b border-neutral-100 bg-neutral-50/60">
+                <form
+                  onSubmit={(e) => {
+                    handleSearch(e);
+                    setSearchOpen(false);
+                  }}
+                  className="relative flex items-center"
+                >
+                  <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-neutral-400" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Search t-shirts, cargos, jackets..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-neutral-200 bg-white py-2.5 pl-10 pr-10 text-xs font-semibold text-black placeholder:text-neutral-400 focus:border-black focus:outline-none transition shadow-xs"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 text-neutral-400 hover:text-black cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </form>
+              </div>
+
+              {/* Quick Popular Searches / Trending Drops (Bonkers Corner Style) */}
+              <div className="p-5 flex-1 overflow-y-auto space-y-6">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-wider text-neutral-400 mb-3">
+                    Popular Searches
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Oversized Printed",
+                      "Acid Wash",
+                      "Heavyweight (240+ GSM)",
+                      "Street Cargos",
+                      "Baggy Denim",
+                      "Anime Back-Prints",
+                      "Vintage Drops",
+                      "Polo Tees",
+                    ].map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery(term);
+                          navigate(`/products?search=${encodeURIComponent(term)}`);
+                          setSearchOpen(false);
+                        }}
+                        className="rounded-full border border-neutral-200 bg-neutral-50 hover:bg-black hover:text-white hover:border-black px-3.5 py-1.5 text-xs font-semibold text-neutral-700 transition cursor-pointer"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-wider text-neutral-400 mb-3">
+                    Curated Categories
+                  </p>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[
+                      { name: "Topwear", link: "/products?category=oversized-printed" },
+                      { name: "Bottomwear", link: "/products?search=cargo" },
+                      { name: "New Arrivals", link: "/products?isNewArrival=true" },
+                      { name: "Best Sellers", link: "/products?isBestSeller=true" },
+                      { name: "Acid Wash Series", link: "/products?category=sleeveless-acid-wash" },
+                      { name: "All Products", link: "/products" },
+                    ].map((cat) => (
+                      <Link
+                        key={cat.name}
+                        to={cat.link}
+                        onClick={() => setSearchOpen(false)}
+                        className="flex items-center justify-between p-3 rounded-lg border border-neutral-100 bg-neutral-50/80 hover:bg-black hover:text-white transition group"
+                      >
+                        <span className="text-xs font-bold">{cat.name}</span>
+                        <ArrowRight className="h-3.5 w-3.5 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 transition" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Search Drawer Footer CTA */}
+              <div className="p-4 border-t border-neutral-100 bg-neutral-50">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    handleSearch(e);
+                    setSearchOpen(false);
+                  }}
+                  className="w-full rounded-lg bg-black py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-sm"
+                >
+                  View All Search Results
+                </button>
+                {/* Social Media Links (Matching User Design) */}
+                <div className="pt-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2.5">
+                    Connect With Us
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="https://facebook.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877f2] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <FacebookIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://instagram.com/amayaar.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <InstagramIcon className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://youtube.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="YouTube"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff0000] text-white shadow-xs transition hover:scale-110 active:scale-95"
+                    >
+                      <YoutubeIcon className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>

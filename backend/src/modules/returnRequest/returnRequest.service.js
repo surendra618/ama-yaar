@@ -2,6 +2,7 @@ const ReturnRequest = require('./returnRequest.model');
 const Order = require('../order/order.model');
 const Notification = require('../notification/notification.model');
 const ApiError = require('../../utils/ApiError');
+const { notifyAdmins } = require('../notification/adminNotifier');
 
 async function list(user, query = {}) {
   const { status, page = 1, limit = 20 } = query;
@@ -70,6 +71,27 @@ async function create(userId, data) {
     type: 'return',
     title: 'Return Request Submitted',
     message: `Your return request for order #${order.orderNumber || order._id} has been received and is under review.`,
+  }).catch(() => {});
+
+  // Notify Admins about return request
+  notifyAdmins({
+    event: 'newReturn',
+    subject: `New Return Request: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:540px;margin:auto;border:1px solid #e2e8f0;border-radius:8px;padding:24px;background:#ffffff">
+        <h2 style="color:#d97706;margin-top:0">🔄 New Return / Exchange Request</h2>
+        <div style="background:#fffbeb;border-left:4px solid #d97706;padding:12px 16px;margin:16px 0;border-radius:4px">
+          <p style="margin:4px 0"><strong>Order Number:</strong> #${order.orderNumber || String(order._id).slice(-6).toUpperCase()}</p>
+          <p style="margin:4px 0"><strong>Reason:</strong> ${reason}</p>
+          <p style="margin:4px 0"><strong>Comment:</strong> ${comment || 'No comment provided'}</p>
+          <p style="margin:4px 0"><strong>Estimated Refund:</strong> ₹${refundAmount}</p>
+        </div>
+        <a href="${process.env.ADMIN_URL || 'http://localhost:5174'}/returns/${returnReq._id}" style="display:inline-block;padding:10px 18px;background:#d97706;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:13px">
+          Review Return
+        </a>
+      </div>
+    `,
+    text: `New return request for order #${order.orderNumber || order._id}. Reason: ${reason}`,
   }).catch(() => {});
 
   return returnReq;

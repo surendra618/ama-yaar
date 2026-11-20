@@ -6,6 +6,8 @@ const Wishlist = require('../wishlist/wishlist.model');
 const ApiError = require('../../utils/ApiError');
 const { generateAccessToken, generateRefreshToken } = require('../../utils/generateTokens');
 const { sendEmail } = require('../../config/mailer');
+const { notifyAdmins } = require('../notification/adminNotifier');
+const { newUserTemplate } = require('../../utils/emailTemplates');
 const env = require('../../config/env');
 
 async function register({ name, email, password, phone, role = 'customer' }) {
@@ -47,11 +49,27 @@ async function register({ name, email, password, phone, role = 'customer' }) {
     `,
   }).catch(() => {});
 
-  const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name };
+  // Notify Admins about new registration with styled template
+  notifyAdmins({
+    event: 'newUser',
+    subject: `New User Registered: ${user.name}`,
+    html: newUserTemplate({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      viewUrl: `${env.adminUrl}/customers`,
+    }),
+    text: `New user registration: ${user.name} (${user.email}, ${user.phone || 'no phone'})`,
+  }).catch(() => {});
+
+  const isMainAdmin = user.isSuperAdmin || (user.email && user.email.toLowerCase() === (env.adminSeed.email || '').toLowerCase());
+  const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name, isSuperAdmin: isMainAdmin };
   const accessToken = generateAccessToken(tokenPayload);
   const refreshToken = generateRefreshToken(tokenPayload);
 
   const sanitizedUser = user.toObject();
+  sanitizedUser.isSuperAdmin = isMainAdmin;
   delete sanitizedUser.password;
 
   return { user: sanitizedUser, accessToken, refreshToken };
@@ -88,11 +106,13 @@ async function login({ email, password, role }) {
     throw new ApiError(403, 'Access denied: Admin credentials required');
   }
 
-  const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name };
+  const isMainAdmin = user.isSuperAdmin || (user.email && user.email.toLowerCase() === (env.adminSeed.email || '').toLowerCase());
+  const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name, isSuperAdmin: isMainAdmin };
   const accessToken = generateAccessToken(tokenPayload);
   const refreshToken = generateRefreshToken(tokenPayload);
 
   const sanitizedUser = user.toObject();
+  sanitizedUser.isSuperAdmin = isMainAdmin;
   delete sanitizedUser.password;
 
   return { user: sanitizedUser, accessToken, refreshToken };
@@ -210,10 +230,29 @@ async function quickLogin({ email, phone, name, password }) {
     });
     await Cart.create({ user: user._id, items: [] }).catch(() => {});
     await Wishlist.create({ user: user._id, products: [] }).catch(() => {});
+
+    notifyAdmins({
+      event: 'newUser',
+      subject: `New User Joined (Quick Login): ${user.name}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:540px;margin:auto;border:1px solid #e2e8f0;border-radius:8px;padding:24px;background:#ffffff">
+          <h2 style="color:#4f46e5;margin-top:0">🎉 New User via Quick Login</h2>
+          <div style="background:#f8fafc;border-left:4px solid #4f46e5;padding:12px 16px;margin:16px 0;border-radius:4px">
+            <p style="margin:4px 0"><strong>Name:</strong> ${user.name}</p>
+            <p style="margin:4px 0"><strong>Email:</strong> ${user.email}</p>
+            <p style="margin:4px 0"><strong>Phone:</strong> ${user.phone || 'N/A'}</p>
+          </div>
+          <a href="${env.adminUrl}/customers" style="display:inline-block;padding:10px 18px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:13px">
+            View Customers
+          </a>
+        </div>
+      `,
+      text: `New user via Quick Login: ${user.name} (${user.email}, ${user.phone || 'no phone'})`,
+    }).catch(() => {});
   } else {
     let updated = false;
-    if (name && (!user.name || user.name.startsWith('Guest') || user.name.startsWith('User '))) {
-      user.name = name;
+    if (name && name.trim()) {
+      user.name = name.trim();
       updated = true;
     }
     if (cleanEmail && (!user.email || user.email.includes('@guest.') || user.email.includes('@mobile.'))) {
@@ -234,11 +273,13 @@ async function quickLogin({ email, phone, name, password }) {
     }
   }
 
-  const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name };
+  const isMainAdmin = user.isSuperAdmin || (user.email && user.email.toLowerCase() === (env.adminSeed.email || '').toLowerCase());
+  const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name, isSuperAdmin: isMainAdmin };
   const accessToken = generateAccessToken(tokenPayload);
   const refreshToken = generateRefreshToken(tokenPayload);
 
   const sanitizedUser = user.toObject();
+  sanitizedUser.isSuperAdmin = isMainAdmin;
   delete sanitizedUser.password;
 
   return { user: sanitizedUser, accessToken, refreshToken };

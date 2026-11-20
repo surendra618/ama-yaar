@@ -31,6 +31,30 @@ export const updateUserStatus = createAsyncThunk(
   }
 );
 
+export const createAdminUser = createAsyncThunk(
+  'users/createAdmin',
+  async ({ name, email, password, phone }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.post('/users/admin', { name, email, password, phone });
+      return data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const updateUserRole = createAsyncThunk(
+  'users/updateRole',
+  async ({ id, role }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.patch(`/users/${id}/role`, { role });
+      return data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
 const usersSlice = createSlice({
   name: 'users',
   initialState: {
@@ -63,6 +87,15 @@ const usersSlice = createSlice({
         state.current = action.payload;
       })
       .addCase(updateUserStatus.fulfilled, (state, action) => {
+        const idx = state.items.findIndex((u) => u._id === action.payload._id);
+        if (idx !== -1) state.items[idx] = { ...state.items[idx], ...action.payload };
+        if (state.current?._id === action.payload._id) state.current = { ...state.current, ...action.payload };
+      })
+      .addCase(createAdminUser.fulfilled, (state, action) => {
+        state.items.unshift(action.payload);
+        state.pagination.total = (state.pagination.total || 0) + 1;
+      })
+      .addCase(updateUserRole.fulfilled, (state, action) => {
         const idx = state.items.findIndex((u) => u._id === action.payload._id);
         if (idx !== -1) state.items[idx] = { ...state.items[idx], ...action.payload };
         if (state.current?._id === action.payload._id) state.current = { ...state.current, ...action.payload };

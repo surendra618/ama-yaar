@@ -38,4 +38,25 @@ const changePassword = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, result, 'Password changed successfully'));
 });
 
-module.exports = { list, getById, getProfile, updateProfile, updateStatus, remove, changePassword };
+const createAdmin = asyncHandler(async (req, res) => {
+  // Check if current requester is Main Admin
+  const isMainAdmin = req.user.isSuperAdmin || (req.user.email && req.user.email.toLowerCase() === (process.env.ADMIN_SEED_EMAIL || '').toLowerCase());
+  if (!isMainAdmin) {
+    res.status(403).json(new ApiResponse(403, null, 'Access denied: Only Main Admin can add other admins'));
+    return;
+  }
+  const item = await service.createAdminUser(req.body);
+  res.status(201).json(new ApiResponse(201, item, 'Admin added successfully'));
+});
+
+const updateRole = asyncHandler(async (req, res) => {
+  const isMainAdmin = req.user.isSuperAdmin || (req.user.email && req.user.email.toLowerCase() === (process.env.ADMIN_SEED_EMAIL || '').toLowerCase());
+  if (!isMainAdmin) {
+    res.status(403).json(new ApiResponse(403, null, 'Access denied: Only Main Admin can modify admin roles'));
+    return;
+  }
+  const item = await service.updateRole(req.params.id, req.body.role);
+  res.status(200).json(new ApiResponse(200, item, 'User role updated'));
+});
+
+module.exports = { list, getById, getProfile, updateProfile, updateStatus, remove, changePassword, createAdmin, updateRole };

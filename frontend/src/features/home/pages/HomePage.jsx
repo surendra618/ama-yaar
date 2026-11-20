@@ -225,19 +225,20 @@ function ReelCard({ item, onOpenModal }) {
 
   useEffect(() => {
     if (!isInstagram && videoRef.current) {
-      videoRef.current.muted = isMuted;
-      const promise = videoRef.current.play();
-      if (promise !== undefined) {
-        promise.catch(() => {
+      videoRef.current.muted = true;
+      videoRef.current.defaultMuted = true;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Autoplay prevented on reel card, retrying muted:', err);
           if (videoRef.current) {
             videoRef.current.muted = true;
-            setIsMuted(true);
-            videoRef.current.play().catch(() => setHasError(true));
+            videoRef.current.play().catch(() => {});
           }
         });
       }
     }
-  }, [isMuted, isInstagram]);
+  }, [item.video, isInstagram]);
 
   const handleProductNavigate = (e) => {
     e.stopPropagation();
@@ -277,16 +278,15 @@ function ReelCard({ item, onOpenModal }) {
       ) : (
         <video
           ref={videoRef}
+          src={item.video}
           autoPlay
           loop
-          muted={isMuted}
+          muted
           playsInline
+          preload="auto"
           onError={() => setHasError(true)}
           className="h-full w-full object-cover"
-        >
-          <source src={item.video} type="video/mp4" />
-          <source src={item.altVideo} type="video/mp4" />
-        </video>
+        />
       )}
 
       {/* Subtle Gradient for contrast */}
@@ -373,9 +373,20 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
   useEffect(() => {
     if (!isInstagram && modalVideoRef.current) {
       modalVideoRef.current.muted = isMuted;
-      modalVideoRef.current.play().catch(() => {});
+      modalVideoRef.current.defaultMuted = isMuted;
+      const playPromise = modalVideoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Autoplay prevented on reel modal, falling back to muted play:', err);
+          if (modalVideoRef.current) {
+            modalVideoRef.current.muted = true;
+            setIsMuted(true);
+            modalVideoRef.current.play().catch(() => {});
+          }
+        });
+      }
     }
-  }, [reel, isMuted, isInstagram]);
+  }, [reel?.video, isMuted, isInstagram]);
 
   if (!reel) return null;
 
@@ -442,15 +453,14 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
           ) : (
             <video
               ref={modalVideoRef}
+              src={reel.video || reel.altVideo}
               autoPlay
               loop
               muted={isMuted}
               playsInline
+              preload="auto"
               className="h-full w-full object-cover"
-            >
-              <source src={reel.video} type="video/mp4" />
-              <source src={reel.altVideo} type="video/mp4" />
-            </video>
+            />
           )}
         </div>
 
@@ -883,7 +893,7 @@ export default function HomePage() {
           );
         }
       };
-    } catch (_) {}
+    } catch (_) { }
 
     window.addEventListener("reels_setting_changed", handleSettingChange);
     window.addEventListener("storage", handleSettingChange);
@@ -915,7 +925,7 @@ export default function HomePage() {
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     loadReels();
@@ -929,22 +939,22 @@ export default function HomePage() {
   const displayReels =
     dbReels.length > 0
       ? dbReels.map((r, idx) => ({
-          id: r._id || idx,
-          productId: r.product?._id || r.product || null,
-          product2Id: r.product2?._id || r.product2 || null,
-          product2Title: r.product2?.name || "",
-          title: r.product?.name || r.title,
-          price: r.product?.price || r.price,
-          mrp: r.product?.mrp || r.mrp,
-          discount: r.discount || "50% OFF",
-          views: r.views || "15.2K views",
-          badge: r.badge || "Top Selling",
-          poster: r.poster ? getMediaUrl(r.poster) : r.product?.images?.[0] || r.poster,
-          altPoster: r.altPoster
-            ? getMediaUrl(r.altPoster)
-            : r.product2?.images?.[0] || r.altPoster || "/model04.png",
-          video: r.video ? getMediaUrl(r.video) : r.video,
-        }))
+        id: r._id || idx,
+        productId: r.product?._id || r.product || null,
+        product2Id: r.product2?._id || r.product2 || null,
+        product2Title: r.product2?.name || "",
+        title: r.product?.name || r.title,
+        price: r.product?.price || r.price,
+        mrp: r.product?.mrp || r.mrp,
+        discount: r.discount || "50% OFF",
+        views: r.views || "15.2K views",
+        badge: r.badge || "Top Selling",
+        poster: r.poster ? getMediaUrl(r.poster) : r.product?.images?.[0] || r.poster,
+        altPoster: r.altPoster
+          ? getMediaUrl(r.altPoster)
+          : r.product2?.images?.[0] || r.altPoster || "/model04.png",
+        video: r.video ? getMediaUrl(r.video) : r.video,
+      }))
       : REEL_ITEMS;
 
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -958,17 +968,17 @@ export default function HomePage() {
   const displaySlides =
     activeBanners.length > 0
       ? activeBanners.map((b) => ({
-          bgImage: b.image ? getMediaUrl(b.image) : HERO_SLIDES[0].bgImage,
-          eyebrow: b.badge || "Featured Collection 2026",
-          title1: b.title || "GEAR UP",
-          title2: "",
-          titleHighlight: "",
-          subtitle:
-            b.subtitle || "Discover premium fits crafted for everyday impact.",
-          accentColor: "#facc15",
-          link: b.link || "/products",
-          buttonText: b.buttonText || "SHOP NOW",
-        }))
+        bgImage: b.image ? getMediaUrl(b.image) : HERO_SLIDES[0].bgImage,
+        eyebrow: b.badge || "Featured Collection 2026",
+        title1: b.title || "GEAR UP",
+        title2: "",
+        titleHighlight: "",
+        subtitle:
+          b.subtitle || "Discover premium fits crafted for everyday impact.",
+        accentColor: "#facc15",
+        link: b.link || "/products",
+        buttonText: b.buttonText || "SHOP NOW",
+      }))
       : HERO_SLIDES;
 
   const activeSlide =
@@ -1089,26 +1099,26 @@ export default function HomePage() {
 
   const displayCardSliders = (cardSliders && cardSliders.length > 0)
     ? cardSliders.map((c, idx) => {
-        const cardImg = c.image
-          ? getMediaUrl(c.image)
-          : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
-        return {
-          id: c._id || idx,
-          name: c.title || c.name || 'Category',
-          subtitle: c.subtitle,
-          image: cardImg,
-          fallback: CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.fallback || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80',
-          link: c.link || (c.slug ? `/products?category=${c.slug}` : '/products'),
-          badge: c.badge,
-          cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
-        };
-      })
-    : displayCategories.map((item, idx) => ({
-        ...item,
-        id: item._id || item.slug || idx,
-        link: item.link || `/products?category=${item.slug || ''}`,
+      const cardImg = c.image
+        ? getMediaUrl(c.image)
+        : CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.image;
+      return {
+        id: c._id || idx,
+        name: c.title || c.name || 'Category',
+        subtitle: c.subtitle,
+        image: cardImg,
+        fallback: CATEGORY_ITEMS[idx % CATEGORY_ITEMS.length]?.fallback || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80',
+        link: c.link || (c.slug ? `/products?category=${c.slug}` : '/products'),
+        badge: c.badge,
         cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
-      }));
+      };
+    })
+    : displayCategories.map((item, idx) => ({
+      ...item,
+      id: item._id || item.slug || idx,
+      link: item.link || `/products?category=${item.slug || ''}`,
+      cardStyle: idx % 2 === 1 ? 'h-[310px] sm:h-[350px] sm:mt-16' : 'h-[310px] sm:h-[350px] sm:mt-0',
+    }));
 
   useEffect(() => {
     AOS.refresh();
@@ -1125,9 +1135,8 @@ export default function HomePage() {
               key={slide.bgImage || sIdx}
               src={slide.bgImage}
               alt={slide.title1 || "Hero slide"}
-              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ease-in-out ${
-                isActive ? "opacity-100 z-0" : "opacity-0 pointer-events-none"
-              }`}
+              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ease-in-out ${isActive ? "opacity-100 z-0" : "opacity-0 pointer-events-none"
+                }`}
             />
           );
         })}
@@ -1191,11 +1200,10 @@ export default function HomePage() {
                   <button
                     key={sIdx}
                     onClick={() => setCurrentSlide(sIdx)}
-                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                      isActive
-                        ? "w-7 bg-white shadow-xs"
-                        : "w-2 bg-white/40 hover:bg-white/70"
-                    }`}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${isActive
+                      ? "w-7 bg-white shadow-xs"
+                      : "w-2 bg-white/40 hover:bg-white/70"
+                      }`}
                     aria-label={`Go to slide ${sIdx + 1}`}
                   />
                 );
@@ -1317,12 +1325,16 @@ export default function HomePage() {
             transition={{ duration: 0.7, ease: "easeOut" }}
             className="text-center mb-5 sm:mb-6"
           >
-            <h2 className="font-display text-3xl sm:text-4xl leading-tight tracking-wide text-black font-black">
-              FRESH FITS FOR{" "}
-              <span className="font-script italic font-normal">Your</span>
+            <h2 className="text-center font-display text-[26px] xs:text-[30px] sm:text-[42px] md:text-[48px] lg:text-[54px] font-black uppercase text-black leading-[1.08] tracking-tight">
+              <span className="inline-flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                <span>FRESH FITS FOR</span>
+                <span className="font-script normal-case font-normal text-[1.28em] leading-none text-black -mt-1 sm:-mt-2">Your</span>
+              </span>
               <br />
-              <span className="font-script italic font-normal">Next</span>{" "}
-              OUTFITS
+              <span className="inline-flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                <span className="font-script normal-case font-normal text-[1.28em] leading-none text-black -mt-1 sm:-mt-2">Next</span>
+                <span>OUTFITS</span>
+              </span>
             </h2>
           </motion.div>
 
@@ -1363,34 +1375,34 @@ export default function HomePage() {
 
               const productItem = p?._id
                 ? {
-                    ...p,
-                    images:
-                      p.images && p.images.length > 0
-                        ? p.images
-                        : [
-                            localImages[i % localImages.length],
-                            localImages[(i + 1) % localImages.length],
-                          ],
-                  }
+                  ...p,
+                  images:
+                    p.images && p.images.length > 0
+                      ? p.images
+                      : [
+                        localImages[i % localImages.length],
+                        localImages[(i + 1) % localImages.length],
+                      ],
+                }
                 : {
-                    _id: `sample-${i + 1}`,
-                    name: sampleNames[i % sampleNames.length],
-                    price: [
-                      499, 999, 599, 699, 1299, 549, 649, 1799, 1199, 450, 699,
-                      799, 599, 999, 899,
-                    ][i % 15],
-                    mrp: [
-                      999, 1999, 1199, 1399, 2499, 1099, 1299, 3499, 2399, 899,
-                      1399, 1599, 1199, 1999, 1799,
-                    ][i % 15],
-                    discount: 50,
-                    brand: "AMA YAAR",
-                    category: { name: "OVERSIZED FIT" },
-                    images: [
-                      localImages[i % localImages.length],
-                      localImages[(i + 1) % localImages.length],
-                    ],
-                  };
+                  _id: `sample-${i + 1}`,
+                  name: sampleNames[i % sampleNames.length],
+                  price: [
+                    499, 999, 599, 699, 1299, 549, 649, 1799, 1199, 450, 699,
+                    799, 599, 999, 899,
+                  ][i % 15],
+                  mrp: [
+                    999, 1999, 1199, 1399, 2499, 1099, 1299, 3499, 2399, 899,
+                    1399, 1599, 1199, 1999, 1799,
+                  ][i % 15],
+                  discount: 50,
+                  brand: "AMA YAAR",
+                  category: { name: "OVERSIZED FIT" },
+                  images: [
+                    localImages[i % localImages.length],
+                    localImages[(i + 1) % localImages.length],
+                  ],
+                };
 
               return (
                 <motion.div
@@ -1432,7 +1444,7 @@ export default function HomePage() {
       <EditorialBanner />
 
       {/* 6. Instagram reel cards row — Exactly 5 cards in 1 row on desktop */}
-      <section className="w-full bg-[#0a0a0a] py-14 my-10 overflow-hidden">
+      <section className="w-full bg-[#0a0a0a] pt-8 sm:pt-10 pb-0 mt-0 mb-0 overflow-hidden">
         {/* Stylish Modern Heading */}
         <div className="mb-10 text-center px-4 flex flex-col items-center justify-center">
           <div className="flex items-center gap-2 mb-1.5">
@@ -1508,19 +1520,22 @@ export default function HomePage() {
         )}
       </section>
 
+      {/* 7. Instagram Banner */}
+      <InstagramBanner />
+
       <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
-        {/* 7. Customer reviews with AOS Animation & Functional Scroll */}
-        <section className="py-16 overflow-hidden">
+        {/* 8. Customer reviews with AOS Animation & Functional Scroll */}
+        <section className="pt-8 pb-1 sm:pt-10 sm:pb-2 overflow-hidden">
           <div
             data-aos="fade-up"
             data-aos-duration="600"
-            className="mb-8 flex items-end justify-between gap-4"
+            className="mb-4 flex items-center justify-between gap-4"
           >
-            <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
               <h2 className="text-xl sm:text-2xl lg:text-[28px] font-black uppercase tracking-tight text-black font-sans leading-none">
                 OUR HAPPY
               </h2>
-              <span className="font-script italic text-2xl sm:text-3xl lg:text-[34px] font-normal text-black leading-none self-baseline">
+              <span className="font-script italic text-2xl sm:text-3xl lg:text-[34px] font-normal text-black leading-none">
                 Customers
               </span>
             </div>
@@ -1550,7 +1565,7 @@ export default function HomePage() {
 
           <div
             id="customer-reviews-rail"
-            className="flex gap-5 overflow-x-auto pt-3 pb-6 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth items-stretch"
+            className="flex gap-5 overflow-x-auto pt-2 pb-3 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth items-stretch"
           >
             {REVIEWS.map((r, idx) => (
               <motion.div
@@ -1646,21 +1661,18 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* 8. Instagram Banner */}
-      <InstagramBanner />
-
       {/* 9. Newsletter floating card */}
-      <section className="bg-white py-10 px-4 sm:px-6 lg:px-12">
-        <div className="mx-auto max-w-[1480px] bg-black rounded-2xl p-8 sm:p-10 lg:px-14 lg:py-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
+      <section className="bg-white pt-2 pb-5 sm:pt-3 sm:pb-6 lg:pt-4 lg:pb-8 px-3 sm:px-6 lg:px-12">
+        <div className="mx-auto max-w-[1480px] bg-black rounded-xl sm:rounded-2xl p-4 sm:p-7 lg:px-14 lg:py-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-8 shadow-sm">
           {/* Left: heading */}
-          <div className="text-white flex-1">
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold leading-tight tracking-wide">
+          <div className="text-white flex-1 text-center md:text-left">
+            <h2 className="font-display text-xl sm:text-3xl md:text-4xl font-extrabold leading-tight tracking-tight sm:tracking-wide">
               STAY UPTO DATE{" "}
               <span className="font-script italic font-normal text-white/90">
                 About
               </span>
             </h2>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold leading-tight tracking-wide mt-1">
+            <h2 className="font-display text-xl sm:text-3xl md:text-4xl font-extrabold leading-tight tracking-tight sm:tracking-wide mt-0.5 sm:mt-1">
               OUR LATEST{" "}
               <span className="font-script italic font-normal text-white/90">
                 Offer
@@ -1668,8 +1680,8 @@ export default function HomePage() {
             </h2>
           </div>
           {/* Right: email input & form */}
-          <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-3 w-full max-w-sm">
-            <div className="flex items-center gap-3 bg-white rounded-full px-5 py-3 focus-within:ring-2 focus-within:ring-white/40 transition">
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-2 sm:gap-3 w-full max-w-sm">
+            <div className="flex items-center gap-2.5 sm:gap-3 bg-white rounded-full px-4 sm:px-5 py-2 sm:py-3 focus-within:ring-2 focus-within:ring-white/40 transition">
               <svg
                 className="h-4 w-4 text-black/40 shrink-0"
                 fill="none"
@@ -1695,7 +1707,7 @@ export default function HomePage() {
             <button
               type="submit"
               disabled={newsletterLoading}
-              className="w-full rounded-full bg-white text-black py-3 text-xs font-bold tracking-wide hover:bg-neutral-100 disabled:opacity-75 transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
+              className="w-full rounded-full bg-white text-black py-2.5 sm:py-3 text-xs font-bold tracking-wide hover:bg-neutral-100 disabled:opacity-75 transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
             >
               {newsletterLoading ? (
                 <>

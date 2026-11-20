@@ -343,46 +343,21 @@ export default function ProductDetailsPage() {
         </nav>
 
         {/* Product Overview 3-Column Grid (Image Centered & Large, Minimal Padding) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center py-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start py-0">
           {/* LEFT COLUMN: Title, Description, Bullet Features, Model Info */}
-          <div className="lg:col-span-3 flex flex-col justify-center order-2 lg:order-1 pr-0 lg:pr-2">
+          <div className="lg:col-span-3 flex flex-col justify-start order-2 lg:order-1 pr-0 lg:pr-2 pt-0 sm:pt-1">
             <h1 className="text-xl sm:text-2xl lg:text-[27px] font-bold tracking-tight text-neutral-900 leading-[1.2]">
               {product.name || "Men's Oversized Puffer Winter Bubble Jacket"}
             </h1>
 
-            <p className="mt-3 text-xs sm:text-[13px] text-neutral-600 leading-[1.45] font-normal">
+            <p className="mt-3 text-xs sm:text-[13px] text-neutral-600 leading-[1.55] font-normal whitespace-pre-line">
               {product.description ||
                 "Ultra-warm insulated winter puffer jacket with high stand collar, detachable hood, thermal fleece lining, and water-repellent shell."}
-            </p>
-
-            {/* Bullet points with small clean dots */}
-            <ul className="mt-4 space-y-1.5 text-xs sm:text-[12px] text-neutral-700 font-normal leading-normal">
-              <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
-                <span>Fit: oversized, dropped shoulder</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
-                <span>Fabric: heavyweight cotton</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
-                <span>Finish: washed effect with high-density print</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-neutral-800 shrink-0" />
-                <span>Collar: reinforced rib</span>
-              </li>
-            </ul>
-
-            {/* Model wear info */}
-            <p className="mt-3.5 text-[11.5px] text-neutral-400 font-normal">
-              {product.modelInfo || "Model is 1.90 m and wears size M"}
             </p>
           </div>
 
           {/* CENTER COLUMN: Large Focused Product Image (Centered, High Visibility, No Padding Restriction) */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center order-1 lg:order-2">
+          <div className="lg:col-span-6 flex flex-col items-center justify-start order-1 lg:order-2 pt-0">
             <div
               className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group cursor-crosshair select-none"
               onMouseEnter={() => setIsHoveringZoom(true)}
@@ -395,6 +370,11 @@ export default function ProductDetailsPage() {
                 key={safeImageIndex}
                 src={displayImages[safeImageIndex] || displayImages[0]}
                 alt={product.name || "Product Showcase"}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src =
+                    "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=1200&q=85";
+                }}
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                   transform: isHoveringZoom ? "scale(2.5)" : "scale(1)",
@@ -503,6 +483,11 @@ export default function ProductDetailsPage() {
                     <img
                       src={img}
                       alt=""
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src =
+                          "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400&q=80";
+                      }}
                       className="h-full w-full object-cover object-top"
                     />
                   </button>
@@ -512,7 +497,7 @@ export default function ProductDetailsPage() {
           </div>
 
           {/* RIGHT COLUMN: Size Selectors, ADD TO CART Button, Details Tabs */}
-          <div className="lg:col-span-3 flex flex-col justify-center order-3 pl-0 lg:pl-2 space-y-4">
+          <div className="lg:col-span-3 flex flex-col justify-start order-3 pl-0 lg:pl-2 space-y-4 pt-0 sm:pt-1">
             {/* Size Selector */}
             <div>
               <span className="block text-xs font-medium text-neutral-500 mb-2">

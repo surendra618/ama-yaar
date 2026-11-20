@@ -77,7 +77,7 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!form.email || !form.email.includes('@') || !form.email.includes('.')) {
+    if (form.email && (!form.email.includes('@') || !form.email.includes('.'))) {
       setCaptchaError('Please enter a valid email address');
       return;
     }
@@ -261,15 +261,14 @@ export default function RegisterPage() {
 
           {/* Email Address */}
           <div className={`af-field ${focused === 'email' ? 'af-field--focus' : ''}`}>
-            <label className="af-label">EMAIL ADDRESS</label>
+            <label className="af-label">EMAIL ADDRESS <span className="text-neutral-400 font-normal">(Optional)</span></label>
             <div className="af-input-box">
               <Mail size={16} className="af-icon" />
               <input
                 type="email"
                 name="email"
-                required
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder="you@example.com (optional)"
                 value={form.email}
                 onChange={handleChange}
                 onFocus={() => setFocused('email')}

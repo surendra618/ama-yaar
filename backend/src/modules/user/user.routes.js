@@ -11,6 +11,8 @@ router.get('/profile', controller.getProfile);
 router.put('/profile', controller.updateProfile);
 router.put('/change-password', controller.changePassword);
 router.get('/', role('admin'), controller.list);
+router.post('/admin', role('admin'), controller.createAdmin);
+router.patch('/:id/role', role('admin'), controller.updateRole);
 router.get('/:id', role('admin'), controller.getById);
 router.patch('/:id/status', role('admin'), controller.updateStatus);
 router.put('/:id', role('admin'), controller.updateProfile);

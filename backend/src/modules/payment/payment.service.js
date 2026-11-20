@@ -2,6 +2,11 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Payment = require('./payment.model');
 const Order = require('../order/order.model');
+const Cart = require('../cart/cart.model');
+const Product = require('../product/product.model');
+const Notification = require('../notification/notification.model');
+const { notifyAdmins } = require('../notification/adminNotifier');
+const { newOrderTemplate } = require('../../utils/emailTemplates');
 const ApiError = require('../../utils/ApiError');
 const env = require('../../config/env');
 
@@ -50,42 +55,47 @@ async function getById(id) {
 async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
   const paiseAmount = Math.round(Number(amount) * 100);
 
-  if (razorpayInstance) {
-    try {
-      const razorpayOrder = await razorpayInstance.orders.create({
-        amount: paiseAmount,
-        currency,
-        receipt: receipt || `rcpt_${Date.now()}`,
-      });
-      return {
-        id: razorpayOrder.id,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        receipt: razorpayOrder.receipt,
-        keyId: env.razorpay.keyId,
-      };
-    } catch (err) {
-      console.error('Razorpay order creation failed, falling back to simulated order:', err);
-    }
-  }
+  const envKey = (env.razorpay.keyId || '').trim();
+  const envSecret = (env.razorpay.keySecret || '').trim();
 
-  // Fallback / simulated order if SDK creation fails
-  const orderId = `rzp_order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-  return {
-    id: orderId,
-    amount: paiseAmount,
-    currency,
-    receipt: receipt || `rcpt_${Date.now()}`,
-    keyId: env.razorpay.keyId || 'rzp_test_S7lSvWtu89c6zD',
-  };
+  // If envKey is a test key or mismatching, fallback to live keys
+  const effectiveKeyId = (envKey.startsWith('rzp_live_') ? envKey : '') || 'rzp_live_U00eTD8bUufKVi';
+  const effectiveKeySecret = (envKey.startsWith('rzp_live_') ? envSecret : '') || '7kqlWKxtVLVyeRF4azmuak51';
+
+  // Always instantiate with verified credentials
+  const client = new Razorpay({
+    key_id: effectiveKeyId,
+    key_secret: effectiveKeySecret,
+  });
+
+  try {
+    const razorpayOrder = await client.orders.create({
+      amount: paiseAmount,
+      currency,
+      receipt: receipt || `rcpt_${Date.now()}`,
+    });
+    return {
+      id: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      receipt: razorpayOrder.receipt,
+      keyId: effectiveKeyId,
+    };
+  } catch (err) {
+    console.error('Razorpay order creation failed:', err.error || err.message);
+    throw new ApiError(500, `Razorpay error: ${err.error?.description || err.message}`);
+  }
 }
 
 async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId, method = 'Razorpay Online' }) {
   let isVerified = false;
 
-  if (env.razorpay.keySecret && razorpay_order_id && razorpay_payment_id && razorpay_signature) {
+  const envKey = (env.razorpay.keyId || '').trim();
+  const envSecret = (env.razorpay.keySecret || '').trim();
+  const secretToVerify = (envKey.startsWith('rzp_live_') ? envSecret : '') || '7kqlWKxtVLVyeRF4azmuak51';
+  if (razorpay_order_id && razorpay_payment_id && razorpay_signature) {
     const generatedSignature = crypto
-      .createHmac('sha256', env.razorpay.keySecret)
+      .createHmac('sha256', secretToVerify)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
@@ -128,6 +138,48 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
         },
         { upsert: true, new: true }
       );
+
+      // Now that online payment is verified successfully, clear the user's cart
+      if (order.user) {
+        await Cart.findOneAndUpdate(
+          { user: order.user },
+          { $set: { items: [], coupon: null } }
+        ).catch(() => { });
+      }
+
+      // Deduct inventory
+      for (const item of (order.items || [])) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: { stock: -item.quantity },
+          }).catch(() => { });
+        }
+      }
+
+      // Create user notification
+      await Notification.create({
+        user: order.user,
+        type: 'order',
+        title: 'Payment Successful & Order Confirmed!',
+        message: `Your payment of ₹${order.total} for order #${order.orderNumber || order._id} was successful.`,
+      }).catch(() => { });
+
+      // Notify Admins
+      notifyAdmins({
+        event: 'newOrder',
+        subject: `New Paid Order: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()} (₹${order.total})`,
+        html: newOrderTemplate({
+          orderNumber: order.orderNumber || String(order._id).slice(-6).toUpperCase(),
+          customerName: order.shippingAddress?.fullName || 'Customer',
+          customerPhone: order.shippingAddress?.phone || 'No phone',
+          total: order.total,
+          itemCount: order.items?.length || 1,
+          paymentMethod: method || 'Razorpay Online',
+          paymentStatus: 'paid',
+          address: `${order.shippingAddress?.line1 || ''}, ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} - ${order.shippingAddress?.pincode || order.shippingAddress?.postalCode || ''}`,
+        }),
+        text: `New paid order #${order.orderNumber || order._id} (₹${order.total}) verified via Razorpay`,
+      }).catch(() => { });
     }
   }
 

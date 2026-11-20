@@ -44,6 +44,9 @@ export const router = createBrowserRouter([
       { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
       { path: '/about', element: <AboutPage /> },
       { path: '/contact', element: <ContactPage /> },
+      { path: '/customer-support', element: <ContactPage /> },
+      { path: '/support', element: <ContactPage /> },
+      { path: '/help', element: <ContactPage /> },
       { path: '/careers', element: <CareersPage /> },
       { path: '/blog', element: <BlogPage /> },
       { path: '/blogs', element: <BlogPage /> },
@@ -60,7 +63,7 @@ export const router = createBrowserRouter([
         path: '/account',
         element: <AccountLayout />,
         children: [
-          { index: true, element: <Navigate to="/account/profile" replace /> },
+          { index: true,           element: <Navigate to="/account/profile" replace /> },
           { path: 'profile',       element: <ProfilePage /> },
           { path: 'addresses',     element: <AddressesPage /> },
           { path: 'orders',        element: <MyOrdersPage /> },
