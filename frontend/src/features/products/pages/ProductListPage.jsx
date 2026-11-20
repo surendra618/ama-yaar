@@ -130,75 +130,77 @@ export default function ProductListPage() {
         {/* Main Content Area without fixed sidebar */}
         <main>
           {/* Toolbar */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-3.5">
-            {/* Filter Toggle Button (opens slide-over drawer) */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setFilterDrawerOpen(true)}
-                className="inline-flex items-center gap-2 border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-900 hover:border-black transition cursor-pointer"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span>Filters</span>
-                {activeFilterCount > 0 && (
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
-
-              {activeFilterCount > 0 && (
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-200 pb-3.5">
+            {/* Top row on mobile: Filter button and Showing counts */}
+            <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-2.5">
                 <button
-                  onClick={clearAllFilters}
-                  className="text-xs font-bold text-rose-600 hover:underline uppercase tracking-wider cursor-pointer"
+                  onClick={() => setFilterDrawerOpen(true)}
+                  className="inline-flex items-center gap-2 border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-900 hover:border-black transition cursor-pointer"
                 >
-                  Clear all
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
+                      {activeFilterCount}
+                    </span>
+                  )}
                 </button>
-              )}
-            </div>
 
-            {/* Products Count */}
-            <div className="text-xs text-neutral-500 font-medium">
-              Showing <strong className="text-black font-bold">{products.length}</strong> of{' '}
-              <strong className="text-black font-bold">{pagination.total || products.length}</strong> products
-            </div>
-
-              {/* Center / Right: View Mode & Sort Selector */}
-              <div className="flex items-center gap-4 text-xs ml-auto">
-                {/* View Mode Toggle */}
-                <div className="flex items-center border border-neutral-200 p-0.5">
+                {activeFilterCount > 0 && (
                   <button
-                    onClick={() => setViewMode('grid')}
-                    title="Grid View"
-                    className={`p-1 transition cursor-pointer ${viewMode === 'grid' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
+                    onClick={clearAllFilters}
+                    className="text-xs font-bold text-rose-600 hover:underline uppercase tracking-wider cursor-pointer"
                   >
-                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Clear all
                   </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    title="List View"
-                    className={`p-1 transition cursor-pointer ${viewMode === 'list' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
-                  >
-                    <List className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                )}
+              </div>
 
-                {/* Sort Selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-neutral-500 uppercase tracking-wider font-bold text-[11px] hidden sm:inline">Sort by:</span>
-                  <select
-                    value={sort}
-                    onChange={(e) => updateFilter('sort', e.target.value)}
-                    className="border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-black focus:border-black focus:outline-hidden cursor-pointer"
-                  >
-                    <option value="newest">Newest First</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="rating-desc">Customer Rating</option>
-                    <option value="discount-desc">Better Discount</option>
-                  </select>
-                </div>
+              {/* Products Count */}
+              <div className="text-xs text-neutral-500 font-medium">
+                Showing <strong className="text-black font-bold">{products.length}</strong> of{' '}
+                <strong className="text-black font-bold">{pagination.total || products.length}</strong>
               </div>
             </div>
+
+            {/* Bottom row on mobile / Right on desktop: View Mode & Sort Selector */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs w-full sm:w-auto">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border border-neutral-200 p-0.5 bg-neutral-50">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  title="Grid View"
+                  className={`p-1.5 transition cursor-pointer ${viewMode === 'grid' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  title="List View"
+                  className={`p-1.5 transition cursor-pointer ${viewMode === 'list' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
+                >
+                  <List className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              {/* Sort Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-neutral-500 uppercase tracking-wider font-bold text-[11px] hidden sm:inline">Sort by:</span>
+                <select
+                  value={sort}
+                  onChange={(e) => updateFilter('sort', e.target.value)}
+                  className="border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-black focus:border-black focus:outline-hidden cursor-pointer"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="rating-desc">Customer Rating</option>
+                  <option value="discount-desc">Better Discount</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
             {/* Active Filter Badges */}
             {activeFilterCount > 0 && (
