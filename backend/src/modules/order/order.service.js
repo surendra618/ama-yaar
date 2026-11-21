@@ -14,6 +14,11 @@ const shiprocketService = require('../shiprocket/shiprocket.service');
 const { notifyAdmins } = require('../notification/adminNotifier');
 const { newOrderTemplate } = require('../../utils/emailTemplates');
 const { emitAdminEvent, emitUserEvent, emitOrderEvent } = require('../../config/socket');
+const {
+  attributeOrderCommission,
+  confirmOrderCommission,
+  reverseOrderCommission,
+} = require('../creator/creator.service');
 
 async function createOrder(userId, payload) {
   const { shippingAddressId, shippingAddress: directAddress, paymentProvider = 'cod', paymentMethod = 'Cash on Delivery', paymentId } = payload;
@@ -195,7 +200,17 @@ async function createOrder(userId, payload) {
     deliveryCharge,
     tax,
     total,
+    creatorRef: payload.creatorRef || undefined,
   });
+
+  // Check creator affiliate commission attribution
+  if (payload.creatorRef || couponCode) {
+    attributeOrderCommission({
+      order,
+      creatorCode: payload.creatorRef,
+      couponCode,
+    }).catch((err) => console.warn('Creator attribution notice:', err.message));
+  }
 
   // Create payment record
   await Payment.create({
@@ -387,9 +402,20 @@ async function updateStatus(id, { status, note, trackingNumber }) {
   }
 
   order.status = status;
-  if (status === 'delivered' && order.paymentInfo.provider === 'cod') {
-    order.paymentInfo.status = 'paid';
-    await Payment.findOneAndUpdate({ order: id }, { status: 'success' });
+  if (status === 'delivered') {
+    if (order.paymentInfo.provider === 'cod') {
+      order.paymentInfo.status = 'paid';
+      await Payment.findOneAndUpdate({ order: id }, { status: 'success' });
+    }
+    // Confirm creator commission upon successful delivery
+    confirmOrderCommission(order._id).catch((err) =>
+      console.warn('Commission confirmation notice:', err.message)
+    );
+  } else if (['cancelled', 'returned', 'refunded'].includes(status)) {
+    // Reverse creator commission if order is cancelled, returned or refunded
+    reverseOrderCommission(order._id, note || `Order marked as ${status}`).catch((err) =>
+      console.warn('Commission reversal notice:', err.message)
+    );
   }
 
   order.statusHistory.push({
@@ -456,6 +482,11 @@ async function cancelOrder(id, user, { reason = 'Cancelled by user' }) {
     note: `Order cancelled: ${reason}`,
     at: new Date(),
   });
+
+  // Reverse creator commission if order is cancelled
+  reverseOrderCommission(order._id, reason).catch((err) =>
+    console.warn('Commission reversal on cancel notice:', err.message)
+  );
 
   // Restore inventory
   for (const item of order.items) {

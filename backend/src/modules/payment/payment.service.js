@@ -7,6 +7,7 @@ const Product = require('../product/product.model');
 const Notification = require('../notification/notification.model');
 const { notifyAdmins } = require('../notification/adminNotifier');
 const { newOrderTemplate } = require('../../utils/emailTemplates');
+const { attributeOrderCommission } = require('../creator/creator.service');
 const ApiError = require('../../utils/ApiError');
 const env = require('../../config/env');
 
@@ -54,18 +55,33 @@ async function getById(id) {
 
 async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
   const paiseAmount = Math.round(Number(amount) * 100);
+  const mode = (env.paymentMode || 'fake').toLowerCase();
 
+  // FAKE / MOCK PAYMENT MODE
+  if (mode === 'fake' || mode === 'mock') {
+    const mockOrderId = `order_mock_${Date.now()}`;
+    return {
+      id: mockOrderId,
+      amount: paiseAmount,
+      currency,
+      receipt: receipt || `rcpt_${Date.now()}`,
+      keyId: 'rzp_test_mock',
+      isMock: true,
+      mode: 'fake',
+    };
+  }
+
+  // REAL PAYMENT MODE (Razorpay Gateway)
   const envKey = (env.razorpay.keyId || '').trim();
   const envSecret = (env.razorpay.keySecret || '').trim();
 
-  // If envKey is a test key or mismatching, fallback to live keys
-  const effectiveKeyId = (envKey.startsWith('rzp_live_') ? envKey : '') || 'rzp_live_U00eTD8bUufKVi';
-  const effectiveKeySecret = (envKey.startsWith('rzp_live_') ? envSecret : '') || '7kqlWKxtVLVyeRF4azmuak51';
+  if (!envKey || !envSecret) {
+    throw new ApiError(500, 'Razorpay keys (RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET) are missing in backend/.env for real payment mode.');
+  }
 
-  // Always instantiate with verified credentials
   const client = new Razorpay({
-    key_id: effectiveKeyId,
-    key_secret: effectiveKeySecret,
+    key_id: envKey,
+    key_secret: envSecret,
   });
 
   try {
@@ -79,7 +95,9 @@ async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
       receipt: razorpayOrder.receipt,
-      keyId: effectiveKeyId,
+      keyId: envKey,
+      isMock: false,
+      mode: 'real',
     };
   } catch (err) {
     console.error('Razorpay order creation failed:', err.error || err.message);
@@ -89,20 +107,29 @@ async function createPaymentOrder({ amount, currency = 'INR', receipt }) {
 
 async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId, method = 'Razorpay Online' }) {
   let isVerified = false;
+  const mode = (env.paymentMode || 'fake').toLowerCase();
+  const isMockOrder =
+    mode === 'fake' ||
+    mode === 'mock' ||
+    (razorpay_order_id && razorpay_order_id.startsWith('order_mock_')) ||
+    (razorpay_payment_id && razorpay_payment_id.startsWith('pay_mock_'));
 
-  const envKey = (env.razorpay.keyId || '').trim();
-  const envSecret = (env.razorpay.keySecret || '').trim();
-  const secretToVerify = (envKey.startsWith('rzp_live_') ? envSecret : '') || '7kqlWKxtVLVyeRF4azmuak51';
-  if (razorpay_order_id && razorpay_payment_id && razorpay_signature) {
-    const generatedSignature = crypto
-      .createHmac('sha256', secretToVerify)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
-
-    isVerified = (generatedSignature === razorpay_signature);
-  } else {
-    // Simulated verification if signature is absent in dev mode
+  if (isMockOrder) {
+    // Simulated instant verification for testing
     isVerified = true;
+  } else {
+    // Real Razorpay signature verification
+    const envSecret = (env.razorpay.keySecret || '').trim();
+    if (razorpay_order_id && razorpay_payment_id && razorpay_signature && envSecret) {
+      const generatedSignature = crypto
+        .createHmac('sha256', envSecret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+      isVerified = (generatedSignature === razorpay_signature);
+    } else {
+      isVerified = false;
+    }
   }
 
   if (!isVerified) {
@@ -163,6 +190,15 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
         title: 'Payment Successful & Order Confirmed!',
         message: `Your payment of ₹${order.total} for order #${order.orderNumber || order._id} was successful.`,
       }).catch(() => { });
+
+      // Check creator commission attribution for verified online order
+      if (order.creatorRef || order.coupon) {
+        attributeOrderCommission({
+          order,
+          creatorCode: order.creatorRef,
+          couponCode: order.coupon?.code || order.coupon,
+        }).catch((err) => console.warn('Creator attribution notice on payment verify:', err.message));
+      }
 
       // Notify Admins
       notifyAdmins({

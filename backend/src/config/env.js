@@ -18,9 +18,10 @@ module.exports = {
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
+  paymentMode: (process.env.PAYMENT_MODE || 'fake').toLowerCase(),
   razorpay: {
-    keyId: process.env.RAZORPAY_KEY_ID || 'rzp_live_U00eTD8bUufKVi',
-    keySecret: process.env.RAZORPAY_KEY_SECRET || '7kqlWKxtVLVyeRF4azmuak51',
+    keyId: process.env.RAZORPAY_KEY_ID || '',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
   },
   smtp: {
     host: process.env.SMTP_HOST,

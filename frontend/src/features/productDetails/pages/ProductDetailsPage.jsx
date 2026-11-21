@@ -21,6 +21,7 @@ import {
   User,
   ShoppingBag,
   X,
+  Ruler,
 } from "lucide-react";
 import {
   fetchProductDetails,
@@ -33,6 +34,7 @@ import { toggleWishlist } from "../../wishlist/wishlistSlice";
 import ProductCard from "../../../components/ProductCard";
 import Loader from "../../../components/Loader";
 import AuthPopupModal from "../../../components/AuthPopupModal";
+import SizeChartModal from "../components/SizeChartModal";
 import api from "../../../lib/axios";
 import { getMediaUrl } from "../../../utils/mediaUrl";
 
@@ -355,6 +357,11 @@ export default function ProductDetailsPage() {
             <h1 className="text-xl sm:text-2xl lg:text-[27px] font-bold tracking-tight text-neutral-900 leading-[1.2]">
               {product.name || "Men's Oversized Puffer Winter Bubble Jacket"}
             </h1>
+            {product.sku && (
+              <p className="mt-1 font-mono text-[10px] text-neutral-400 font-semibold tracking-wider uppercase">
+                SKU: {product.sku}
+              </p>
+            )}
 
             {/* Price & MRP Row */}
             <div className="mt-2.5 flex items-baseline gap-2.5 flex-wrap">
@@ -400,7 +407,7 @@ export default function ProductDetailsPage() {
                 }}
                 style={{
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                  transform: isHoveringZoom ? "scale(2.5)" : "scale(1)",
+                  transform: isHoveringZoom ? "scale(1.5)" : "scale(1)",
                   transition: isHoveringZoom
                     ? "transform 200ms ease-out, transform-origin 75ms ease-out"
                     : "transform 200ms ease-out",
@@ -480,7 +487,7 @@ export default function ProductDetailsPage() {
               {/* Zoom pill indicator */}
               {isHoveringZoom ? (
                 <span className="absolute bottom-3 right-3 z-20 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
-                  2.5x Zoom
+                  1.5x Zoom
                 </span>
               ) : (
                 <span className="absolute bottom-3 left-3 z-10 bg-black/40 backdrop-blur-xs text-white/90 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">
@@ -756,14 +763,15 @@ export default function ProductDetailsPage() {
             {/* Sizing Chart Bar matching user screenshot */}
             <div className="flex items-center justify-between text-xs text-neutral-600 pt-1">
               <span className="text-[11px] font-medium text-neutral-600">
-                Model is 5'8" (172 cm), 70 kg, Wearing M Size
+                {product.modelInfo || "Model is 5'8\" (172 cm), 70 kg, Wearing M Size"}
               </span>
               <button
                 type="button"
                 onClick={() => setSizeModalOpen(true)}
-                className="text-neutral-800 font-semibold text-xs flex items-center gap-1 hover:underline cursor-pointer"
+                className="text-neutral-900 font-bold text-xs flex items-center gap-1.5 hover:underline cursor-pointer"
               >
-                <span>目 Sizing chart</span>
+                <Ruler className="h-3.5 w-3.5 text-neutral-900" />
+                <span>Sizing chart</span>
               </button>
             </div>
 
@@ -863,6 +871,14 @@ export default function ProductDetailsPage() {
 
                 {activeTab === "details" && (
                   <div className="space-y-2 animate-in fade-in duration-200">
+                    {product.sku && (
+                      <div className="flex justify-between py-1 border-b border-neutral-100">
+                        <span className="font-semibold text-neutral-500">SKU / Item Code</span>
+                        <span className="font-mono text-[11px] font-bold text-neutral-900 bg-neutral-100 px-1.5 py-0.5 rounded">
+                          {product.sku}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between py-1 border-b border-neutral-100">
                       <span className="font-semibold text-neutral-500">Fabric</span>
                       <span className="font-medium text-neutral-900">
@@ -1265,6 +1281,15 @@ export default function ProductDetailsPage() {
             navigate('/checkout');
           }
         }}
+      />
+
+      {/* Sizing Chart Modal */}
+      <SizeChartModal
+        isOpen={sizeModalOpen}
+        onClose={() => setSizeModalOpen(false)}
+        selectedSize={selectedSize}
+        product={product}
+        onSelectSize={(sz) => setSelectedSize(sz)}
       />
     </div>
   );

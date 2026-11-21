@@ -62,6 +62,7 @@ const orderSchema = new mongoose.Schema(
     deliveryCharge: { type: Number, default: 0 },
     tax: { type: Number, default: 0 },
     total: { type: Number, required: true },
+    creatorRef: { type: String, uppercase: true, trim: true }, // creator referral code
     cancelReason: { type: String },
     estimatedDeliveryDate: { type: Date },
     trackingNumber: { type: String },

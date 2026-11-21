@@ -57,7 +57,14 @@ export default function ProductsListPage() {
             <p className="max-w-[240px] truncate text-sm font-semibold text-slate-800" title={p.name}>
               {p.name}
             </p>
-            <p className="text-xs text-slate-400 font-medium">{p.brand || '—'}</p>
+            <p className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+              <span>{p.brand || '—'}</span>
+              {p.sku && (
+                <span className="font-mono text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold tracking-wider">
+                  {p.sku}
+                </span>
+              )}
+            </p>
           </div>
         </div>
       ),

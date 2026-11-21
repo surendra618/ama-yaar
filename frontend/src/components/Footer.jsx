@@ -248,6 +248,11 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/pages/creators" className="hover:text-black transition font-semibold text-black">
+                    Creators Program &rarr;
+                  </Link>
+                </li>
+                <li>
                   <Link to="/contact" className="hover:text-black transition">
                     Contact Us
                   </Link>

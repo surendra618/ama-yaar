@@ -54,4 +54,22 @@ const bulkUpload = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, result, `Bulk import successful! Processed ${result.totalProcessed} products.`));
 });
 
-module.exports = { list, getById, getFilterOptions, create, update, remove, bulkUpload };
+const downloadSampleTemplate = asyncHandler(async (req, res) => {
+  const format = (req.query.format || 'xlsx').toLowerCase();
+  const fileData = bulkService.generateSampleWorkbook(format);
+
+  if (format === 'csv') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="amayaar_products_bulk_sample.csv"');
+    return res.status(200).send(fileData);
+  }
+
+  res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
+  res.setHeader('Content-Disposition', 'attachment; filename="amayaar_products_bulk_sample.xlsx"');
+  return res.status(200).send(fileData);
+});
+
+module.exports = { list, getById, getFilterOptions, create, update, remove, bulkUpload, downloadSampleTemplate };

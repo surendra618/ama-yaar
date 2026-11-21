@@ -25,6 +25,7 @@ const { contactRoutes } = require('../modules/contact');
 const { newsletterRoutes } = require('../modules/newsletter');
 const settingRoutes = require('../modules/setting');
 const shiprocketRoutes = require('../modules/shiprocket');
+const creatorRoutes = require('../modules/creator');
 
 const cardSliderRoutes = require('../modules/cardSlider');
 
@@ -56,6 +57,7 @@ router.use('/uploads', uploadRoutes);
 router.use('/reports', reportRoutes);
 router.use('/settings', settingRoutes);
 router.use('/shiprocket', shiprocketRoutes);
+router.use('/creators', creatorRoutes);
 
 module.exports = router;
 

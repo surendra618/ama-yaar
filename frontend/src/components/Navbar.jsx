@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Truck,
   Headphones,
+  Sparkles,
 } from "lucide-react";
 import { logout, checkAuth } from "../features/auth/authSlice";
 import { fetchCart, openDrawer } from "../features/cart/cartSlice";
@@ -522,7 +523,10 @@ export default function Navbar() {
     return base;
   }, [categories]);
 
-  const rightNavLinks = [{ key: "STORIES", label: "STORIES", to: "/blog" }];
+  const rightNavLinks = [
+    { key: "CREATORS", label: "CREATORS", to: "/pages/creators" },
+    { key: "STORIES", label: "STORIES", to: "/blog" },
+  ];
 
   const allMenuData = useMemo(() => {
     const categoriesMenu = { ...MEGA_MENU_DATA.CATEGORIES };
@@ -827,6 +831,13 @@ export default function Navbar() {
                           <Truck className="h-4 w-4 text-amber-600" /> Track Order
                         </Link>
                         <Link
+                          to="/creator/dashboard"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-amber-500 hover:bg-neutral-900 bg-neutral-950 rounded-lg mx-1 my-1 transition"
+                        >
+                          <Sparkles className="h-4 w-4 text-amber-400" /> Creator Studio
+                        </Link>
+                        <Link
                           to="/customer-support"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-neutral-800 hover:bg-neutral-100 hover:text-black transition"
@@ -981,6 +992,13 @@ export default function Navbar() {
                   className="flex items-center gap-2 py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-amber-700 hover:text-black border-b border-neutral-100 transition"
                 >
                   <Truck className="h-4 w-4 text-amber-600" /> TRACK ORDER
+                </Link>
+                <Link
+                  to="/pages/creators"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-amber-500 hover:text-amber-400 border-b border-neutral-100 transition"
+                >
+                  <Sparkles className="h-4 w-4 text-amber-500" /> CREATORS PROGRAM
                 </Link>
                 <Link
                   to="/customer-support"

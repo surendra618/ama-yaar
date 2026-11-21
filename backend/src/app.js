@@ -33,6 +33,8 @@ const allowedOrigins = [
   'http://localhost:5000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
+  'http://192.168.1.12:5173',
+  'http://192.168.1.12:5174',
 ].filter(Boolean);
 
 app.use(
@@ -42,7 +44,8 @@ app.use(
       const isAllowed =
         allowedOrigins.includes(origin) ||
         origin.endsWith('.amayaar.in') ||
-        origin.endsWith('.vercel.app');
+        origin.endsWith('.vercel.app') ||
+        /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+):(5173|5174|5000)$/.test(origin);
       callback(null, isAllowed ? origin : true);
     },
     credentials: true,

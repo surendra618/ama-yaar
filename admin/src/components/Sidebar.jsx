@@ -58,6 +58,7 @@ const NAV_GROUPS = [
   {
     title: 'MARKETING & CONTENT',
     items: [
+      { to: '/creators', label: 'Creators & Affiliates', icon: Sparkles, badge: 'PRO', badgeColor: 'bg-amber-100 text-amber-700' },
       { to: '/coupons', label: 'Coupons', icon: Percent },
       { to: '/banners', label: 'Banners', icon: Image },
       { to: '/card-sliders', label: 'Card Sliders', icon: LayoutGrid },

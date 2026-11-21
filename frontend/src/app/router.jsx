@@ -27,6 +27,10 @@ import ContactPage from '../pages/ContactPage';
 import CareersPage from '../pages/CareersPage';
 import BlogPage from '../pages/BlogPage';
 import TrackOrderPage from '../features/orders/pages/TrackOrderPage';
+import CreatorLandingPage from '../features/creators/pages/CreatorLandingPage';
+import CreatorApplicationPage from '../features/creators/pages/CreatorApplicationPage';
+import CreatorDashboardPage from '../features/creators/pages/CreatorDashboardPage';
+import CreatorLoginPage from '../features/creators/pages/CreatorLoginPage';
 
 export const router = createBrowserRouter([
   {
@@ -51,6 +55,15 @@ export const router = createBrowserRouter([
       { path: '/blog', element: <BlogPage /> },
       { path: '/blogs', element: <BlogPage /> },
       { path: '/stories', element: <BlogPage /> },
+
+      // Creator & Affiliate Program Routes
+      { path: '/pages/creators', element: <CreatorLandingPage /> },
+      { path: '/creators', element: <CreatorLandingPage /> },
+      { path: '/pages/creator-application', element: <CreatorApplicationPage /> },
+      { path: '/creator/dashboard', element: <CreatorDashboardPage /> },
+      { path: '/creator/login', element: <CreatorLoginPage /> },
+      { path: '/creator-login', element: <CreatorLoginPage /> },
+      { path: '/pages/creator-login', element: <CreatorLoginPage /> },
 
       // Redirects for direct navigation or old URLs
       { path: '/orders', element: <Navigate to="/account/orders" replace /> },

@@ -2,11 +2,13 @@ const mongoose = require('mongoose');
 
 const bannerSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    subtitle: { type: String },
+    title: { type: String, default: '' },
+    subtitle: { type: String, default: '' },
     image: { type: String, required: true },
+    mobileImage: { type: String, default: '' },
+    opacity: { type: Number, default: 100, min: 0, max: 100 },
     link: { type: String, default: '/products' },
-    buttonText: { type: String, default: 'Shop Now' },
+    buttonText: { type: String, default: '' },
     badge: { type: String },
     position: {
       type: String,

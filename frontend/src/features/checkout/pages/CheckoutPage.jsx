@@ -386,6 +386,10 @@ export default function CheckoutPage() {
     }
 
     const selectedAddr = addresses.find((a) => a._id === selectedAddressId);
+    let creatorRef = undefined;
+    try {
+      creatorRef = localStorage.getItem('ay_creator_ref') || undefined;
+    } catch (_) {}
 
     const orderRes = await dispatch(
       createOrder({
@@ -397,6 +401,7 @@ export default function CheckoutPage() {
         total: summary?.total || 1899,
         subtotal: summary?.subtotal || 1899,
         email: user?.email || '',
+        creatorRef,
       })
     );
 
@@ -439,6 +444,26 @@ export default function CheckoutPage() {
 
       if (!rzpData || !rzpData.id || !rzpData.id.startsWith('order_')) {
         setOrderError('Unable to generate valid payment order from Razorpay. Please retry or choose Cash on Delivery.');
+        return;
+      }
+
+      // If Fake / Mock mode is enabled on the backend, simulate instant successful payment
+      if (rzpData.isMock || rzpData.mode === 'fake' || rzpData.id.startsWith('order_mock_')) {
+        try {
+          await api.post('/payments/verify', {
+            razorpay_order_id: rzpData.id,
+            razorpay_payment_id: `pay_mock_${Date.now()}`,
+            razorpay_signature: 'mock_signature_approved',
+            orderId: createdOrder._id,
+            method: `${method} (Test Mode)`,
+          });
+        } catch (vErr) {
+          console.error('Mock verification error:', vErr);
+        }
+        dispatch(resetCart());
+        dispatch(clearCart());
+        setStep(3);
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         return;
       }
 

@@ -4,11 +4,17 @@
   "private": true,
   "description": "AMA YAAR E-Commerce Platform Root Workspace",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "concurrently -n \"BACKEND,FRONTEND,ADMIN\" -c \"blue.bold,green.bold,magenta.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\" \"npm --prefix admin run dev\"",
+    "dev:app": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue.bold,green.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
     "dev:admin": "npm --prefix admin run dev",
     "build": "npm --prefix frontend run build",
-    "build:admin": "npm --prefix admin run build"
+    "build:admin": "npm --prefix admin run build",
+    "seed:dev": "npm --prefix backend run seed:dev",
+    "seed:prod": "npm --prefix backend run seed:prod"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

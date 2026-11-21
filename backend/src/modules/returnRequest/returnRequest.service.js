@@ -3,6 +3,7 @@ const Order = require('../order/order.model');
 const Notification = require('../notification/notification.model');
 const ApiError = require('../../utils/ApiError');
 const { notifyAdmins } = require('../notification/adminNotifier');
+const { reverseOrderCommission } = require('../creator/creator.service');
 
 async function list(user, query = {}) {
   const { status, page = 1, limit = 20 } = query;
@@ -109,6 +110,13 @@ async function updateStatus(id, { status, refundAmount, adminComment }) {
     .populate('user', 'name email')
     .populate('order', 'orderNumber');
   if (!doc) throw new ApiError(404, 'Return request not found');
+
+  // Reverse creator commission if return is approved/refunded
+  if (['refunded', 'verified'].includes(status)) {
+    reverseOrderCommission(doc.order?._id || doc.order, `Return ${status}: ${adminComment || ''}`).catch((err) =>
+      console.warn('Commission reversal on return notice:', err.message)
+    );
+  }
 
   // Notify user
   await Notification.create({

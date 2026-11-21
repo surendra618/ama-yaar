@@ -30,6 +30,7 @@ import CardSlidersListPage from '../features/cardSliders/pages/CardSlidersListPa
 import CardSliderFormPage from '../features/cardSliders/pages/CardSliderFormPage';
 import DeliverySettingsPage from '../features/settings/pages/DeliverySettingsPage';
 import NotificationSettingsPage from '../features/settings/pages/NotificationSettingsPage';
+import CreatorsListPage from '../features/creators/pages/CreatorsListPage';
 
 export const router = createBrowserRouter([
   {
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
       { path: '/blogs', element: <BlogsListPage /> },
       { path: '/blog', element: <BlogsListPage /> },
       { path: '/contact-messages', element: <ContactMessagesPage /> },
+      { path: '/creators', element: <CreatorsListPage /> },
       { path: '/payments', element: <PaymentsListPage /> },
       { path: '/returns', element: <ReturnsListPage /> },
       { path: '/returns/:id', element: <ReturnDetailsPage /> },

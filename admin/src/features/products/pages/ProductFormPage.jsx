@@ -19,6 +19,9 @@ import {
   RotateCcw,
   Eye,
   Tag,
+  Ruler,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   fetchCategoriesForSelect,
@@ -33,6 +36,7 @@ import getMediaUrl from '../../../utils/mediaUrl';
 const emptyForm = {
   name: '',
   brand: 'AMAYAAR',
+  sku: '',
   category: '',
   description: '',
   detailedDescription: '',
@@ -47,6 +51,9 @@ const emptyForm = {
   exchangePolicy: '',
   exchangeDays: 7,
   modelInfo: '',
+  sizeChartType: 'default',
+  sizeChartImage: '',
+  customSizeChart: [],
   price: '',
   mrp: '',
   stock: '',
@@ -82,6 +89,48 @@ export default function ProductFormPage() {
   const [previewTab, setPreviewTab] = useState('card'); // 'card' | 'details'
   const [storefrontActiveTab, setStorefrontActiveTab] = useState('description'); // 'description' | 'details' | 'exchange'
 
+  // Collapsible section state (false = expanded, true = contracted/collapsed)
+  const [collapsed, setCollapsed] = useState({
+    basic: false,
+    description: false,
+    features: false,
+    details: false,
+    sizeChart: false,
+    exchange: false,
+    images: false,
+    visibility: false,
+  });
+
+  const toggleCollapse = (section) => {
+    setCollapsed((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const collapseAll = () => {
+    setCollapsed({
+      basic: true,
+      description: true,
+      features: true,
+      details: true,
+      sizeChart: true,
+      exchange: true,
+      images: true,
+      visibility: true,
+    });
+  };
+
+  const expandAll = () => {
+    setCollapsed({
+      basic: false,
+      description: false,
+      features: false,
+      details: false,
+      sizeChart: false,
+      exchange: false,
+      images: false,
+      visibility: false,
+    });
+  };
+
   useEffect(() => {
     dispatch(fetchCategoriesForSelect());
     if (isEdit) dispatch(fetchProductById(id));
@@ -93,6 +142,7 @@ export default function ProductFormPage() {
       setForm({
         name: current.name || '',
         brand: current.brand || 'AMAYAAR',
+        sku: current.sku || '',
         category: current.category?._id || current.category || '',
         description: current.description || '',
         detailedDescription: current.detailedDescription || '',
@@ -112,6 +162,9 @@ export default function ProductFormPage() {
         exchangePolicy: current.exchangePolicy || '',
         exchangeDays: current.exchangeDays ?? 7,
         modelInfo: current.modelInfo || '',
+        sizeChartType: current.sizeChartType || 'default',
+        sizeChartImage: current.sizeChartImage || '',
+        customSizeChart: Array.isArray(current.customSizeChart) ? current.customSizeChart : [],
         price: current.price ?? '',
         mrp: current.mrp ?? '',
         stock: current.stock ?? '',
@@ -120,6 +173,7 @@ export default function ProductFormPage() {
             size: v.size || 'M',
             stock: v.stock ?? 0,
             price: v.price || current.price || 0,
+            sku: v.sku || '',
           }))
           : [],
         images: current.images?.length ? current.images : [],
@@ -160,6 +214,27 @@ export default function ProductFormPage() {
       }
     } catch (err) {
       setUploadError(err.response?.data?.message || 'Failed to upload image. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSizeChartUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await api.post('/uploads/single', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data?.data?.url) {
+        setForm((f) => ({ ...f, sizeChartImage: res.data.data.url, sizeChartType: 'image' }));
+      }
+    } catch (err) {
+      setUploadError(err.response?.data?.message || 'Failed to upload size chart image.');
     } finally {
       setUploading(false);
     }
@@ -215,6 +290,7 @@ export default function ProductFormPage() {
 
     const payload = {
       ...form,
+      sku: form.sku?.trim() || undefined,
       category: form.category || null,
       price: Number(form.price),
       mrp: Number(form.mrp),
@@ -289,13 +365,63 @@ export default function ProductFormPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
         {/* FORM LEFT COLUMN */}
-        <form onSubmit={handleSubmit} className="space-y-5 lg:col-span-7">
-          {/* SECTION 1: BASIC INFO & TITLE */}
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-              <FileText className="h-4 w-4 text-slate-700" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">1. Product Title & Info</h2>
+        <form onSubmit={handleSubmit} className="space-y-4 lg:col-span-7">
+          {/* Section Toolbar: Expand All / Contract All */}
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Form Sections ({8 - Object.values(collapsed).filter(Boolean).length}/8 Open)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={expandAll}
+                className="text-xs font-bold text-slate-600 hover:text-black transition cursor-pointer"
+              >
+                Expand All
+              </button>
+              <span className="text-slate-300">•</span>
+              <button
+                type="button"
+                onClick={collapseAll}
+                className="text-xs font-bold text-slate-600 hover:text-black transition cursor-pointer"
+              >
+                Contract All
+              </button>
             </div>
+          </div>
+
+          {/* SECTION 1: BASIC INFO & TITLE */}
+          <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden transition-all">
+            <button
+              type="button"
+              onClick={() => toggleCollapse('basic')}
+              className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition cursor-pointer text-left border-b border-slate-100"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileText className="h-4 w-4 text-slate-700 shrink-0" />
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                    1. Product Title & Info
+                  </h2>
+                  {collapsed.basic && form.name && (
+                    <p className="text-[11px] text-slate-500 font-medium truncate max-w-sm mt-0.5">
+                      {form.name} • ₹{form.price || 0} • Stock: {form.stock || 0}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[11px] font-semibold text-slate-500 hover:text-black hidden sm:inline">
+                  {collapsed.basic ? 'Expand' : 'Contract'}
+                </span>
+                <span className={`p-1 rounded-md text-slate-500 hover:bg-slate-200/60 transition-transform duration-200 ${collapsed.basic ? '' : 'rotate-180'}`}>
+                  <ChevronDown className="h-4 w-4" />
+                </span>
+              </div>
+            </button>
+
+            {!collapsed.basic && (
+              <div className="p-5 space-y-4">
 
             {/* Product Title / Name */}
             <div>
@@ -313,8 +439,8 @@ export default function ProductFormPage() {
               />
             </div>
 
-            {/* Brand & Category */}
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            {/* Brand, Category & SKU ID */}
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Brand Name</label>
                 <input
@@ -324,6 +450,20 @@ export default function ProductFormPage() {
                   onChange={handleChange}
                   placeholder="e.g. AMAYAAR"
                   className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  SKU / Product ID <span className="text-slate-400 font-normal text-[11px]">(Auto-gen if empty)</span>
+                </label>
+                <input
+                  type="text"
+                  name="sku"
+                  value={form.sku}
+                  onChange={handleChange}
+                  placeholder="e.g. AY-TEE-001"
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none"
                 />
               </div>
 
@@ -440,7 +580,15 @@ export default function ProductFormPage() {
                       type="button"
                       disabled={alreadyHas}
                       onClick={() => {
-                        const next = [...(form.variants || []), { size: sz, stock: 10, price: Number(form.price) || 0 }];
+                        const next = [
+                          ...(form.variants || []),
+                          {
+                            size: sz,
+                            stock: 10,
+                            price: Number(form.price) || 0,
+                            sku: form.sku ? `${form.sku}-${sz}` : '',
+                          },
+                        ];
                         setForm((f) => ({
                           ...f,
                           variants: next,
@@ -470,6 +618,18 @@ export default function ProductFormPage() {
                         {v.size}
                       </span>
                       <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          value={v.sku || ''}
+                          onChange={(e) => {
+                            const updated = [...form.variants];
+                            updated[vIdx] = { ...updated[vIdx], sku: e.target.value.toUpperCase() };
+                            setForm((f) => ({ ...f, variants: updated }));
+                          }}
+                          placeholder="SKU"
+                          className="w-20 h-6 rounded border border-slate-200 px-1 text-[10px] font-bold text-slate-800 bg-white focus:border-black focus:outline-none uppercase text-center"
+                          title="Variant SKU ID"
+                        />
                         <input
                           type="number"
                           min="0"
@@ -514,439 +674,698 @@ export default function ProductFormPage() {
               )}
             </div>
           </div>
+          )}
+        </div>
 
-          {/* SECTION 2: PRODUCT DESCRIPTION */}
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-              <FileText className="h-4 w-4 text-slate-700" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">2. Product Description</h2>
-            </div>
-
-            {/* Main Description */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Main Description <span className="text-slate-400 font-normal text-[11px]">(Storefront Overview)</span>
-              </label>
-              <textarea
-                name="description"
-                rows={3}
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Write a concise product summary, highlight its standout appeal, streetwear cut..."
-                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
-              />
-            </div>
-
-            {/* Detailed Description */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Detailed Description / Story <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
-              </label>
-              <textarea
-                name="detailedDescription"
-                rows={3}
-                value={form.detailedDescription}
-                onChange={handleChange}
-                placeholder="Elaborate on product design philosophy, inspiration, craftsmanship, fit notes..."
-                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
-              />
-            </div>
-
-            {/* What's on Print & Styling Tip */}
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 pt-1">
+        {/* SECTION 2: PRODUCT DESCRIPTION */}
+        <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => toggleCollapse('description')}
+            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition cursor-pointer text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <FileText className="h-4 w-4 text-slate-700 shrink-0" />
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  What's on Print <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  name="whatsOnPrint"
-                  value={form.whatsOnPrint}
-                  onChange={handleChange}
-                  placeholder="e.g. High-density puff and screen print"
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Styling Tip <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  name="stylingTip"
-                  value={form.stylingTip}
-                  onChange={handleChange}
-                  placeholder="e.g. Pair with raw black relaxed denim & sneakers"
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
-                />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">2. Product Description</h2>
+                {collapsed.description && form.description && (
+                  <p className="text-[11px] text-slate-500 font-medium truncate max-w-sm mt-0.5">
+                    {form.description}
+                  </p>
+                )}
               </div>
             </div>
-          </div>
-
-          {/* SECTION 3: KEY FEATURES */}
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
-                <ListChecks className="h-4 w-4 text-slate-700" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">3. Key Features / Bullets (Under Description)</h2>
-              </div>
-              <span className="text-[11px] font-bold text-slate-500">
-                {form.keyFeatures.length} {form.keyFeatures.length === 1 ? 'feature' : 'features'} added
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-500 hover:text-black hidden sm:inline">
+                {collapsed.description ? 'Expand' : 'Contract'}
+              </span>
+              <span className={`p-1 rounded-md text-slate-500 hover:bg-slate-200/60 transition-transform duration-200 ${collapsed.description ? '' : 'rotate-180'}`}>
+                <ChevronDown className="h-4 w-4" />
               </span>
             </div>
+          </button>
 
-            <p className="text-xs text-slate-500">
-              Add bullet points displayed directly below the description on the product page (e.g. Fit, Fabric, Finish, Collar).
-            </p>
-
-            {/* Feature Input Row */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={featureInput}
-                onChange={(e) => setFeatureInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddFeature();
-                  }
-                }}
-                placeholder="e.g. 100% Breathable Heavyweight Cotton (Press Enter or click Add)"
-                className="flex-1 rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddFeature()}
-                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-black transition"
-              >
-                <Plus className="h-3.5 w-3.5" /> Add
-              </button>
-            </div>
-
-            {/* Quick Suggestions */}
-            <div>
-              <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1.5">
-                Quick Suggestions:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {FEATURE_SUGGESTIONS.map((sug, i) => {
-                  const isAdded = form.keyFeatures.includes(sug);
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      disabled={isAdded}
-                      onClick={() => handleAddFeature(sug)}
-                      className={`text-[11px] rounded-md px-2.5 py-1 border transition flex items-center gap-1 ${isAdded
-                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default'
-                        : 'bg-white text-slate-700 border-slate-300 hover:border-black hover:bg-slate-50'
-                        }`}
-                    >
-                      <Plus className="h-3 w-3" /> {sug}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Active Features List */}
-            {form.keyFeatures.length > 0 ? (
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <span className="text-[11px] font-bold text-slate-700 block">Current Key Features:</span>
-                <div className="space-y-1.5">
-                  {form.keyFeatures.map((feat, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-black shrink-0" />
-                        <span className="font-medium">{feat}</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFeature(idx)}
-                        className="text-slate-400 hover:text-rose-600 p-1 transition"
-                        title="Remove feature"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/50 p-3 text-center text-xs text-slate-400 font-medium">
-                No key features added yet. Type above or click a suggestion to add.
-              </div>
-            )}
-          </div>
-
-          {/* SECTION 4: PRODUCT DETAILS & SPECIFICATIONS */}
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-              <Layers className="h-4 w-4 text-slate-700" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                4. Product Details & Fabric Specs
-              </h2>
-            </div>
-
-            <p className="text-xs text-slate-500">
-              These specifications populate the "Details" tab on the product details storefront page.
-            </p>
-
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          {!collapsed.description && (
+            <div className="p-5 space-y-4">
+              {/* Main Description */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Fabric Composition</label>
-                <input
-                  type="text"
-                  name="fabric"
-                  value={form.fabric}
-                  onChange={handleChange}
-                  placeholder="e.g. 100% Super Combed Terry Cotton"
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Fabric Weight / GSM</label>
-                <input
-                  type="text"
-                  name="gsm"
-                  value={form.gsm}
-                  onChange={handleChange}
-                  placeholder="e.g. 380 GSM Heavyweight Fabric"
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Fit & Silhouette</label>
-                <input
-                  type="text"
-                  name="fit"
-                  value={form.fit}
-                  onChange={handleChange}
-                  placeholder="e.g. Oversized Streetwear Fit, Dropped Shoulder"
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Model Wearing Info / Height</label>
-                <input
-                  type="text"
-                  name="modelInfo"
-                  value={form.modelInfo}
-                  onChange={handleChange}
-                  placeholder="e.g. Model is 1.90 m and wears size M"
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Country of Origin</label>
-                <input
-                  type="text"
-                  name="countryOfOrigin"
-                  value={form.countryOfOrigin}
-                  onChange={handleChange}
-                  placeholder="e.g. India"
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Wash & Care Instructions</label>
-              <textarea
-                name="washCare"
-                rows={2}
-                value={form.washCare}
-                onChange={handleChange}
-                placeholder="e.g. Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low."
-                className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 focus:border-black focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* SECTION 5: EXCHANGE POLICY */}
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-              <RotateCcw className="h-4 w-4 text-slate-700" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">5. Exchange Policy</h2>
-            </div>
-
-            <p className="text-xs text-slate-500">
-              Set product-specific return or doorstep exchange rules. Leave empty to use global store settings.
-            </p>
-
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Exchange Window (Days)</label>
-                <input
-                  type="number"
-                  name="exchangeDays"
-                  min="0"
-                  max="90"
-                  value={form.exchangeDays}
-                  onChange={handleChange}
-                  placeholder="7"
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">e.g. 7 days doorstep pickup</span>
-              </div>
-
-              <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Product Specific Exchange Policy Notes <span className="text-slate-400 font-normal">(Optional)</span>
+                  Main Description <span className="text-slate-400 font-normal text-[11px]">(Storefront Overview)</span>
                 </label>
                 <textarea
-                  name="exchangePolicy"
-                  rows={2}
-                  value={form.exchangePolicy}
+                  name="description"
+                  rows={3}
+                  value={form.description}
                   onChange={handleChange}
-                  placeholder="e.g. Hassle-free 7-day doorstep exchange & return. Items must be in original condition with tags attached."
-                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 focus:border-black focus:outline-none"
+                  placeholder="Write a concise product summary, highlight its standout appeal, streetwear cut..."
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
                 />
               </div>
-            </div>
-          </div>
 
-          {/* SECTION 6: PRODUCT IMAGES */}
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
-                <ImageIcon className="h-4 w-4 text-slate-700" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">6. Product Images</h2>
+              {/* Detailed Description */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Detailed Description / Story <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                </label>
+                <textarea
+                  name="detailedDescription"
+                  rows={3}
+                  value={form.detailedDescription}
+                  onChange={handleChange}
+                  placeholder="Elaborate on product design philosophy, inspiration, craftsmanship, fit notes..."
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none transition"
+                />
               </div>
-              <span className="text-[11px] font-bold text-rose-500">* At least 1 image required</span>
-            </div>
 
-            {/* Option A: Direct File Upload */}
-            <div className="space-y-1">
-              <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
-                <Upload className="h-3.5 w-3.5 text-black" /> Option A: Select File(s) from Computer
-              </span>
-              <label className="relative flex flex-col items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 p-3.5 text-center cursor-pointer hover:bg-slate-100/70 hover:border-slate-400 transition">
-                <input type="file" accept="image/*" multiple onChange={handleFileUpload} className="hidden" />
-                {uploading ? (
-                  <div className="flex items-center gap-2 py-1">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
-                    <span className="text-xs font-bold text-black">Uploading image(s)...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-black">
-                      <ImageIcon className="h-4 w-4" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-xs font-bold text-slate-800">
-                        Choose Product Image(s) <span className="text-black font-semibold underline">or drag & drop</span>
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-medium">Select multiple images at once (PNG, JPG, WEBP)</p>
-                    </div>
-                  </div>
+              {/* What's on Print & Styling Tip */}
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    What's on Print <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="whatsOnPrint"
+                    value={form.whatsOnPrint}
+                    onChange={handleChange}
+                    placeholder="e.g. High-density puff and screen print"
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Styling Tip <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="stylingTip"
+                    value={form.stylingTip}
+                    onChange={handleChange}
+                    placeholder="e.g. Pair with raw black relaxed denim & sneakers"
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 3: KEY FEATURES */}
+        <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => toggleCollapse('features')}
+            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition cursor-pointer text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ListChecks className="h-4 w-4 text-slate-700 shrink-0" />
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  3. Key Features / Bullets
+                </h2>
+                {collapsed.features && (
+                  <p className="text-[11px] text-slate-500 font-medium truncate max-w-sm mt-0.5">
+                    {form.keyFeatures.length} feature(s) configured
+                  </p>
                 )}
-              </label>
+              </div>
             </div>
-
-            {/* Divider OR */}
-            <div className="relative flex items-center justify-center my-1">
-              <div className="w-full border-t border-slate-200" />
-              <span className="absolute bg-white px-2.5 text-[10px] font-bold text-slate-400">OR</span>
-            </div>
-
-            {/* Option B: Image URL Input */}
-            <div className="space-y-1">
-              <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
-                <LinkIcon className="h-3.5 w-3.5 text-black" /> Option B: Add Image URL
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-500 hover:text-black hidden sm:inline">
+                {collapsed.features ? 'Expand' : 'Contract'}
               </span>
+              <span className={`p-1 rounded-md text-slate-500 hover:bg-slate-200/60 transition-transform duration-200 ${collapsed.features ? '' : 'rotate-180'}`}>
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </div>
+          </button>
+
+          {!collapsed.features && (
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-slate-500">
+                Add bullet points displayed directly below the description on the product page (e.g. Fit, Fabric, Finish, Collar).
+              </p>
+
+              {/* Feature Input Row */}
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="flex-1 rounded-md border border-slate-300 px-3.5 py-2 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none"
+                  value={featureInput}
+                  onChange={(e) => setFeatureInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddFeature();
+                    }
+                  }}
+                  placeholder="e.g. 100% Breathable Heavyweight Cotton (Press Enter or click Add)"
+                  className="flex-1 rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none"
                 />
                 <button
                   type="button"
-                  onClick={handleAddUrl}
-                  className="rounded-md bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-black transition"
+                  onClick={() => handleAddFeature()}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-black transition"
                 >
-                  Add
+                  <Plus className="h-3.5 w-3.5" /> Add
                 </button>
               </div>
-            </div>
 
-            {/* Uploaded Images Thumbnails Grid */}
-            {form.images.length > 0 && (
-              <div className="mt-3 space-y-1.5">
-                <span className="text-[11px] font-bold text-slate-600">Selected Product Images ({form.images.length}):</span>
-                <div className="grid grid-cols-4 gap-2.5">
-                  {form.images.map((imgUrl, idx) => {
-                    const fullSrc = getMediaUrl(imgUrl);
+              {/* Quick Suggestions */}
+              <div>
+                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1.5">
+                  Quick Suggestions:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {FEATURE_SUGGESTIONS.map((sug, i) => {
+                    const isAdded = form.keyFeatures.includes(sug);
                     return (
-                      <div
-                        key={idx}
-                        className="group relative aspect-square rounded-md overflow-hidden border border-slate-300 bg-slate-100 shadow-xs"
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={isAdded}
+                        onClick={() => handleAddFeature(sug)}
+                        className={`text-[11px] rounded-md px-2.5 py-1 border transition flex items-center gap-1 ${isAdded
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default'
+                          : 'bg-white text-slate-700 border-slate-300 hover:border-black hover:bg-slate-50'
+                          }`}
                       >
-                        <img src={fullSrc} alt={`Product ${idx + 1}`} className="h-full w-full object-cover" />
-                        {idx === 0 && (
-                          <span className="absolute top-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[8px] font-bold text-white uppercase">
-                            Main
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => removeImage(idx)}
-                          className="absolute top-1 right-1 rounded bg-rose-600 p-1 text-white opacity-90 hover:bg-rose-700 transition"
-                          title="Remove Image"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
+                        <Plus className="h-3 w-3" /> {sug}
+                      </button>
                     );
                   })}
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* SECTION 7: VISIBILITY CHECKBOXES */}
-          <div className="flex flex-wrap gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
-            <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 cursor-pointer hover:bg-slate-100/60 transition flex-1">
-              <input
-                type="checkbox"
-                name="isFeatured"
-                checked={form.isFeatured}
-                onChange={handleChange}
-                className="h-4 w-4 rounded border-slate-300 text-black focus:ring-black"
-              />
-              <div>
-                <span className="block text-xs font-bold text-slate-900">Featured Product</span>
-                <span className="block text-[10px] text-slate-500">Show on homepage featured collection</span>
-              </div>
-            </label>
+              {/* Active Features List */}
+              {form.keyFeatures.length > 0 ? (
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-700 block">Current Key Features:</span>
+                  <div className="space-y-1.5">
+                    {form.keyFeatures.map((feat, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="h-1.5 w-1.5 rounded-full bg-black shrink-0" />
+                          <span className="font-medium">{feat}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFeature(idx)}
+                          className="text-slate-400 hover:text-rose-600 p-1 transition"
+                          title="Remove feature"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/50 p-3 text-center text-xs text-slate-400 font-medium">
+                  No key features added yet. Type above or click a suggestion to add.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-            <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 cursor-pointer hover:bg-slate-100/60 transition flex-1">
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={form.isActive}
-                onChange={handleChange}
-                className="h-4 w-4 rounded border-slate-300 text-black focus:ring-black"
-              />
+        {/* SECTION 4: PRODUCT DETAILS & SPECIFICATIONS */}
+        <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => toggleCollapse('details')}
+            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition cursor-pointer text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Layers className="h-4 w-4 text-slate-700 shrink-0" />
               <div>
-                <span className="block text-xs font-bold text-slate-900">Active Status</span>
-                <span className="block text-[10px] text-slate-500">Visible for customers to buy</span>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  4. Product Details & Fabric Specs
+                </h2>
+                {collapsed.details && (
+                  <p className="text-[11px] text-slate-500 font-medium truncate max-w-sm mt-0.5">
+                    {form.fabric || 'Fabric Specs'} • {form.fit || 'Fit Specs'}
+                  </p>
+                )}
               </div>
-            </label>
-          </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-500 hover:text-black hidden sm:inline">
+                {collapsed.details ? 'Expand' : 'Contract'}
+              </span>
+              <span className={`p-1 rounded-md text-slate-500 hover:bg-slate-200/60 transition-transform duration-200 ${collapsed.details ? '' : 'rotate-180'}`}>
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </div>
+          </button>
+
+          {!collapsed.details && (
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-slate-500">
+                These specifications populate the "Details" tab on the product details storefront page.
+              </p>
+
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Fabric Composition</label>
+                  <input
+                    type="text"
+                    name="fabric"
+                    value={form.fabric}
+                    onChange={handleChange}
+                    placeholder="e.g. 100% Super Combed Terry Cotton"
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Fabric Weight / GSM</label>
+                  <input
+                    type="text"
+                    name="gsm"
+                    value={form.gsm}
+                    onChange={handleChange}
+                    placeholder="e.g. 380 GSM Heavyweight Fabric"
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Fit & Silhouette</label>
+                  <input
+                    type="text"
+                    name="fit"
+                    value={form.fit}
+                    onChange={handleChange}
+                    placeholder="e.g. Oversized Streetwear Fit, Dropped Shoulder"
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Model Wearing Info / Height</label>
+                  <input
+                    type="text"
+                    name="modelInfo"
+                    value={form.modelInfo}
+                    onChange={handleChange}
+                    placeholder="e.g. Model is 1.90 m and wears size M"
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Country of Origin</label>
+                  <input
+                    type="text"
+                    name="countryOfOrigin"
+                    value={form.countryOfOrigin}
+                    onChange={handleChange}
+                    placeholder="e.g. India"
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Wash & Care Instructions</label>
+                <textarea
+                  name="washCare"
+                  rows={2}
+                  value={form.washCare}
+                  onChange={handleChange}
+                  placeholder="e.g. Machine wash cold inside out with similar colors. Do not iron directly on print. Tumble dry low."
+                  className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 focus:border-black focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 5: SIZE CHART & FIT GUIDE */}
+        <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => toggleCollapse('sizeChart')}
+            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition cursor-pointer text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Ruler className="h-4 w-4 text-slate-700 shrink-0" />
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">5. Size Chart & Fit Guide</h2>
+                {collapsed.sizeChart && (
+                  <p className="text-[11px] text-slate-500 font-medium truncate max-w-sm mt-0.5">
+                    Mode: {form.sizeChartType} {form.modelInfo ? `• ${form.modelInfo}` : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-500 hover:text-black hidden sm:inline">
+                {collapsed.sizeChart ? 'Expand' : 'Contract'}
+              </span>
+              <span className={`p-1 rounded-md text-slate-500 hover:bg-slate-200/60 transition-transform duration-200 ${collapsed.sizeChart ? '' : 'rotate-180'}`}>
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </div>
+          </button>
+
+          {!collapsed.sizeChart && (
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-slate-500">
+                Controls the customer "Sizing chart" popup and fit reference displayed on the storefront.
+              </p>
+
+              {/* Template / Mode Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Size Chart Mode</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'default', label: 'Auto (Category Preset)', desc: 'Tops / Bottoms based on category' },
+                    { id: 'tops', label: 'Tops / Streetwear Tees', desc: 'Chest, Length, Shoulder, Sleeve' },
+                    { id: 'bottoms', label: 'Bottoms / Cargos / Pants', desc: 'Waist, Hip, Inseam, Outseam' },
+                    { id: 'image', label: 'Upload Graphic Image', desc: 'Custom size chart diagram/photo' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, sizeChartType: t.id }))}
+                      className={`rounded-lg border p-2.5 text-left transition ${
+                        form.sizeChartType === t.id
+                          ? 'border-black bg-slate-50 ring-1 ring-black'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <p className="text-xs font-bold text-slate-900">{t.label}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{t.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* If Graphic Image Upload Mode */}
+              {form.sizeChartType === 'image' && (
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <label className="block text-xs font-bold text-slate-700">Custom Size Chart Graphic / Diagram</label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="inline-flex items-center gap-2 rounded-md bg-black px-3.5 py-2 text-xs font-bold text-white hover:bg-slate-800 transition cursor-pointer">
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Upload Chart Image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleSizeChartUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-xs text-slate-400 font-medium">or paste image URL:</span>
+                    <input
+                      type="text"
+                      value={form.sizeChartImage}
+                      onChange={(e) => setForm((f) => ({ ...f, sizeChartImage: e.target.value }))}
+                      placeholder="https://.../size-chart.png"
+                      className="flex-1 min-w-[200px] rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-900 focus:border-black focus:outline-none"
+                    />
+                  </div>
+                  {form.sizeChartImage && (
+                    <div className="relative inline-block border rounded-lg p-1 bg-slate-50 mt-2">
+                      <img
+                        src={getMediaUrl(form.sizeChartImage)}
+                        alt="Size Chart Preview"
+                        className="max-h-48 rounded object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, sizeChartImage: '' }))}
+                        className="absolute top-2 right-2 rounded-full bg-rose-600 text-white p-1 shadow hover:bg-rose-700"
+                        title="Remove image"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 6: EXCHANGE POLICY */}
+        <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => toggleCollapse('exchange')}
+            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition cursor-pointer text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <RotateCcw className="h-4 w-4 text-slate-700 shrink-0" />
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">6. Exchange Policy</h2>
+                {collapsed.exchange && (
+                  <p className="text-[11px] text-slate-500 font-medium truncate max-w-sm mt-0.5">
+                    {form.exchangeDays || 7} Days Return/Exchange Policy
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-500 hover:text-black hidden sm:inline">
+                {collapsed.exchange ? 'Expand' : 'Contract'}
+              </span>
+              <span className={`p-1 rounded-md text-slate-500 hover:bg-slate-200/60 transition-transform duration-200 ${collapsed.exchange ? '' : 'rotate-180'}`}>
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </div>
+          </button>
+
+          {!collapsed.exchange && (
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-slate-500">
+                Set product-specific return or doorstep exchange rules. Leave empty to use global store settings.
+              </p>
+
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Exchange Window (Days)</label>
+                  <input
+                    type="number"
+                    name="exchangeDays"
+                    min="0"
+                    max="90"
+                    value={form.exchangeDays}
+                    onChange={handleChange}
+                    placeholder="7"
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">e.g. 7 days doorstep pickup</span>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Product Specific Exchange Policy Notes <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <textarea
+                    name="exchangePolicy"
+                    rows={2}
+                    value={form.exchangePolicy}
+                    onChange={handleChange}
+                    placeholder="e.g. Hassle-free 7-day doorstep exchange & return. Items must be in original condition with tags attached."
+                    className="w-full rounded-md border border-slate-300 px-3.5 py-2 text-xs font-normal text-slate-900 focus:border-black focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 7: PRODUCT IMAGES */}
+        <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => toggleCollapse('images')}
+            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition cursor-pointer text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ImageIcon className="h-4 w-4 text-slate-700 shrink-0" />
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">7. Product Images</h2>
+                {collapsed.images && (
+                  <p className="text-[11px] text-slate-500 font-medium truncate max-w-sm mt-0.5">
+                    {form.images.length} image(s) selected
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-500 hover:text-black hidden sm:inline">
+                {collapsed.images ? 'Expand' : 'Contract'}
+              </span>
+              <span className={`p-1 rounded-md text-slate-500 hover:bg-slate-200/60 transition-transform duration-200 ${collapsed.images ? '' : 'rotate-180'}`}>
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </div>
+          </button>
+
+          {!collapsed.images && (
+            <div className="p-5 space-y-4">
+              {/* Option A: Direct File Upload */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
+                  <Upload className="h-3.5 w-3.5 text-black" /> Option A: Select File(s) from Computer
+                </span>
+                <label className="relative flex flex-col items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 p-3.5 text-center cursor-pointer hover:bg-slate-100/70 hover:border-slate-400 transition">
+                  <input type="file" accept="image/*" multiple onChange={handleFileUpload} className="hidden" />
+                  {uploading ? (
+                    <div className="flex items-center gap-2 py-1">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                      <span className="text-xs font-bold text-black">Uploading image(s)...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-black">
+                        <ImageIcon className="h-4 w-4" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-slate-800">
+                          Choose Product Image(s) <span className="text-black font-semibold underline">or drag & drop</span>
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-medium">Select multiple images at once (PNG, JPG, WEBP)</p>
+                      </div>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {/* Divider OR */}
+              <div className="relative flex items-center justify-center my-1">
+                <div className="w-full border-t border-slate-200" />
+                <span className="absolute bg-white px-2.5 text-[10px] font-bold text-slate-400">OR</span>
+              </div>
+
+              {/* Option B: Image URL Input */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
+                  <LinkIcon className="h-3.5 w-3.5 text-black" /> Option B: Add Image URL
+                </span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="https://images.unsplash.com/photo-..."
+                    className="flex-1 rounded-md border border-slate-300 px-3.5 py-2 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:border-black focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddUrl}
+                    className="rounded-md bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-black transition"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Uploaded Images Thumbnails Grid */}
+              {form.images.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  <span className="text-[11px] font-bold text-slate-600">Selected Product Images ({form.images.length}):</span>
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {form.images.map((imgUrl, idx) => {
+                      const fullSrc = getMediaUrl(imgUrl);
+                      return (
+                        <div
+                          key={idx}
+                          className="group relative aspect-square rounded-md overflow-hidden border border-slate-300 bg-slate-100 shadow-xs"
+                        >
+                          <img src={fullSrc} alt={`Product ${idx + 1}`} className="h-full w-full object-cover" />
+                          {idx === 0 && (
+                            <span className="absolute top-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[8px] font-bold text-white uppercase">
+                              Main
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 rounded bg-rose-600 p-1 text-white opacity-90 hover:bg-rose-700 transition"
+                            title="Remove Image"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 8: VISIBILITY & PUBLISHING */}
+        <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => toggleCollapse('visibility')}
+            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition cursor-pointer text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Eye className="h-4 w-4 text-slate-700 shrink-0" />
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">8. Visibility & Publishing</h2>
+                {collapsed.visibility && (
+                  <p className="text-[11px] text-slate-500 font-medium truncate max-w-sm mt-0.5">
+                    Status: {form.isActive ? 'Active (Live)' : 'Draft (Hidden)'} {form.isFeatured ? '• Featured' : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-500 hover:text-black hidden sm:inline">
+                {collapsed.visibility ? 'Expand' : 'Contract'}
+              </span>
+              <span className={`p-1 rounded-md text-slate-500 hover:bg-slate-200/60 transition-transform duration-200 ${collapsed.visibility ? '' : 'rotate-180'}`}>
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </div>
+          </button>
+
+          {!collapsed.visibility && (
+            <div className="p-5 flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 cursor-pointer hover:bg-slate-100/60 transition flex-1">
+                <input
+                  type="checkbox"
+                  name="isFeatured"
+                  checked={form.isFeatured}
+                  onChange={handleChange}
+                  className="h-4 w-4 rounded border-slate-300 text-black focus:ring-black"
+                />
+                <div>
+                  <span className="block text-xs font-bold text-slate-900">Featured Product</span>
+                  <span className="block text-[10px] text-slate-500">Show on homepage featured collection</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 cursor-pointer hover:bg-slate-100/60 transition flex-1">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={form.isActive}
+                  onChange={handleChange}
+                  className="h-4 w-4 rounded border-slate-300 text-black focus:ring-black"
+                />
+                <div>
+                  <span className="block text-xs font-bold text-slate-900">Active Status</span>
+                  <span className="block text-[10px] text-slate-500">Visible for customers to buy</span>
+                </div>
+              </label>
+            </div>
+          )}
+        </div>
 
           {/* Form Actions */}
           <div className="flex items-center justify-end gap-2.5 pt-2">

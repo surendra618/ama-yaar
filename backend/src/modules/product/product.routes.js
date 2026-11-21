@@ -13,6 +13,7 @@ const router = express.Router();
 
 router.get('/', controller.list);
 router.get('/filters', controller.getFilterOptions);
+router.get('/sample-template', controller.downloadSampleTemplate);
 router.get('/:id', controller.getById);
 
 router.post('/bulk-upload', authenticate, role('admin'), upload.single('file'), controller.bulkUpload);

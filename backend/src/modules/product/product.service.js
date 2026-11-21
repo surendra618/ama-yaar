@@ -126,6 +126,7 @@ async function list(query = {}) {
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
+        { sku: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { brand: { $regex: search, $options: 'i' } },
         { tags: { $in: [new RegExp(search, 'i')] } },
@@ -207,24 +208,18 @@ async function list(query = {}) {
       inStock
     );
 
-    // Only use fallback dummy products if DB has 0 products in total AND no specific search/filter was applied
-    const returnFallback = products.length === 0 && !hasFilter && (await Product.countDocuments({})) === 0;
-
     return {
-      products: returnFallback ? fallbackProducts : products,
+      products,
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: returnFallback ? fallbackProducts.length : total,
-        pages: Math.ceil((returnFallback ? fallbackProducts.length : total) / limitNum) || 1,
+        total,
+        pages: Math.ceil(total / limitNum) || 1,
       },
     };
   } catch (err) {
-    console.warn('[product.service] Database query error, using fallback:', err.message);
-    return {
-      products: fallbackProducts,
-      pagination: { page: 1, limit: 12, total: fallbackProducts.length, pages: 1 },
-    };
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(500, err.message);
   }
 }
 
@@ -242,7 +237,7 @@ async function getByIdOrSlug(idOrSlug, query = {}) {
         .populate('category', 'name slug parent')
         .populate('subCategory', 'name slug');
     }
-    if (!doc) return fallbackProducts[0];
+    if (!doc) throw new ApiError(404, 'Product not found');
 
     // If product is disabled and inactive items are not explicitly allowed, do not expose to public
     if (!doc.isActive && includeInactive !== 'true' && includeInactive !== true) {
@@ -298,7 +293,7 @@ async function getByIdOrSlug(idOrSlug, query = {}) {
     return docObj;
   } catch (err) {
     if (err instanceof ApiError) throw err;
-    return fallbackProducts[0];
+    throw new ApiError(500, err.message);
   }
 }
 

@@ -62,8 +62,15 @@ export default function BannersListPage() {
             )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-800">{b.title}</p>
-            <p className="text-xs font-medium text-slate-400 truncate max-w-[200px]">{b.link || '—'}</p>
+            <p className="text-sm font-semibold text-slate-800">{b.title || <span className="italic text-slate-400 font-normal">(Image Only Banner)</span>}</p>
+            <p className="text-xs font-mono font-medium text-indigo-600 truncate max-w-[200px]">{b.link || '—'}</p>
+            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500">
+              <span className="font-semibold text-slate-700">Opacity: {b.opacity ?? 100}%</span>
+              <span>•</span>
+              <span className={b.mobileImage ? 'text-emerald-600 font-semibold' : 'text-slate-400'}>
+                {b.mobileImage ? 'Mobile Banner: Custom' : 'Mobile Banner: Auto'}
+              </span>
+            </div>
           </div>
         </div>
       ),
