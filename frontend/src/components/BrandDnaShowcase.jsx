@@ -127,7 +127,7 @@ export default function BrandDnaShowcase() {
               LOOKBOOK & DROP MATRIX
             </div>
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-tight">
-              SIGNATURE <span className="text-amber-400 italic font-serif">Street Fits</span>
+              SIGNATURE <span className="text-amber-400 italic">Street Fits</span>
             </h2>
           </div>
           <p className="max-w-md text-xs sm:text-sm text-neutral-400 leading-relaxed">

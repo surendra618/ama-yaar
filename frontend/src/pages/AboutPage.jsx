@@ -115,21 +115,21 @@ export default function AboutPage() {
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-20">
           {/* Top Tag (Only Text) */}
-          <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-amber-400 mb-4 font-['Outfit']">
+          <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-amber-400 mb-4">
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
             <span>BORN ON THE STREETS OF INDIA • EST. 2026</span>
           </div>
 
           {/* Main Hero Headline */}
-          <h1 className="font-['Outfit'] text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-black uppercase tracking-tight text-white leading-[1.05]">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-black uppercase tracking-tight text-white leading-[1.05]">
             STYLE KA LAFDA?{' '}
-            <span className="font-['Unbounded'] font-black text-amber-400 block sm:inline mt-1 sm:mt-0">
+            <span className="font-black text-amber-400 block sm:inline mt-1 sm:mt-0">
               WE GOT YOU.
             </span>
           </h1>
 
           {/* Subtitle / Philosophy */}
-          <p className="mt-6 mx-auto max-w-2xl text-sm sm:text-base font-medium text-neutral-300 leading-relaxed font-['Plus_Jakarta_Sans']">
+          <p className="mt-6 mx-auto max-w-2xl text-sm sm:text-base font-medium text-neutral-300 leading-relaxed">
             AMA YAAR is engineered for those who wear their individuality with pride.{' '}
             <span className="text-amber-400 font-bold block mt-2 text-xs sm:text-sm tracking-wider uppercase">
               No Thin Cotton Tees • No Boring Fits • Just Raw, Heavyweight Streetwear
@@ -181,13 +181,13 @@ export default function AboutPage() {
                   </div>
 
                   {/* Overlapping Badge Pill */}
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-0.5 text-[9px] font-black uppercase tracking-wider text-black shadow-md font-['Outfit'] whitespace-nowrap">
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-0.5 text-[9px] font-black uppercase tracking-wider text-black shadow-md whitespace-nowrap">
                     {card.badge}
                   </span>
                 </div>
 
                 {/* Title & Subtext — static, no hover change */}
-                <h3 className="mt-2 text-xs sm:text-sm font-black text-white uppercase tracking-wider font-['Outfit']">
+                <h3 className="mt-2 text-xs sm:text-sm font-black text-white uppercase tracking-wider">
                   {card.title}
                 </h3>
                 <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 uppercase tracking-widest opacity-80">

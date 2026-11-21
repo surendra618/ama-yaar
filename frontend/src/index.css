@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Boldonse&family=Pinyon+Script&family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Boldonse&family=Pinyon+Script&family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&family=Red+Hat+Text:ital,wght@0,300..700;1,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 /* Local Red Hat Display @font-face */
 @font-face {
@@ -41,7 +41,7 @@
 
 @layer base {
     html {
-        font-family: 'Red Hat Display', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-family: 'Red Hat Text', 'Red Hat Display', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         scroll-behavior: smooth;
         color: #0f172a;
         background-color: #f8fafc;
@@ -65,7 +65,7 @@
 }
 
 .font-redhat {
-  font-family: 'Red Hat Display', sans-serif !important;
+  font-family: 'Red Hat Text', 'Red Hat Display', sans-serif !important;
 }
 
 /* Marquee ticker scroll animation */
@@ -329,7 +329,7 @@
     right: 32px;
     text-align: center;
     color: #0f172a;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Red Hat Text', 'Red Hat Display', sans-serif;
     font-size: 13.5px;
     font-weight: 800;
     font-style: italic;
@@ -362,7 +362,7 @@
     border-radius: 99px;
     background: #0f172a;
     color: #ffffff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Red Hat Text', 'Red Hat Display', sans-serif;
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.5px;
@@ -376,7 +376,7 @@
 }
 
 .al-headline {
-    font-family: 'Syne', 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Red Hat Text', 'Red Hat Display', sans-serif;
     font-size: clamp(32px, 3.8vw, 54px);
     font-weight: 800;
     color: #0f172a;
@@ -389,7 +389,7 @@
     background: linear-gradient(90deg, #7c3aed, #ec4899, #f59e0b);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-family: 'Bodoni Moda', 'Playfair Display', serif;
+    font-family: 'Red Hat Text', 'Red Hat Display', sans-serif;
     font-style: italic;
     font-weight: 700;
     position: relative;
@@ -402,7 +402,7 @@
 }
 
 .al-tagline {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Red Hat Text', 'Red Hat Display', sans-serif;
     font-size: 14.5px;
     color: #475569;
     margin: 0 0 24px;
@@ -461,7 +461,7 @@
 }
 
 .al-feature-title {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Red Hat Text', 'Red Hat Display', sans-serif;
     font-size: 12.5px;
     font-weight: 800;
     color: #0f172a;
@@ -474,7 +474,7 @@
 }
 
 .al-script {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Red Hat Text', 'Red Hat Display', sans-serif;
     font-style: italic;
     font-weight: 700;
     font-size: 22px;

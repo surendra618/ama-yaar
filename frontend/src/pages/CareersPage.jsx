@@ -89,7 +89,7 @@ export default function CareersPage() {
                   <Rocket className="h-3.5 w-3.5 text-[#facc15]" /> WE ARE HIRING YAARS
                 </span>
 
-                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-white leading-[1.05] mt-1 font-['Outfit']">
+                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-white leading-[1.05] mt-1">
                   BUILD THE FUTURE OF <span className="text-[#facc15]">STREETWEAR</span>
                 </h1>
               </div>
@@ -158,7 +158,7 @@ export default function CareersPage() {
       {/* 3. CULTURE & PERKS SECTION */}
       <section id="culture" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-8 sm:pb-10">
         <div className="text-center max-w-3xl mx-auto mb-10">
-          <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-slate-900 font-['Outfit']">
+          <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-slate-900">
             PERKS &amp; CULTURE AT AMA YAAR
           </h2>
           <p className="mt-3 text-xs sm:text-sm text-neutral-600 font-medium leading-relaxed">
@@ -178,7 +178,7 @@ export default function CareersPage() {
                   <div className="h-12 w-12 bg-black text-[#facc15] flex items-center justify-center font-bold mb-6 rounded-md group-hover:scale-105 transition">
                     <Icon className="h-6 w-6 text-[#facc15]" />
                   </div>
-                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide group-hover:text-black transition font-['Outfit']">
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide group-hover:text-black transition">
                     {perk.title}
                   </h3>
                   <p className="mt-3 text-xs text-neutral-600 font-medium leading-relaxed">
@@ -202,7 +202,7 @@ export default function CareersPage() {
             <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-slate-900">
               <Briefcase className="h-3.5 w-3.5 text-slate-900" /> JOIN THE CREW
             </span>
-            <h2 className="mt-3 text-3xl sm:text-5xl font-black uppercase tracking-tight text-slate-900 font-['Outfit']">
+            <h2 className="mt-3 text-3xl sm:text-5xl font-black uppercase tracking-tight text-slate-900">
               OPEN ROLES &amp; APPLICATIONS
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-neutral-600 font-medium max-w-xl mx-auto">
@@ -225,7 +225,7 @@ export default function CareersPage() {
                 </span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase tracking-wide font-['Outfit']">
+              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase tracking-wide">
                 APPLY TO JOIN THE AMA YAAR SQUAD
               </h3>
 
@@ -265,7 +265,7 @@ export default function CareersPage() {
             <Flame className="h-3.5 w-3.5 text-[#facc15]" /> OPEN CALL FOR TALENT
           </span>
 
-          <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white font-['Outfit']">
+          <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
             DON'T SEE YOUR EXACT ROLE LISTED?
           </h2>
 
@@ -308,7 +308,7 @@ export default function CareersPage() {
                   <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-widest px-3 py-1 mb-2">
                     APPLICATION RECEIVED
                   </span>
-                  <h3 className="text-2xl font-black text-slate-900 uppercase font-['Outfit']">YOUR APPLICATION HAS BEEN SUBMITTED!</h3>
+                  <h3 className="text-2xl font-black text-slate-900 uppercase">YOUR APPLICATION HAS BEEN SUBMITTED!</h3>
                   <p className="mt-3 text-xs text-neutral-600 font-medium leading-relaxed max-w-md mx-auto">
                     We've received your application. Our hiring team reviews submissions weekly and will reach out if your profile matches our drop requirements.
                   </p>
@@ -325,7 +325,7 @@ export default function CareersPage() {
                     <span className="bg-black text-[#facc15] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest inline-block mb-1.5">
                       JOIN THE SQUAD
                     </span>
-                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 uppercase leading-tight font-['Outfit']">
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 uppercase leading-tight">
                       SUBMIT YOUR APPLICATION
                     </h3>
                     <p className="text-xs text-neutral-500 font-medium mt-1">

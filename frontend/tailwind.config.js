@@ -9,10 +9,10 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['"Red Hat Display"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        display: ['"Boldonse"', '"Red Hat Display"', 'sans-serif'],
+        sans: ['"Red Hat Text"', '"Red Hat Display"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        display: ['"Boldonse"', '"Red Hat Display"', '"Red Hat Text"', 'sans-serif'],
         boldonse: ['"Boldonse"', 'sans-serif'],
-        redhat: ['"Red Hat Display"', 'sans-serif'],
+        redhat: ['"Red Hat Text"', '"Red Hat Display"', 'sans-serif'],
         script: ['"Pinyon Script"', 'cursive'],
         pinyon: ['"Pinyon Script"', 'cursive'],
       },

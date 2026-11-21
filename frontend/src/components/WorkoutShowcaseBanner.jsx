@@ -73,7 +73,7 @@ export default function WorkoutShowcaseBanner() {
           <span
             className="font-light tracking-wide text-transparent"
             style={{
-              fontFamily: '"Outfit", "Inter", sans-serif',
+              fontFamily: '"Red Hat Text", "Red Hat Display", sans-serif',
               WebkitTextStroke: '1.5px #d1d7de',
             }}
           >
@@ -92,7 +92,7 @@ export default function WorkoutShowcaseBanner() {
           <span
             className="font-light tracking-wide text-transparent"
             style={{
-              fontFamily: '"Outfit", "Inter", sans-serif',
+              fontFamily: '"Red Hat Text", "Red Hat Display", sans-serif',
               WebkitTextStroke: '1.5px #d1d7de',
             }}
           >
@@ -101,7 +101,7 @@ export default function WorkoutShowcaseBanner() {
           <span
             className="font-light tracking-wide text-transparent"
             style={{
-              fontFamily: '"Outfit", "Inter", sans-serif',
+              fontFamily: '"Red Hat Text", "Red Hat Display", sans-serif',
               WebkitTextStroke: '1.5px #d1d7de',
             }}
           >
@@ -150,7 +150,7 @@ export default function WorkoutShowcaseBanner() {
             {/* VEXO Tag (Ultra-Thin Sleek Font) */}
             <span
               className="text-[11px] sm:text-[12px] font-medium uppercase tracking-[0.3em] text-white/90"
-              style={{ fontFamily: '"Outfit", "Plus Jakarta Sans", sans-serif' }}
+              style={{ fontFamily: '"Red Hat Text", "Red Hat Display", sans-serif' }}
             >
               VEXO
             </span>
@@ -158,7 +158,7 @@ export default function WorkoutShowcaseBanner() {
             {/* Sub-header */}
             <span
               className="text-[8.5px] sm:text-[9px] font-semibold uppercase tracking-[0.2em] text-white/50 mt-0.5"
-              style={{ fontFamily: '"Inter", sans-serif' }}
+              style={{ fontFamily: '"Red Hat Text", "Red Hat Display", sans-serif' }}
             >
               LEVEL UP
             </span>
@@ -166,7 +166,7 @@ export default function WorkoutShowcaseBanner() {
             {/* Stacked Main Title */}
             <h2
               className="text-base sm:text-lg md:text-[20px] font-semibold uppercase tracking-wide text-white leading-tight mt-1 drop-shadow-md max-w-[290px] sm:max-w-[320px]"
-              style={{ fontFamily: '"Outfit", "Plus Jakarta Sans", "Inter", sans-serif' }}
+              style={{ fontFamily: '"Red Hat Text", "Red Hat Display", sans-serif' }}
             >
               WITH THE LATEST IN<br />
               <span className="text-white font-semibold">WORKOUT WEAR</span>

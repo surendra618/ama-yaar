@@ -183,7 +183,7 @@ export default function StyleLabShowcase() {
               INTERACTIVE STREETWEAR LAB
             </p>
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-black leading-tight">
-              BUILD YOUR <span className="text-amber-500 italic font-serif">Signature Fit</span>
+              BUILD YOUR <span className="text-amber-500 italic">Signature Fit</span>
             </h2>
           </div>
           <p className="max-w-md text-xs sm:text-sm text-neutral-600 leading-relaxed font-medium">
