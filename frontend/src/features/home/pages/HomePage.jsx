@@ -50,6 +50,7 @@ import {
   isInstagramUrl,
 } from "../../../utils/instagram";
 import ProductCard from "../../../components/ProductCard";
+import EmptyState from "../../../components/EmptyState";
 import InstagramBanner from "../../../components/InstagramBanner";
 import EditorialBanner from "../../../components/EditorialBanner";
 import WorkoutShowcaseBanner from "../../../components/WorkoutShowcaseBanner";
@@ -233,7 +234,7 @@ function ReelCard({ item, onOpenModal }) {
           console.warn('Autoplay prevented on reel card, retrying muted:', err);
           if (videoRef.current) {
             videoRef.current.muted = true;
-            videoRef.current.play().catch(() => {});
+            videoRef.current.play().catch(() => { });
           }
         });
       }
@@ -381,7 +382,7 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
           if (modalVideoRef.current) {
             modalVideoRef.current.muted = true;
             setIsMuted(true);
-            modalVideoRef.current.play().catch(() => {});
+            modalVideoRef.current.play().catch(() => { });
           }
         });
       }
@@ -830,9 +831,11 @@ function TypewriterBannerTitle({
 }
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const {
     items: products,
+    loading: productsLoading,
     categories,
     banners,
     cardSliders,
@@ -969,6 +972,8 @@ export default function HomePage() {
     activeBanners.length > 0
       ? activeBanners.map((b) => ({
         bgImage: b.image ? getMediaUrl(b.image) : HERO_SLIDES[0].bgImage,
+        mobileImage: b.mobileImage ? getMediaUrl(b.mobileImage) : null,
+        opacity: typeof b.opacity === 'number' ? b.opacity : 100,
         eyebrow: b.badge || "Featured Collection 2026",
         title1: b.title || "GEAR UP",
         title2: "",
@@ -979,10 +984,21 @@ export default function HomePage() {
         link: b.link || "/products",
         buttonText: b.buttonText || "SHOP NOW",
       }))
-      : HERO_SLIDES;
+      : HERO_SLIDES.map((s) => ({ ...s, opacity: 100 }));
 
   const activeSlide =
     displaySlides[currentSlide % displaySlides.length] || HERO_SLIDES[0];
+
+  const handleBannerClick = (e) => {
+    // If clicked on slide indicator dots, let dot handler switch slides
+    if (e.target.closest('[data-no-navigate]')) return;
+    const targetLink = activeSlide.link || "/products";
+    if (targetLink.startsWith("http://") || targetLink.startsWith("https://")) {
+      window.location.href = targetLink;
+    } else {
+      navigate(targetLink);
+    }
+  };
 
   // Auto-slide every 2 seconds (2000ms) as requested: "sliding speed 2 sec kr"
   useEffect(() => {
@@ -1126,80 +1142,108 @@ export default function HomePage() {
 
   return (
     <div className="bg-white">
-      {/* 1. Hero Banner with 2s auto-slide and compact top/bottom spacing */}
-      <section className="relative w-full overflow-hidden bg-neutral-950 h-[560px] sm:h-[620px] lg:h-[670px]">
+      {/* 1. Hero Banner with 2s auto-slide and unified click redirection */}
+      <section
+        onClick={handleBannerClick}
+        className="relative w-full overflow-hidden bg-neutral-950 h-[560px] sm:h-[620px] lg:h-[670px] cursor-pointer group"
+      >
         {displaySlides.map((slide, sIdx) => {
           const isActive = sIdx === currentSlide % displaySlides.length;
           return (
-            <img
+            <picture
               key={slide.bgImage || sIdx}
-              src={slide.bgImage}
-              alt={slide.title1 || "Hero slide"}
-              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ease-in-out ${isActive ? "opacity-100 z-0" : "opacity-0 pointer-events-none"
+              className={`absolute inset-0 h-full w-full transition-opacity duration-700 ease-in-out ${isActive ? "opacity-100 z-0" : "opacity-0 pointer-events-none"
                 }`}
-            />
+            >
+              {slide.mobileImage && (
+                <source media="(max-width: 640px)" srcSet={slide.mobileImage} />
+              )}
+              <img
+                src={slide.bgImage}
+                alt={slide.title1 || "Hero slide"}
+                className="h-full w-full object-cover object-center transition-opacity duration-300"
+                style={{ opacity: (slide.opacity ?? 100) / 100 }}
+              />
+            </picture>
           );
         })}
 
-        {/* Minimal scrim gradient overlay - bottom vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/15 z-10 pointer-events-none" />
+        {/* Subtle bottom vignette only if text or button is present */}
+        {(activeSlide.eyebrow || activeSlide.title1 || activeSlide.subtitle || activeSlide.buttonText) ? (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 pointer-events-none" />
+        ) : null}
 
         {/* Content container - centered at bottom */}
-        <div className="absolute inset-0 flex flex-col justify-end items-center z-20 px-4 sm:px-6 lg:px-12 pb-6 sm:pb-8 text-center">
+        <div className="absolute inset-0 flex flex-col justify-end items-center z-20 px-4 sm:px-6 lg:px-12 pb-6 sm:pb-8 text-center pointer-events-none">
           <div className="w-full max-w-4xl sm:max-w-5xl mx-auto flex flex-col items-center text-center">
             {/* Eyebrow */}
-            <span className="mb-1.5 inline-block text-[10.5px] sm:text-[11.5px] font-black uppercase tracking-[0.25em] text-white/90">
-              {activeSlide.eyebrow}
-            </span>
+            {activeSlide.eyebrow ? (
+              <span className="mb-1.5 inline-block text-[10.5px] sm:text-[11.5px] font-black uppercase tracking-[0.25em] text-white/90 drop-shadow">
+                {activeSlide.eyebrow}
+              </span>
+            ) : null}
 
-            {/* Main Headline (Single row, no second row) */}
-            <h1
-              className="font-sans font-black tracking-tight text-white uppercase text-center sm:whitespace-nowrap"
-              style={{
-                fontSize: "clamp(1.5rem, 3.1vw, 2.75rem)",
-                lineHeight: "1.08",
-                letterSpacing: "-0.02em",
-                textShadow: "0 2px 14px rgba(0,0,0,0.6)",
-              }}
-            >
-              {[
+            {/* Main Headline */}
+            {(() => {
+              const headline = [
                 activeSlide.title1,
                 activeSlide.title2,
                 activeSlide.title3 || activeSlide.titleHighlight,
               ]
                 .filter(Boolean)
-                .join(" ")}
-            </h1>
+                .join(" ");
+              return headline ? (
+                <h1
+                  className="font-sans font-black tracking-tight text-white uppercase text-center sm:whitespace-nowrap"
+                  style={{
+                    fontSize: "clamp(1.5rem, 3.1vw, 2.75rem)",
+                    lineHeight: "1.08",
+                    letterSpacing: "-0.02em",
+                    textShadow: "0 2px 14px rgba(0,0,0,0.7)",
+                  }}
+                >
+                  {headline}
+                </h1>
+              ) : null;
+            })()}
 
             {/* Subtitle */}
-            <p className="mt-2 sm:mt-2.5 text-xs sm:text-[13.5px] font-medium text-white/90 tracking-wide leading-snug drop-shadow max-w-xl text-center">
-              {activeSlide.subtitle}
-            </p>
+            {activeSlide.subtitle ? (
+              <p className="mt-2 sm:mt-2.5 text-xs sm:text-[13.5px] font-medium text-white/90 tracking-wide leading-snug drop-shadow max-w-xl text-center">
+                {activeSlide.subtitle}
+              </p>
+            ) : null}
 
-            {/* CTA Action Buttons - Centered */}
-            <div className="mt-3.5 sm:mt-4 flex items-center justify-center gap-3 flex-wrap">
-              <Link
-                to={activeSlide.link || "/products"}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2 sm:px-7 sm:py-2.5 text-[11px] font-black tracking-widest text-black uppercase shadow-lg transition hover:bg-neutral-100 hover:scale-102 active:scale-95"
-              >
-                {activeSlide.buttonText || "SHOP NOW"}
-              </Link>
-              <Link
-                to="/products"
-                className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-black/30 px-6 py-2 sm:px-7 sm:py-2.5 text-[11px] font-black tracking-widest text-white uppercase transition hover:border-white hover:bg-white/10 hover:scale-102 active:scale-95 backdrop-blur-xs"
-              >
-                EXPLORE ALL
-              </Link>
-            </div>
+            {/* CTA Action Button - Only show if buttonText is provided */}
+            {activeSlide.buttonText ? (
+              <div className="mt-3.5 sm:mt-4 flex items-center justify-center gap-3 flex-wrap pointer-events-auto">
+                <Link
+                  to={activeSlide.link || "/products"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-2.5 sm:px-8 sm:py-3 text-[11px] sm:text-xs font-black tracking-widest text-black uppercase shadow-xl transition hover:bg-neutral-100 hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  {activeSlide.buttonText}
+                </Link>
+              </div>
+            ) : null}
 
             {/* Slide Indicator Dots - Centered Below Text */}
-            <div className="mt-4 sm:mt-5 flex items-center justify-center gap-2 bg-black/35 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-white/10 shadow-xs">
+            <div
+              data-no-navigate="true"
+              onClick={(e) => e.stopPropagation()}
+              className="mt-4 sm:mt-5 flex items-center justify-center gap-2 bg-black/35 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-white/10 shadow-xs pointer-events-auto"
+            >
               {displaySlides.map((_, sIdx) => {
                 const isActive = sIdx === currentSlide % displaySlides.length;
                 return (
                   <button
                     key={sIdx}
-                    onClick={() => setCurrentSlide(sIdx)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentSlide(sIdx);
+                    }}
                     className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${isActive
                       ? "w-7 bg-white shadow-xs"
                       : "w-2 bg-white/40 hover:bg-white/70"
@@ -1338,102 +1382,61 @@ export default function HomePage() {
             </h2>
           </motion.div>
 
-          {/* Product Grid - 4 Cards per row */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:gap-5">
-            {(grid.length ? grid : Array.from({ length: 15 })).map((p, i) => {
-              const localImages = [
-                "/model01.png",
-                "/model04.png",
-                "/model03.png",
-                "/model02.png",
-                "/model05.jpg",
-                "/side.png",
-                "/model07.jpg",
-                "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&q=80",
-                "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=600&q=80",
-                "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=600&q=80",
-                "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=600&q=80",
-              ];
+          {/* Product Grid / Loading / Empty State */}
+          {productsLoading && (!products || products.length === 0) ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:gap-5">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="animate-pulse flex flex-col bg-neutral-100/70 p-3 rounded-2xl border border-neutral-200">
+                  <div className="aspect-[3/4.2] bg-neutral-200 w-full rounded-xl" />
+                  <div className="mt-3 h-4 bg-neutral-200 w-3/4 rounded-sm" />
+                  <div className="mt-2 h-3.5 bg-neutral-200 w-1/3 rounded-sm" />
+                </div>
+              ))}
+            </div>
+          ) : grid && grid.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:gap-5">
+                {grid.map((productItem, i) => (
+                  <motion.div
+                    key={productItem?._id || i}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 0.4, delay: (i % 5) * 0.05 }}
+                  >
+                    <ProductCard product={productItem} />
+                  </motion.div>
+                ))}
+              </div>
 
-              const sampleNames = [
-                "Oversized Acid Wash Tee",
-                "Raw Edge Vintage Hoodie",
-                "Heavyweight Streetwear Tee",
-                "Cyberpunk Graphic Tee",
-                "Baggy 90s Skater Cargo",
-                "Drop Shoulder Boxy Tee",
-                "Signature Mineral Wash Tee",
-                "Retro Varsity Bomber",
-                "Distressed Parachute Pant",
-                "Minimalist Black Cotton Tee",
-                "Aesthetic Tokyo Graphic Tee",
-                "Relaxed French Terry Shorts",
-                "Vintage Fade Streetwear Tee",
-                "Reflective Track Pant",
-                "Signature Edition Oversized",
-              ];
-
-              const productItem = p?._id
-                ? {
-                  ...p,
-                  images:
-                    p.images && p.images.length > 0
-                      ? p.images
-                      : [
-                        localImages[i % localImages.length],
-                        localImages[(i + 1) % localImages.length],
-                      ],
-                }
-                : {
-                  _id: `sample-${i + 1}`,
-                  name: sampleNames[i % sampleNames.length],
-                  price: [
-                    499, 999, 599, 699, 1299, 549, 649, 1799, 1199, 450, 699,
-                    799, 599, 999, 899,
-                  ][i % 15],
-                  mrp: [
-                    999, 1999, 1199, 1399, 2499, 1099, 1299, 3499, 2399, 899,
-                    1399, 1599, 1199, 1999, 1799,
-                  ][i % 15],
-                  discount: 50,
-                  brand: "AMA YAAR",
-                  category: { name: "OVERSIZED FIT" },
-                  images: [
-                    localImages[i % localImages.length],
-                    localImages[(i + 1) % localImages.length],
-                  ],
-                };
-
-              return (
-                <motion.div
-                  key={productItem._id || i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ duration: 0.4, delay: (i % 5) * 0.05 }}
+              {/* View all button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mt-10 text-center"
+              >
+                <Link
+                  to="/products"
+                  className="group inline-flex items-center gap-2 rounded-full bg-black px-8 py-3 text-xs font-black tracking-widest text-white uppercase hover:bg-neutral-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-xs"
                 >
-                  <ProductCard product={productItem} />
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* View all button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-10 text-center"
-          >
-            <Link
-              to="/products"
-              className="group inline-flex items-center gap-2 rounded-full bg-black px-8 py-3 text-xs font-black tracking-widest text-white uppercase hover:bg-neutral-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-xs"
-            >
-              <span>View all products</span>
-              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-            </Link>
-          </motion.div>
+                  <span>View all products</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                </Link>
+              </motion.div>
+            </>
+          ) : (
+            <EmptyState
+              title="NO PRODUCTS AVAILABLE RIGHT NOW"
+              subtitle="Our exclusive streetwear pieces are flying off the racks or undergoing custom wash treatments in our lab. Stay tuned for our next heavyweight drop!"
+              badge="VAULT RESTOCKING"
+              actionText="Explore Categories"
+              actionLink="/products"
+              onRefresh={() => dispatch(fetchProducts({ limit: 15 }))}
+              secondaryActionText="Check Again"
+            />
+          )}
         </section>
       </div>
 

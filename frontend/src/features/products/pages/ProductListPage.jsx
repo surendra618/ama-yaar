@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { fetchProducts, fetchCategories, fetchFilterOptions } from '../productsSlice';
 import ProductCard from '../../../components/ProductCard';
+import EmptyState from '../../../components/EmptyState';
 
 export default function ProductListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -257,16 +258,16 @@ export default function ProductListPage() {
                 ))}
               </div>
             ) : products.length === 0 ? (
-              <div className="py-20 text-center">
-                <h3 className="text-lg font-bold text-neutral-900 uppercase tracking-wider mb-2">No Products Found</h3>
-                <p className="text-xs text-neutral-500 mb-6 font-medium">Try removing some of your filters or searching for something else.</p>
-                <button
-                  onClick={clearAllFilters}
-                  className="bg-black text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-neutral-800 transition cursor-pointer"
-                >
-                  Clear All Filters
-                </button>
-              </div>
+              <EmptyState
+                title="NO PRODUCTS FOUND"
+                subtitle="Try adjusting or clearing your filters to explore our full streetwear catalogue."
+                badge="NO MATCHES"
+                actionText="Clear All Filters"
+                actionLink=""
+                onAction={clearAllFilters}
+                onRefresh={() => dispatch(fetchProducts({ limit: 12 }))}
+                secondaryActionText="Reset View"
+              />
             ) : viewMode === 'list' ? (
               /* List Mode */
               <div className="flex flex-col gap-4">
