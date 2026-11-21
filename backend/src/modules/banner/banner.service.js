@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Banner = require('./banner.model');
 const ApiError = require('../../utils/ApiError');
 
@@ -85,11 +86,16 @@ async function list(query = {}) {
 
 async function getById(id) {
   try {
-    const doc = await Banner.findById(id);
-    if (!doc) return fallbackBanners[0];
-    return doc;
-  } catch (err) {
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      const doc = await Banner.findById(id);
+      if (doc) return doc;
+    }
+    const fallback = fallbackBanners.find((b) => b._id === id);
+    if (fallback) return fallback;
     return fallbackBanners[0];
+  } catch (err) {
+    const fallback = fallbackBanners.find((b) => b._id === id);
+    return fallback || fallbackBanners[0];
   }
 }
 
@@ -106,8 +112,14 @@ async function create(data) {
 
 async function update(id, data) {
   try {
-    const doc = await Banner.findByIdAndUpdate(id, data, { new: true, runValidators: true });
-    if (!doc) throw new ApiError(404, 'Banner not found');
+    let doc = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      doc = await Banner.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+    }
+    if (!doc) {
+      const { _id, ...cleanData } = data;
+      doc = await Banner.create(cleanData);
+    }
     clearBannerCache();
     return doc;
   } catch (err) {

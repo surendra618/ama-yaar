@@ -974,15 +974,14 @@ export default function HomePage() {
         bgImage: b.image ? getMediaUrl(b.image) : HERO_SLIDES[0].bgImage,
         mobileImage: b.mobileImage ? getMediaUrl(b.mobileImage) : null,
         opacity: typeof b.opacity === 'number' ? b.opacity : 100,
-        eyebrow: b.badge || "Featured Collection 2026",
-        title1: b.title || "GEAR UP",
+        eyebrow: (typeof b.badge === 'string' && b.badge.trim()) ? b.badge.trim() : "",
+        title1: (typeof b.title === 'string' && b.title.trim()) ? b.title.trim() : "",
         title2: "",
         titleHighlight: "",
-        subtitle:
-          b.subtitle || "Discover premium fits crafted for everyday impact.",
+        subtitle: (typeof b.subtitle === 'string' && b.subtitle.trim()) ? b.subtitle.trim() : "",
         accentColor: "#facc15",
         link: b.link || "/products",
-        buttonText: b.buttonText || "SHOP NOW",
+        buttonText: (typeof b.buttonText === 'string' && b.buttonText.trim()) ? b.buttonText.trim() : "",
       }))
       : HERO_SLIDES.map((s) => ({ ...s, opacity: 100 }));
 
