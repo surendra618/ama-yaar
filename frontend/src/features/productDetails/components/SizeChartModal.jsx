@@ -161,11 +161,51 @@ export default function SizeChartModal({
   onSelectSize,
 }) {
   const [unit, setUnit] = useState('in'); // 'in' | 'cm'
-  const [activeTab, setActiveTab] = useState('tops'); // 'tops' | 'bottoms'
+  const [activeTab, setActiveTab] = useState('tops'); // 'tops' | 'bottoms' | 'custom' | 'image'
+
+  // Helper to format values with unit toggle
+  const formatMeasurement = (val, targetUnit) => {
+    if (!val || (typeof val !== 'string' && typeof val !== 'number')) return '—';
+    const str = String(val).trim();
+    if (!str) return '—';
+
+    if (targetUnit === 'in') {
+      return str.endsWith('"') || str.toLowerCase().endsWith('in') ? str : `${str}"`;
+    }
+
+    // Convert from inches to cm
+    const rangeMatch = str.match(/^([\d.]+)\s*-\s*([\d.]+)$/);
+    if (rangeMatch) {
+      const c1 = Math.round(parseFloat(rangeMatch[1]) * 2.54 * 10) / 10;
+      const c2 = Math.round(parseFloat(rangeMatch[2]) * 2.54 * 10) / 10;
+      return `${c1} - ${c2} cm`;
+    }
+    const singleNum = parseFloat(str.replace(/[^\d.]/g, ''));
+    if (!isNaN(singleNum) && singleNum > 0) {
+      const cmVal = Math.round(singleNum * 2.54 * 10) / 10;
+      return `${cmVal} cm`;
+    }
+    return str;
+  };
+
+  const customRows = Array.isArray(product?.customSizeChart) ? product.customSizeChart : [];
+  const hasCustomChart =
+    (product?.sizeChartType === 'custom' || customRows.length > 0) && customRows.length > 0;
+  const hasChest = customRows.some((r) => r.chest && String(r.chest).trim());
+  const hasLength = customRows.some((r) => r.length && String(r.length).trim());
+  const hasShoulder = customRows.some((r) => r.shoulder && String(r.shoulder).trim());
+  const hasSleeve = customRows.some((r) => r.sleeve && String(r.sleeve).trim());
+  const hasWaist = customRows.some((r) => r.waist && String(r.waist).trim());
+  const hasHip = customRows.some((r) => r.hip && String(r.hip).trim());
+  const hasInseam = customRows.some((r) => r.inseam && String(r.inseam).trim());
 
   // Determine default tab based on product category, type or custom image
   useEffect(() => {
     if (!product) return;
+    if (product.sizeChartType === 'custom' && hasCustomChart) {
+      setActiveTab('custom');
+      return;
+    }
     if (product.sizeChartType === 'image' && product.sizeChartImage) {
       setActiveTab('image');
       return;
@@ -176,6 +216,10 @@ export default function SizeChartModal({
     }
     if (product.sizeChartType === 'tops') {
       setActiveTab('tops');
+      return;
+    }
+    if (hasCustomChart) {
+      setActiveTab('custom');
       return;
     }
 
@@ -194,7 +238,7 @@ export default function SizeChartModal({
       prodName.includes('jogger');
 
     setActiveTab(isBottom ? 'bottoms' : 'tops');
-  }, [product]);
+  }, [product, hasCustomChart]);
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -252,8 +296,21 @@ export default function SizeChartModal({
 
         {/* Modal Controls: Category Tabs & Unit Switcher */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-5 py-3 shrink-0 bg-white">
-          {/* Tops vs Bottoms Tab */}
-          <div className="flex items-center rounded-lg bg-neutral-100 p-1">
+          {/* Tops vs Bottoms vs Custom vs Image Tab */}
+          <div className="flex items-center rounded-lg bg-neutral-100 p-1 flex-wrap gap-1">
+            {hasCustomChart && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('custom')}
+                className={`rounded-md px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                  activeTab === 'custom'
+                    ? 'bg-black text-white shadow-xs'
+                    : 'text-neutral-600 hover:text-black'
+                }`}
+              >
+                Custom Fit Guide
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setActiveTab('tops')}
@@ -338,7 +395,107 @@ export default function SizeChartModal({
           {/* Measurement Table */}
           {activeTab !== 'image' && (
           <div className="overflow-x-auto rounded-lg border border-neutral-200">
-            {activeTab === 'tops' ? (
+            {activeTab === 'custom' && hasCustomChart ? (
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-neutral-900 text-white uppercase text-[11px] font-black tracking-wider">
+                    <th className="py-2.5 px-3">Size</th>
+                    {hasChest && <th className="py-2.5 px-3">Chest / Bust</th>}
+                    {hasLength && <th className="py-2.5 px-3">Front Length</th>}
+                    {hasShoulder && <th className="py-2.5 px-3">Shoulder</th>}
+                    {hasSleeve && <th className="py-2.5 px-3">Sleeve</th>}
+                    {hasWaist && <th className="py-2.5 px-3">Waist</th>}
+                    {hasHip && <th className="py-2.5 px-3">Hip</th>}
+                    {hasInseam && <th className="py-2.5 px-3">Inseam</th>}
+                    {onSelectSize && <th className="py-2.5 px-3 text-right">Action</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {customRows.map((row, idx) => {
+                    const rowSize = (row.size || '').trim();
+                    const isCurrent =
+                      selectedSize &&
+                      rowSize &&
+                      (rowSize.toUpperCase() === selectedSize.toUpperCase() ||
+                        rowSize.split(' ')[0].toUpperCase() === selectedSize.toUpperCase());
+                    return (
+                      <tr
+                        key={idx}
+                        className={`transition ${
+                          isCurrent
+                            ? 'bg-neutral-900 text-white font-bold'
+                            : 'hover:bg-neutral-50'
+                        }`}
+                      >
+                        <td className="py-2.5 px-3 font-black">
+                          <span className="flex items-center gap-1.5">
+                            {rowSize}
+                            {isCurrent && (
+                              <span className="rounded-full bg-amber-400 text-black text-[9px] font-black px-1.5 py-0.2">
+                                YOUR SIZE
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                        {hasChest && (
+                          <td className="py-2.5 px-3 font-medium">
+                            {formatMeasurement(row.chest, unit)}
+                          </td>
+                        )}
+                        {hasLength && (
+                          <td className="py-2.5 px-3 font-medium">
+                            {formatMeasurement(row.length, unit)}
+                          </td>
+                        )}
+                        {hasShoulder && (
+                          <td className="py-2.5 px-3 font-medium">
+                            {formatMeasurement(row.shoulder, unit)}
+                          </td>
+                        )}
+                        {hasSleeve && (
+                          <td className="py-2.5 px-3 font-medium">
+                            {formatMeasurement(row.sleeve, unit)}
+                          </td>
+                        )}
+                        {hasWaist && (
+                          <td className="py-2.5 px-3 font-medium">
+                            {formatMeasurement(row.waist, unit)}
+                          </td>
+                        )}
+                        {hasHip && (
+                          <td className="py-2.5 px-3 font-medium">
+                            {formatMeasurement(row.hip, unit)}
+                          </td>
+                        )}
+                        {hasInseam && (
+                          <td className="py-2.5 px-3 font-medium">
+                            {formatMeasurement(row.inseam, unit)}
+                          </td>
+                        )}
+                        {onSelectSize && (
+                          <td className="py-2.5 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onSelectSize(rowSize.split(' ')[0] || rowSize);
+                                onClose();
+                              }}
+                              className={`rounded px-2 py-1 text-[11px] font-bold uppercase transition ${
+                                isCurrent
+                                  ? 'bg-white text-black'
+                                  : 'bg-neutral-900 text-white hover:bg-black'
+                              }`}
+                            >
+                              {isCurrent ? 'Selected' : 'Select'}
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : activeTab === 'tops' ? (
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-neutral-900 text-white uppercase text-[11px] font-black tracking-wider">

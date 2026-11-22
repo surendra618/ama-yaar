@@ -219,6 +219,60 @@ export default function ProductFormPage() {
     }
   };
 
+  const DEFAULT_TOPS_ROWS = [
+    { size: 'XS', chest: '38', length: '27', shoulder: '18.5', sleeve: '8.5', waist: '', hip: '', inseam: '' },
+    { size: 'S', chest: '40', length: '28', shoulder: '19.5', sleeve: '9.0', waist: '', hip: '', inseam: '' },
+    { size: 'M', chest: '42', length: '29', shoulder: '20.5', sleeve: '9.5', waist: '', hip: '', inseam: '' },
+    { size: 'L', chest: '44', length: '30', shoulder: '21.5', sleeve: '10.0', waist: '', hip: '', inseam: '' },
+    { size: 'XL', chest: '46', length: '31', shoulder: '22.5', sleeve: '10.5', waist: '', hip: '', inseam: '' },
+    { size: 'XXL', chest: '48', length: '32', shoulder: '23.5', sleeve: '11.0', waist: '', hip: '', inseam: '' },
+    { size: '3XL', chest: '50', length: '33', shoulder: '24.5', sleeve: '11.5', waist: '', hip: '', inseam: '' },
+  ];
+
+  const DEFAULT_BOTTOMS_ROWS = [
+    { size: '28 (XS)', waist: '28 - 29', hip: '38', length: '39', inseam: '28', chest: '', shoulder: '', sleeve: '' },
+    { size: '30 (S)', waist: '30 - 31', hip: '40', length: '40', inseam: '29', chest: '', shoulder: '', sleeve: '' },
+    { size: '32 (M)', waist: '32 - 33', hip: '42', length: '41', inseam: '30', chest: '', shoulder: '', sleeve: '' },
+    { size: '34 (L)', waist: '34 - 35', hip: '44', length: '42', inseam: '30.5', chest: '', shoulder: '', sleeve: '' },
+    { size: '36 (XL)', waist: '36 - 37', hip: '46', length: '42.5', inseam: '31', chest: '', shoulder: '', sleeve: '' },
+    { size: '38 (XXL)', waist: '38 - 39', hip: '48', length: '43', inseam: '31.5', chest: '', shoulder: '', sleeve: '' },
+  ];
+
+  const handleSelectSizeChartMode = (modeId) => {
+    setForm((f) => {
+      let customRows = f.customSizeChart || [];
+      if (modeId === 'custom' && (!customRows || customRows.length === 0)) {
+        customRows = DEFAULT_TOPS_ROWS;
+      }
+      return { ...f, sizeChartType: modeId, customSizeChart: customRows };
+    });
+  };
+
+  const handleUpdateCustomSizeRow = (index, field, value) => {
+    setForm((f) => {
+      const updated = [...(f.customSizeChart || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...f, customSizeChart: updated };
+    });
+  };
+
+  const handleAddCustomSizeRow = () => {
+    setForm((f) => ({
+      ...f,
+      customSizeChart: [
+        ...(f.customSizeChart || []),
+        { size: '', chest: '', length: '', shoulder: '', sleeve: '', waist: '', hip: '', inseam: '' },
+      ],
+    }));
+  };
+
+  const handleRemoveCustomSizeRow = (index) => {
+    setForm((f) => ({
+      ...f,
+      customSizeChart: (f.customSizeChart || []).filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSizeChartUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
@@ -298,6 +352,20 @@ export default function ProductFormPage() {
       stock: Number(form.stock),
       variants: form.variants || [],
       exchangeDays: form.exchangeDays ? Number(form.exchangeDays) : 7,
+      customSizeChart: Array.isArray(form.customSizeChart)
+        ? form.customSizeChart
+            .filter((r) => r.size && r.size.trim())
+            .map((r) => ({
+              size: (r.size || '').trim(),
+              chest: (r.chest || '').trim(),
+              length: (r.length || '').trim(),
+              shoulder: (r.shoulder || '').trim(),
+              sleeve: (r.sleeve || '').trim(),
+              waist: (r.waist || '').trim(),
+              hip: (r.hip || '').trim(),
+              inseam: (r.inseam || '').trim(),
+            }))
+        : [],
       keyFeatures: cleanFeatures,
       highlights: cleanFeatures,
       images: currentImages.filter(Boolean),
@@ -1044,17 +1112,18 @@ export default function ProductFormPage() {
               {/* Template / Mode Selector */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Size Chart Mode</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {[
                     { id: 'default', label: 'Auto (Category Preset)', desc: 'Tops / Bottoms based on category' },
                     { id: 'tops', label: 'Tops / Streetwear Tees', desc: 'Chest, Length, Shoulder, Sleeve' },
                     { id: 'bottoms', label: 'Bottoms / Cargos / Pants', desc: 'Waist, Hip, Inseam, Outseam' },
+                    { id: 'custom', label: 'Custom Measurement Table', desc: 'Custom size rows & table values' },
                     { id: 'image', label: 'Upload Graphic Image', desc: 'Custom size chart diagram/photo' },
                   ].map((t) => (
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, sizeChartType: t.id }))}
+                      onClick={() => handleSelectSizeChartMode(t.id)}
                       className={`rounded-lg border p-2.5 text-left transition ${
                         form.sizeChartType === t.id
                           ? 'border-black bg-slate-50 ring-1 ring-black'
@@ -1067,6 +1136,146 @@ export default function ProductFormPage() {
                   ))}
                 </div>
               </div>
+
+              {/* If Custom Measurement Table Mode */}
+              {form.sizeChartType === 'custom' && (
+                <div className="space-y-3 pt-3 border-t border-slate-100">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800">
+                        Custom Sizing Table Measurements (Inches)
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Enter exact measurements for each size. Customers will see these values in the storefront Sizing Chart modal.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, customSizeChart: DEFAULT_TOPS_ROWS }))}
+                        className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                        title="Load Tops (Tees/Hoodies/Jackets) standard values"
+                      >
+                        Reset to Tops Preset
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, customSizeChart: DEFAULT_BOTTOMS_ROWS }))}
+                        className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                        title="Load Bottoms (Pants/Cargos) standard values"
+                      >
+                        Reset to Bottoms Preset
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddCustomSizeRow}
+                        className="inline-flex items-center gap-1 rounded-md bg-black px-3 py-1 text-[11px] font-bold text-white hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>Add Size</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Measurement Table */}
+                  <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-2xs">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-900 text-white uppercase text-[10px] font-black tracking-wider">
+                          <th className="py-2 px-3 w-28">Size Label</th>
+                          <th className="py-2 px-3">Chest / Bust (in)</th>
+                          <th className="py-2 px-3">Front Length (in)</th>
+                          <th className="py-2 px-3">Shoulder (in)</th>
+                          <th className="py-2 px-3">Sleeve (in)</th>
+                          <th className="py-2 px-3">Waist (in)</th>
+                          <th className="py-2 px-3">Hip / Inseam</th>
+                          <th className="py-2 px-2 text-center w-12">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(form.customSizeChart || []).map((row, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50/70 transition">
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={row.size || ''}
+                                onChange={(e) => handleUpdateCustomSizeRow(idx, 'size', e.target.value)}
+                                placeholder="e.g. M"
+                                className="w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-black text-slate-900 focus:bg-white focus:border-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={row.chest || ''}
+                                onChange={(e) => handleUpdateCustomSizeRow(idx, 'chest', e.target.value)}
+                                placeholder='42"'
+                                className="w-full rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-800 focus:border-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={row.length || ''}
+                                onChange={(e) => handleUpdateCustomSizeRow(idx, 'length', e.target.value)}
+                                placeholder='29"'
+                                className="w-full rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-800 focus:border-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={row.shoulder || ''}
+                                onChange={(e) => handleUpdateCustomSizeRow(idx, 'shoulder', e.target.value)}
+                                placeholder='20.5"'
+                                className="w-full rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-800 focus:border-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={row.sleeve || ''}
+                                onChange={(e) => handleUpdateCustomSizeRow(idx, 'sleeve', e.target.value)}
+                                placeholder='9.5"'
+                                className="w-full rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-800 focus:border-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={row.waist || ''}
+                                onChange={(e) => handleUpdateCustomSizeRow(idx, 'waist', e.target.value)}
+                                placeholder='—'
+                                className="w-full rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-800 focus:border-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={row.hip || row.inseam || ''}
+                                onChange={(e) => handleUpdateCustomSizeRow(idx, 'hip', e.target.value)}
+                                placeholder='—'
+                                className="w-full rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-800 focus:border-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCustomSizeRow(idx)}
+                                className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                                title="Delete row"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {/* If Graphic Image Upload Mode */}
               {form.sizeChartType === 'image' && (
