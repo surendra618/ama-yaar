@@ -14,7 +14,7 @@ import {
   Check,
   LayoutGrid,
 } from 'lucide-react';
-import { fetchCardSliderById, createCardSlider, updateCardSlider, clearCurrentCardSlider } from '../cardSlidersSlice';
+import { fetchCardSliderById, createCardSlider, updateCardSlider, clearCurrentCardSlider, fetchCardSliders } from '../cardSlidersSlice';
 import api from '../../../lib/axios';
 import getMediaUrl from '../../../utils/mediaUrl';
 
@@ -142,7 +142,10 @@ export default function CardSliderFormPage() {
     };
     const action = isEdit ? updateCardSlider({ id, payload }) : createCardSlider(payload);
     const result = await dispatch(action);
-    if (!result.error) navigate('/card-sliders');
+    if (!result.error) {
+      await dispatch(fetchCardSliders());
+      navigate('/card-sliders');
+    }
   };
 
   return (

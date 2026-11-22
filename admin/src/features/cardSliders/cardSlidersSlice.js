@@ -3,7 +3,13 @@ import api from '../../lib/axios';
 
 export const fetchCardSliders = createAsyncThunk('cardSliders/fetch', async (params, { rejectWithValue }) => {
   try {
-    const { data } = await api.get('/card-sliders', { params });
+    const { data } = await api.get('/card-sliders', {
+      params: { ...params, _t: Date.now() },
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+      },
+    });
     return data.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || err.message);
@@ -82,9 +88,13 @@ const cardSlidersSlice = createSlice({
       .addCase(updateCardSlider.fulfilled, (state, action) => {
         state.saving = false;
         if (action.payload && action.payload._id) {
-          const index = state.items.findIndex((item) => item._id === action.payload._id);
+          const index = state.items.findIndex(
+            (item) => String(item._id) === String(action.payload._id)
+          );
           if (index !== -1) {
             state.items[index] = { ...state.items[index], ...action.payload };
+          } else {
+            state.items.unshift(action.payload);
           }
         }
       })

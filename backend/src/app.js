@@ -59,13 +59,15 @@ app.options('*', cors());
 // Ensure Vary: Origin and optimize caching on public API routes
 app.use((req, res, next) => {
   res.setHeader('Vary', 'Origin');
+  const isCacheBusted = req.query._t || req.headers['authorization'] || req.query.noCache;
   if (
+    !isCacheBusted &&
     req.method === 'GET' &&
     (req.path.includes('/categories') ||
       req.path.includes('/card-sliders') ||
       req.path.includes('/banners'))
   ) {
-    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
   } else if (req.path.startsWith('/api/')) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
@@ -80,6 +82,7 @@ app.use(cookieParser());
 app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 
 // Serve static uploads, videos, and editorial looks
+app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 app.use('/video', express.static(path.join(__dirname, '../public/video')));
 app.use('/editorial-looks', express.static(path.join(__dirname, '../public/editorial-looks')));

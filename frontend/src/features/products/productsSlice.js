@@ -53,7 +53,13 @@ export const fetchCardSliders = createAsyncThunk(
   'products/fetchCardSliders',
   async (params = { activeOnly: 'true' }, { rejectWithValue }) => {
     try {
-      const { data } = await api.get('/card-sliders', { params });
+      const { data } = await api.get('/card-sliders', {
+        params: { ...params, _t: Date.now() },
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+        },
+      });
       return data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);

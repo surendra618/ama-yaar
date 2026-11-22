@@ -10,11 +10,15 @@ export function getMediaUrl(path) {
   ) {
     return path;
   }
-  if (path.startsWith('/editorial-looks/') || path.startsWith('/video/')) {
-    return path;
-  }
-  if (path.startsWith('editorial-looks/') || path.startsWith('video/')) {
-    return `/${path}`;
+  if (
+    path.startsWith('/model') ||
+    path.startsWith('model') ||
+    path.startsWith('/editorial-looks/') ||
+    path.startsWith('editorial-looks/') ||
+    path.startsWith('/video/') ||
+    path.startsWith('video/')
+  ) {
+    return path.startsWith('/') ? path : `/${path}`;
   }
 
   const base =

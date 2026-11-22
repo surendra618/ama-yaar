@@ -37,11 +37,19 @@ export function getMediaUrl(path, fallbackName = '') {
   ) {
     return path;
   }
-  if (path.startsWith('/editorial-looks/') || path.startsWith('/video/')) {
-    return path;
-  }
-  if (path.startsWith('editorial-looks/') || path.startsWith('video/')) {
-    return `/${path}`;
+  if (
+    path.startsWith('/model') ||
+    path.startsWith('model') ||
+    path.startsWith('/editorial-looks/') ||
+    path.startsWith('editorial-looks/') ||
+    path.startsWith('/video/') ||
+    path.startsWith('video/') ||
+    path.startsWith('/home img/') ||
+    path.startsWith('home img/') ||
+    path.startsWith('/nocta-stage/') ||
+    path.startsWith('nocta-stage/')
+  ) {
+    return path.startsWith('/') ? path : `/${path}`;
   }
 
   // When path is a placeholder /products/... that doesn't exist on server

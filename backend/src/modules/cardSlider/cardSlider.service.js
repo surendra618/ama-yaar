@@ -64,11 +64,11 @@ function clearCardSliderCache() {
 
 async function list(query = {}) {
   try {
-    const { activeOnly = 'false' } = query;
+    const { activeOnly = 'false', _t } = query;
     const cacheKey = JSON.stringify({ activeOnly });
     const cached = cardSliderCache.get(cacheKey);
 
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    if (!_t && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return cached.data;
     }
 

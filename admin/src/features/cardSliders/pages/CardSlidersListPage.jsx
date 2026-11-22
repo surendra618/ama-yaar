@@ -123,7 +123,7 @@ export default function CardSlidersListPage() {
                 className="h-full w-full object-cover"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=120&q=80';
                 }}
               />
             ) : (
