@@ -10,12 +10,19 @@ function redactUri(uri) {
 
 async function connectDB() {
   mongoose.set('strictQuery', true);
-  mongoose.set('bufferCommands', false);
+  // Allow Mongoose to buffer operations until connection is established
+  mongoose.set('bufferCommands', true);
+
+  const rawUri = env.mongoUri || 'mongodb://127.0.0.1:27017/ama-yaar';
+  const cleanUri = rawUri.trim().replace(/^["']|["']$/g, '');
 
   try {
     // Attempt connecting to the configured MongoDB URI
-    await mongoose.connect(env.mongoUri, { serverSelectionTimeoutMS: 10000 });
-    console.log('[db] MongoDB connected to:', redactUri(env.mongoUri));
+    await mongoose.connect(cleanUri, {
+      serverSelectionTimeoutMS: 10000,
+      bufferCommands: true,
+    });
+    console.log('[db] MongoDB connected to:', redactUri(cleanUri));
   } catch (err) {
     console.log('[db] Local MongoDB not reachable (' + err.message + '). Starting in-memory MongoDB server...');
     try {

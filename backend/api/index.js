@@ -1,7 +1,8 @@
 const app = require('../src/app');
 const connectDB = require('../src/config/db');
+const mongoose = require('mongoose');
 
-let dbPromise = null;
+let connectionPromise = null;
 
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
@@ -20,15 +21,19 @@ module.exports = async (req, res) => {
   if (req.url === '/health' || req.url === '/api/v1/health') {
     return app(req, res);
   }
-  if (!dbPromise) {
-    dbPromise = connectDB().catch(err => {
-      console.warn('[db] Database connection deferred:', err.message);
-    });
+
+  if (mongoose.connection.readyState !== 1) {
+    if (!connectionPromise) {
+      connectionPromise = connectDB().finally(() => {
+        connectionPromise = null;
+      });
+    }
+    try {
+      await connectionPromise;
+    } catch (err) {
+      console.error('[db] Serverless connection error:', err.message);
+    }
   }
-  try {
-    await dbPromise;
-  } catch (err) {
-    console.warn('[db] DB connection error ignored in serverless:', err.message);
-  }
+
   return app(req, res);
 };
