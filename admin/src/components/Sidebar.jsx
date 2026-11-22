@@ -61,7 +61,7 @@ const NAV_GROUPS = [
       { to: '/creators', label: 'Creators & Affiliates', icon: Sparkles, badge: 'PRO', badgeColor: 'bg-amber-100 text-amber-700' },
       { to: '/coupons', label: 'Coupons', icon: Percent },
       { to: '/banners', label: 'Banners', icon: Image },
-      { to: '/card-sliders', label: 'Card Sliders', icon: LayoutGrid },
+      { to: '/card-sliders', label: 'Shop By Category', icon: LayoutGrid, badge: 'HOMEPAGE', badgeColor: 'bg-amber-100 text-amber-800', keywords: 'card slider categories homepage rail shop by category' },
       { to: '/reels', label: 'Reels Manager', icon: Video },
       { to: '/blogs', label: 'Blog & Stories', icon: BookOpen },
     ],
@@ -103,9 +103,14 @@ export default function Sidebar() {
   // Filter items based on sidebar search input
   const filteredGroups = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) =>
-      item.label.toLowerCase().includes(navSearch.toLowerCase())
-    ),
+    items: group.items.filter((item) => {
+      const q = navSearch.toLowerCase().trim();
+      if (!q) return true;
+      return (
+        item.label.toLowerCase().includes(q) ||
+        (item.keywords && item.keywords.toLowerCase().includes(q))
+      );
+    }),
   })).filter((group) => group.items.length > 0);
 
   return (

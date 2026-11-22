@@ -90,11 +90,19 @@ async function list(query = {}) {
 
 async function getById(id) {
   try {
-    const doc = await CardSlider.findById(id);
-    if (!doc) return fallbackCardSliders[0];
-    return doc;
+    if (String(id).startsWith('cardslider_')) {
+      const fb = fallbackCardSliders.find((c) => c._id === id);
+      if (fb) return fb;
+    }
+    if (String(id).match(/^[0-9a-fA-F]{24}$/)) {
+      const doc = await CardSlider.findById(id);
+      if (doc) return doc;
+    }
+    const fb = fallbackCardSliders.find((c) => c._id === id);
+    return fb || fallbackCardSliders[0];
   } catch (err) {
-    return fallbackCardSliders[0];
+    const fb = fallbackCardSliders.find((c) => c._id === id);
+    return fb || fallbackCardSliders[0];
   }
 }
 
@@ -111,8 +119,15 @@ async function create(data) {
 
 async function update(id, data) {
   try {
-    const doc = await CardSlider.findByIdAndUpdate(id, data, { new: true, runValidators: true });
-    if (!doc) throw new ApiError(404, 'Card Slider item not found');
+    let doc = null;
+    if (String(id).match(/^[0-9a-fA-F]{24}$/)) {
+      doc = await CardSlider.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+    }
+    if (!doc) {
+      const fb = fallbackCardSliders.find((c) => c._id === id) || {};
+      const { _id, ...cleanData } = { ...fb, ...data };
+      doc = await CardSlider.create(cleanData);
+    }
     clearCardSliderCache();
     return doc;
   } catch (err) {
@@ -123,10 +138,12 @@ async function update(id, data) {
 
 async function remove(id) {
   try {
-    const doc = await CardSlider.findByIdAndDelete(id);
-    if (!doc) throw new ApiError(404, 'Card Slider item not found');
+    let doc = null;
+    if (String(id).match(/^[0-9a-fA-F]{24}$/)) {
+      doc = await CardSlider.findByIdAndDelete(id);
+    }
     clearCardSliderCache();
-    return doc;
+    return doc || { _id: id };
   } catch (err) {
     clearCardSliderCache();
     return { _id: id };
