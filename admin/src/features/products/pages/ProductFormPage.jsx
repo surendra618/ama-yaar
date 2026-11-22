@@ -32,6 +32,7 @@ import {
 } from '../productsSlice';
 import api from '../../../lib/axios';
 import getMediaUrl from '../../../utils/mediaUrl';
+import SizeChartPreviewModal from '../components/SizeChartPreviewModal';
 
 const emptyForm = {
   name: '',
@@ -86,8 +87,10 @@ export default function ProductFormPage() {
   const [featureInput, setFeatureInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
-  const [previewTab, setPreviewTab] = useState('card'); // 'card' | 'details'
+  const [previewTab, setPreviewTab] = useState('card'); // 'card' | 'details' | 'sizeChart'
   const [storefrontActiveTab, setStorefrontActiveTab] = useState('description'); // 'description' | 'details' | 'exchange'
+  const [isSizeModalPreviewOpen, setIsSizeModalPreviewOpen] = useState(false);
+  const [section5PreviewUnit, setSection5PreviewUnit] = useState('in'); // 'in' | 'cm'
 
   // Collapsible section state (false = expanded, true = contracted/collapsed)
   const [collapsed, setCollapsed] = useState({
@@ -272,6 +275,56 @@ export default function ProductFormPage() {
       customSizeChart: (f.customSizeChart || []).filter((_, i) => i !== index),
     }));
   };
+
+  const formatMeasurement = (val, targetUnit) => {
+    if (!val || (typeof val !== 'string' && typeof val !== 'number')) return '—';
+    const str = String(val).trim();
+    if (!str) return '—';
+
+    if (targetUnit === 'in') {
+      return str.endsWith('"') || str.toLowerCase().endsWith('in') ? str : `${str}"`;
+    }
+
+    const rangeMatch = str.match(/^([\d.]+)\s*-\s*([\d.]+)$/);
+    if (rangeMatch) {
+      const c1 = Math.round(parseFloat(rangeMatch[1]) * 2.54 * 10) / 10;
+      const c2 = Math.round(parseFloat(rangeMatch[2]) * 2.54 * 10) / 10;
+      return `${c1} - ${c2} cm`;
+    }
+    const singleNum = parseFloat(str.replace(/[^\d.]/g, ''));
+    if (!isNaN(singleNum) && singleNum > 0) {
+      const cmVal = Math.round(singleNum * 2.54 * 10) / 10;
+      return `${cmVal} cm`;
+    }
+    return str;
+  };
+
+  const selectedCatDoc = categories.find((c) => (c._id || c.id) === form.category);
+  const catName = (selectedCatDoc?.name || selectedCatDoc?.slug || '').toLowerCase();
+  const prodName = (form.name || '').toLowerCase();
+  const isBottomAuto =
+    catName.includes('pant') ||
+    catName.includes('cargo') ||
+    catName.includes('jean') ||
+    catName.includes('lower') ||
+    catName.includes('trouser') ||
+    catName.includes('short') ||
+    prodName.includes('pant') ||
+    prodName.includes('cargo') ||
+    prodName.includes('jean') ||
+    prodName.includes('jogger');
+  const resolvedAutoMode = isBottomAuto ? 'bottoms' : 'tops';
+  const effectiveSizeChartMode =
+    form.sizeChartType === 'default' ? resolvedAutoMode : form.sizeChartType;
+
+  const previewCustomRows = Array.isArray(form.customSizeChart) ? form.customSizeChart : [];
+  const previewHasChest = previewCustomRows.some((r) => r.chest && String(r.chest).trim());
+  const previewHasLength = previewCustomRows.some((r) => r.length && String(r.length).trim());
+  const previewHasShoulder = previewCustomRows.some((r) => r.shoulder && String(r.shoulder).trim());
+  const previewHasSleeve = previewCustomRows.some((r) => r.sleeve && String(r.sleeve).trim());
+  const previewHasWaist = previewCustomRows.some((r) => r.waist && String(r.waist).trim());
+  const previewHasHip = previewCustomRows.some((r) => r.hip && String(r.hip).trim());
+  const previewHasInseam = previewCustomRows.some((r) => r.inseam && String(r.inseam).trim());
 
   const handleSizeChartUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -1320,6 +1373,256 @@ export default function ProductFormPage() {
                   )}
                 </div>
               )}
+
+              {/* LIVE CUSTOMER STOREFRONT PREVIEW (WHAT USERS WILL SEE ON ALL MODES) */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 mt-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-black text-white">
+                      <Eye className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold uppercase tracking-tight text-slate-900">
+                          Live Customer Preview
+                        </h4>
+                        <span className="rounded bg-black text-white px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                          {form.sizeChartType === 'default'
+                            ? `Auto Preset (${resolvedAutoMode === 'bottoms' ? 'Bottoms' : 'Tops'})`
+                            : form.sizeChartType === 'tops'
+                            ? 'Tops Preset'
+                            : form.sizeChartType === 'bottoms'
+                            ? 'Bottoms Preset'
+                            : form.sizeChartType === 'custom'
+                            ? 'Custom Table'
+                            : 'Graphic Image'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Realtime preview of what customers see when clicking "Sizing chart" on this product.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Unit Toggle */}
+                    <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setSection5PreviewUnit('in')}
+                        className={`rounded px-2.5 py-1 text-[11px] font-bold transition cursor-pointer ${
+                          section5PreviewUnit === 'in' ? 'bg-black text-white shadow-2xs' : 'text-slate-500 hover:text-black'
+                        }`}
+                      >
+                        Inches (in)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSection5PreviewUnit('cm')}
+                        className={`rounded px-2.5 py-1 text-[11px] font-bold transition cursor-pointer ${
+                          section5PreviewUnit === 'cm' ? 'bg-black text-white shadow-2xs' : 'text-slate-500 hover:text-black'
+                        }`}
+                      >
+                        CM (cm)
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsSizeModalPreviewOpen(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800 transition cursor-pointer shadow-xs"
+                    >
+                      <Ruler className="h-3.5 w-3.5" />
+                      <span>Preview Customer Modal</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live Preview Display based on mode */}
+                {effectiveSizeChartMode === 'image' ? (
+                  form.sizeChartImage ? (
+                    <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-slate-200">
+                      <img
+                        src={getMediaUrl(form.sizeChartImage)}
+                        alt="Product Size Chart"
+                        className="max-h-64 object-contain rounded"
+                      />
+                      <span className="text-[11px] text-slate-500 mt-2 font-medium">
+                        Customers will see this visual diagram inside the modal.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center bg-white rounded-lg border border-dashed border-slate-300 text-slate-400 text-xs">
+                      <ImageIcon className="h-8 w-8 mx-auto mb-1 opacity-40" />
+                      Upload a graphic image above to preview it here.
+                    </div>
+                  )
+                ) : effectiveSizeChartMode === 'custom' ? (
+                  <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-900 text-white uppercase text-[10px] font-black tracking-wider">
+                          <th className="py-2.5 px-3">Size</th>
+                          {previewHasChest && <th className="py-2.5 px-3">Chest / Bust</th>}
+                          {previewHasLength && <th className="py-2.5 px-3">Front Length</th>}
+                          {previewHasShoulder && <th className="py-2.5 px-3">Shoulder</th>}
+                          {previewHasSleeve && <th className="py-2.5 px-3">Sleeve</th>}
+                          {previewHasWaist && <th className="py-2.5 px-3">Waist</th>}
+                          {previewHasHip && <th className="py-2.5 px-3">Hip</th>}
+                          {previewHasInseam && <th className="py-2.5 px-3">Inseam</th>}
+                          <th className="py-2.5 px-3 text-right">Customer Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {previewCustomRows.length > 0 ? (
+                          previewCustomRows.map((row, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50 transition">
+                              <td className="py-2 px-3 font-black text-slate-900">{row.size || '—'}</td>
+                              {previewHasChest && (
+                                <td className="py-2 px-3 font-medium text-slate-700">
+                                  {formatMeasurement(row.chest, section5PreviewUnit)}
+                                </td>
+                              )}
+                              {previewHasLength && (
+                                <td className="py-2 px-3 font-medium text-slate-700">
+                                  {formatMeasurement(row.length, section5PreviewUnit)}
+                                </td>
+                              )}
+                              {previewHasShoulder && (
+                                <td className="py-2 px-3 font-medium text-slate-700">
+                                  {formatMeasurement(row.shoulder, section5PreviewUnit)}
+                                </td>
+                              )}
+                              {previewHasSleeve && (
+                                <td className="py-2 px-3 font-medium text-slate-700">
+                                  {formatMeasurement(row.sleeve, section5PreviewUnit)}
+                                </td>
+                              )}
+                              {previewHasWaist && (
+                                <td className="py-2 px-3 font-medium text-slate-700">
+                                  {formatMeasurement(row.waist, section5PreviewUnit)}
+                                </td>
+                              )}
+                              {previewHasHip && (
+                                <td className="py-2 px-3 font-medium text-slate-700">
+                                  {formatMeasurement(row.hip, section5PreviewUnit)}
+                                </td>
+                              )}
+                              {previewHasInseam && (
+                                <td className="py-2 px-3 font-medium text-slate-700">
+                                  {formatMeasurement(row.inseam, section5PreviewUnit)}
+                                </td>
+                              )}
+                              <td className="py-2 px-3 text-right">
+                                <span className="rounded bg-black text-white px-2 py-0.5 text-[9px] font-bold uppercase">
+                                  Select
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="p-4 text-center text-xs text-slate-400">
+                              No sizes added yet. Use the table editor above to configure sizes.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : effectiveSizeChartMode === 'bottoms' ? (
+                  <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-900 text-white uppercase text-[10px] font-black tracking-wider">
+                          <th className="py-2.5 px-3">Size / Waist</th>
+                          <th className="py-2.5 px-3">Waist Span</th>
+                          <th className="py-2.5 px-3">Hip</th>
+                          <th className="py-2.5 px-3">Outseam Length</th>
+                          <th className="py-2.5 px-3">Inseam</th>
+                          <th className="py-2.5 px-3 text-right">Customer Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {DEFAULT_BOTTOMS_ROWS.map((row) => (
+                          <tr key={row.size} className="hover:bg-slate-50 transition">
+                            <td className="py-2 px-3 font-black text-slate-900">{row.size}</td>
+                            <td className="py-2 px-3 font-medium text-slate-700">
+                              {formatMeasurement(row.waist, section5PreviewUnit)}
+                            </td>
+                            <td className="py-2 px-3 font-medium text-slate-700">
+                              {formatMeasurement(row.hip, section5PreviewUnit)}
+                            </td>
+                            <td className="py-2 px-3 font-medium text-slate-700">
+                              {formatMeasurement(row.length, section5PreviewUnit)}
+                            </td>
+                            <td className="py-2 px-3 font-medium text-slate-700">
+                              {formatMeasurement(row.inseam, section5PreviewUnit)}
+                            </td>
+                            <td className="py-2 px-3 text-right">
+                              <span className="rounded bg-black text-white px-2 py-0.5 text-[9px] font-bold uppercase">
+                                Select
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-900 text-white uppercase text-[10px] font-black tracking-wider">
+                          <th className="py-2.5 px-3">Size</th>
+                          <th className="py-2.5 px-3">Chest / Bust</th>
+                          <th className="py-2.5 px-3">Front Length</th>
+                          <th className="py-2.5 px-3">Shoulder</th>
+                          <th className="py-2.5 px-3">Sleeve</th>
+                          <th className="py-2.5 px-3 text-right">Customer Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {DEFAULT_TOPS_ROWS.map((row) => (
+                          <tr key={row.size} className="hover:bg-slate-50 transition">
+                            <td className="py-2 px-3 font-black text-slate-900">{row.size}</td>
+                            <td className="py-2 px-3 font-medium text-slate-700">
+                              {formatMeasurement(row.chest, section5PreviewUnit)}
+                            </td>
+                            <td className="py-2 px-3 font-medium text-slate-700">
+                              {formatMeasurement(row.length, section5PreviewUnit)}
+                            </td>
+                            <td className="py-2 px-3 font-medium text-slate-700">
+                              {formatMeasurement(row.shoulder, section5PreviewUnit)}
+                            </td>
+                            <td className="py-2 px-3 font-medium text-slate-700">
+                              {formatMeasurement(row.sleeve, section5PreviewUnit)}
+                            </td>
+                            <td className="py-2 px-3 text-right">
+                              <span className="rounded bg-black text-white px-2 py-0.5 text-[9px] font-bold uppercase">
+                                Select
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Model Fit Reference Footnote */}
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                  <span>
+                    Fit Reference:{' '}
+                    <strong className="text-slate-800">
+                      {form.modelInfo || "Model is 5'8\" (172 cm), 70 kg, Wearing M Size."}
+                    </strong>
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Auto-synced with Section 5 fit settings
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1600,7 +1903,7 @@ export default function ProductFormPage() {
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3 sticky top-6">
             {/* Preview Mode Switcher */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-md">
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-md flex-wrap">
                 <button
                   type="button"
                   onClick={() => setPreviewTab('card')}
@@ -1615,10 +1918,19 @@ export default function ProductFormPage() {
                   className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${previewTab === 'details' ? 'bg-white text-black shadow-xs' : 'text-slate-600 hover:text-black'
                     }`}
                 >
-                  Storefront Tabs Preview
+                  Storefront Tabs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewTab('sizeChart')}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded transition flex items-center gap-1 ${previewTab === 'sizeChart' ? 'bg-white text-black shadow-xs' : 'text-slate-600 hover:text-black'
+                    }`}
+                >
+                  <Ruler className="h-3 w-3" />
+                  <span>Size Chart</span>
                 </button>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-black">
+              <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-black shrink-0">
                 <Check className="h-3 w-3" /> Realtime
               </span>
             </div>
@@ -1679,6 +1991,21 @@ export default function ProductFormPage() {
             {/* PREVIEW VIEW 2: STOREFRONT TABS PREVIEW */}
             {previewTab === 'details' && (
               <div className="rounded-lg border border-slate-200 bg-white p-3.5 space-y-3">
+                {/* Sizing Chart Bar matching Storefront */}
+                <div className="flex items-center justify-between text-[11px] text-neutral-600 pb-2 border-b border-neutral-100">
+                  <span className="font-medium text-neutral-600 truncate max-w-[170px]">
+                    {form.modelInfo || "Model is 5'8\" (172 cm), 70 kg, Wearing M Size"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsSizeModalPreviewOpen(true)}
+                    className="text-neutral-900 font-bold flex items-center gap-1 hover:underline cursor-pointer shrink-0"
+                  >
+                    <Ruler className="h-3 w-3 text-neutral-900" />
+                    <span>Sizing chart</span>
+                  </button>
+                </div>
+
                 <div className="flex items-center justify-between border-b border-neutral-200 text-xs font-medium text-neutral-500 pb-1">
                   <button
                     type="button"
@@ -1822,9 +2149,131 @@ export default function ProductFormPage() {
                 )}
               </div>
             )}
+
+            {/* PREVIEW VIEW 3: STOREFRONT SIZE CHART PREVIEW */}
+            {previewTab === 'sizeChart' && (
+              <div className="rounded-lg border border-slate-200 bg-white p-3.5 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Ruler className="h-3.5 w-3.5 text-black" />
+                    <span className="text-xs font-black uppercase text-slate-900">
+                      Storefront Size Chart
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSizeModalPreviewOpen(true)}
+                    className="text-[10px] font-bold text-black underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Full Modal</span>
+                    <Eye className="h-3 w-3" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-500">
+                  <span className="font-semibold text-slate-700">
+                    Mode:{' '}
+                    {form.sizeChartType === 'default'
+                      ? `Auto (${resolvedAutoMode})`
+                      : form.sizeChartType}
+                  </span>
+                  <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded">
+                    <button
+                      type="button"
+                      onClick={() => setSection5PreviewUnit('in')}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded cursor-pointer ${
+                        section5PreviewUnit === 'in' ? 'bg-black text-white' : 'text-slate-600'
+                      }`}
+                    >
+                      in
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSection5PreviewUnit('cm')}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded cursor-pointer ${
+                        section5PreviewUnit === 'cm' ? 'bg-black text-white' : 'text-slate-600'
+                      }`}
+                    >
+                      cm
+                    </button>
+                  </div>
+                </div>
+
+                {effectiveSizeChartMode === 'image' && form.sizeChartImage ? (
+                  <div className="flex justify-center p-2 bg-slate-50 rounded border border-slate-100">
+                    <img
+                      src={getMediaUrl(form.sizeChartImage)}
+                      alt="Chart"
+                      className="max-h-40 object-contain rounded"
+                    />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded border border-slate-200 text-[10px]">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-900 text-white font-bold">
+                          <th className="p-1.5">Size</th>
+                          <th className="p-1.5">
+                            {effectiveSizeChartMode === 'bottoms' ? 'Waist' : 'Chest'}
+                          </th>
+                          <th className="p-1.5">Length</th>
+                          <th className="p-1.5 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(effectiveSizeChartMode === 'custom'
+                          ? previewCustomRows
+                          : effectiveSizeChartMode === 'bottoms'
+                          ? DEFAULT_BOTTOMS_ROWS
+                          : DEFAULT_TOPS_ROWS
+                        ).map((row, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="p-1.5 font-bold text-slate-900">{row.size}</td>
+                            <td className="p-1.5 text-slate-700">
+                              {formatMeasurement(
+                                row.chest || row.waist,
+                                section5PreviewUnit
+                              )}
+                            </td>
+                            <td className="p-1.5 text-slate-700">
+                              {formatMeasurement(row.length, section5PreviewUnit)}
+                            </td>
+                            <td className="p-1.5 text-right">
+                              <span className="rounded bg-black text-white px-1.5 py-0.5 text-[8px] font-bold uppercase">
+                                Select
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="rounded bg-slate-50 p-2 border border-slate-100 text-[10px] text-slate-600 space-y-0.5">
+                  <p className="font-bold text-slate-800">
+                    Fit:{' '}
+                    <span className="font-normal">
+                      {form.modelInfo || "Model is 5'8\", 70 kg, Wearing M"}
+                    </span>
+                  </p>
+                  <p className="text-[9px] text-slate-400">
+                    Free 7-day size exchange enabled for customer reassurance.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* FULL SCREEN CUSTOMER SIZING CHART PREVIEW MODAL */}
+      <SizeChartPreviewModal
+        isOpen={isSizeModalPreviewOpen}
+        onClose={() => setIsSizeModalPreviewOpen(false)}
+        product={form}
+        categories={categories}
+      />
     </div>
   );
 }
