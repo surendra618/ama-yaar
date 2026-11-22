@@ -1335,7 +1335,12 @@ export default function HomePage() {
                   {/* Scrim gradient overlay */}
                   <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-500 group-hover:opacity-95" />
 
-
+                  {/* Top Badge */}
+                  {item.badge && (
+                    <span className="absolute top-3 left-3 z-10 rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-black shadow-xs">
+                      {item.badge}
+                    </span>
+                  )}
 
                   {/* Bottom Card Content: Title Left + Arrow Right */}
                   <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4 sm:p-5">
