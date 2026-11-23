@@ -7,6 +7,7 @@ import DashboardPage from '../features/dashboard/pages/DashboardPage';
 import UsersListPage from '../features/users/pages/UsersListPage';
 import CustomersListPage from '../features/users/pages/CustomersListPage';
 import TeamAdminsPage from '../features/users/pages/TeamAdminsPage';
+import TeamSettingsPage from '../features/settings/pages/TeamSettingsPage';
 import UserDetailsPage from '../features/users/pages/UserDetailsPage';
 import ProductsListPage from '../features/products/pages/ProductsListPage';
 import ProductFormPage from '../features/products/pages/ProductFormPage';
@@ -39,7 +40,8 @@ export const router = createBrowserRouter([
     element: <DashboardLayout />,
     children: [
       { path: '/', element: <DashboardPage /> },
-      { path: '/team', element: <TeamAdminsPage /> },
+      { path: '/settings/team', element: <TeamSettingsPage /> },
+      { path: '/team', element: <TeamSettingsPage /> },
       { path: '/customers', element: <CustomersListPage /> },
       { path: '/users', element: <CustomersListPage /> },
       { path: '/users/:id', element: <UserDetailsPage /> },
@@ -76,7 +78,7 @@ export const router = createBrowserRouter([
       { path: '/reports', element: <ReportsPage /> },
       { path: '/settings/notifications', element: <NotificationSettingsPage /> },
       { path: '/settings/delivery', element: <DeliverySettingsPage /> },
-      { path: '/settings', element: <DeliverySettingsPage /> },
+      { path: '/settings', element: <TeamSettingsPage /> },
     ],
   },
   {

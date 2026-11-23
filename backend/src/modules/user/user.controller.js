@@ -39,10 +39,9 @@ const changePassword = asyncHandler(async (req, res) => {
 });
 
 const createAdmin = asyncHandler(async (req, res) => {
-  // Check if current requester is Main Admin
-  const isMainAdmin = req.user.isSuperAdmin || (req.user.email && req.user.email.toLowerCase() === (process.env.ADMIN_SEED_EMAIL || '').toLowerCase());
-  if (!isMainAdmin) {
-    res.status(403).json(new ApiResponse(403, null, 'Access denied: Only Main Admin can add other admins'));
+  const isAllowed = req.user.isSuperAdmin || req.user.role === 'admin' || (req.user.email && req.user.email.toLowerCase() === (process.env.ADMIN_SEED_EMAIL || '').toLowerCase());
+  if (!isAllowed) {
+    res.status(403).json(new ApiResponse(403, null, 'Access denied: Admin access required to add team members'));
     return;
   }
   const item = await service.createAdminUser(req.body);
@@ -50,9 +49,9 @@ const createAdmin = asyncHandler(async (req, res) => {
 });
 
 const updateRole = asyncHandler(async (req, res) => {
-  const isMainAdmin = req.user.isSuperAdmin || (req.user.email && req.user.email.toLowerCase() === (process.env.ADMIN_SEED_EMAIL || '').toLowerCase());
-  if (!isMainAdmin) {
-    res.status(403).json(new ApiResponse(403, null, 'Access denied: Only Main Admin can modify admin roles'));
+  const isAllowed = req.user.isSuperAdmin || req.user.role === 'admin' || (req.user.email && req.user.email.toLowerCase() === (process.env.ADMIN_SEED_EMAIL || '').toLowerCase());
+  if (!isAllowed) {
+    res.status(403).json(new ApiResponse(403, null, 'Access denied: Admin access required to modify roles'));
     return;
   }
   const item = await service.updateRole(req.params.id, req.body.role);

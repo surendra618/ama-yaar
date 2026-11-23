@@ -42,10 +42,9 @@ const NAV_GROUPS = [
     ],
   },
   {
-    title: 'STAFF & USERS',
+    title: 'CUSTOMERS',
     items: [
-      { to: '/team', label: 'Team & Admins', icon: Shield, badge: 'STAFF', badgeColor: 'bg-purple-100 text-purple-700' },
-      { to: '/customers', label: 'Customers', icon: Users },
+      { to: '/customers', label: 'Customers', icon: Users, keywords: 'customers buyers users accounts clients' },
     ],
   },
   {
@@ -86,6 +85,7 @@ const NAV_GROUPS = [
   {
     title: 'STORE CONFIGURATION',
     items: [
+      { to: '/settings/team', label: 'Team & Admins Settings', icon: Shield, badge: 'STAFF', badgeColor: 'bg-purple-100 text-purple-700', keywords: 'team admin staff settings members permissions roles users' },
       { to: '/settings/notifications', label: 'Email & Alerts Settings', icon: Bell, badge: 'ALERTS', badgeColor: 'bg-indigo-100 text-indigo-700' },
       { to: '/settings/delivery', label: 'Delivery & Policy Settings', icon: Truck, badge: 'CONFIG', badgeColor: 'bg-indigo-100 text-indigo-700' },
     ],

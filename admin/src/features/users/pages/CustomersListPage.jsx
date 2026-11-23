@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Search, Ban, CheckCircle2, Shield, User } from 'lucide-react';
-import { fetchUsers, updateUserStatus, updateUserRole } from '../usersSlice';
+import { Search, Ban, CheckCircle2, User } from 'lucide-react';
+import { fetchUsers, updateUserStatus } from '../usersSlice';
 import DataTable from '../../../components/DataTable';
 import Pagination from '../../../components/Pagination';
 import StatusBadge from '../../../components/StatusBadge';
@@ -12,17 +12,10 @@ export default function CustomersListPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items, pagination, status } = useSelector((state) => state.users);
-  const { user: currentAdmin } = useSelector((state) => state.auth);
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [toToggle, setToToggle] = useState(null);
-  const [promoteUser, setPromoteUser] = useState(null);
-
-  const isMainAdmin = Boolean(
-    currentAdmin?.isSuperAdmin ||
-    (currentAdmin?.email && currentAdmin?.email.toLowerCase() === 'pritamkumars5398@gmail.com')
-  );
 
   useEffect(() => {
     dispatch(fetchUsers({ search, page, limit: 10, role: 'customer' }));
@@ -32,13 +25,6 @@ export default function CustomersListPage() {
     const newStatus = toToggle.status === 'blocked' ? 'active' : 'blocked';
     await dispatch(updateUserStatus({ id: toToggle._id, status: newStatus }));
     setToToggle(null);
-  };
-
-  const handlePromoteAdmin = async () => {
-    if (!promoteUser) return;
-    await dispatch(updateUserRole({ id: promoteUser._id, role: 'admin' }));
-    setPromoteUser(null);
-    dispatch(fetchUsers({ search, page, limit: 10, role: 'customer' }));
   };
 
   const columns = [
@@ -83,18 +69,6 @@ export default function CustomersListPage() {
       className: 'text-right',
       render: (u) => (
         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          {isMainAdmin && (
-            <button
-              type="button"
-              onClick={() => setPromoteUser(u)}
-              className="inline-flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition hover:scale-105 active:scale-95"
-              title="Promote this customer to Admin"
-            >
-              <Shield className="h-3.5 w-3.5" />
-              Make Admin
-            </button>
-          )}
-
           <button
             type="button"
             onClick={() => setToToggle(u)}
@@ -155,16 +129,6 @@ export default function CustomersListPage() {
         />
         <Pagination {...pagination} onPageChange={setPage} />
       </div>
-
-      {/* Promote to Admin Dialog */}
-      <ConfirmDialog
-        open={!!promoteUser}
-        title={`Promote ${promoteUser?.name} to Admin?`}
-        message="This user will be granted full administrative dashboard access to manage orders, products, and categories."
-        confirmLabel="Promote to Admin"
-        onConfirm={handlePromoteAdmin}
-        onCancel={() => setPromoteUser(null)}
-      />
 
       {/* Block/Unblock Dialog */}
       <ConfirmDialog
