@@ -243,57 +243,39 @@ export default function CategoriesListPage() {
                           </div>
                         </div>
 
-                        {/* Child Subcategory Actions (Ultra Compact Text-Only Popup) */}
-                        <div className="relative shrink-0">
+                        {/* Directly Visible Subcategory Actions */}
+                        <div className="flex items-center gap-1 shrink-0">
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveMenuId(activeMenuId === sub._id ? null : sub._id);
-                            }}
-                            className="flex h-7 w-7 items-center justify-center border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition shadow-2xs"
+                            onClick={() => handleToggleActive(sub)}
+                            disabled={togglingId === sub._id}
+                            className={`rounded border p-1 transition shadow-2xs ${
+                              sub.isActive
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                : 'border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100'
+                            }`}
+                            title={sub.isActive ? 'Active - Click to Disable' : 'Disabled - Click to Activate'}
                           >
-                            <MoreVertical className="h-4 w-4" />
+                            <CheckCircle2 className="h-3.5 w-3.5" />
                           </button>
 
-                          {activeMenuId === sub._id && (
-                            <div
-                              className={`absolute top-1/2 -translate-y-1/2 z-30 w-[72px] border border-slate-200 bg-white p-0.5 shadow-sm animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5 ${subIdx % 2 === 1 ? 'right-full mr-1' : 'left-full ml-1'
-                                }`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveMenuId(null);
-                                  handleToggleActive(sub);
-                                }}
-                                disabled={togglingId === sub._id}
-                                className="w-full text-left px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition"
-                              >
-                                {sub.isActive ? 'Disable' : 'Activate'}
-                              </button>
+                          <Link
+                            to={`/categories/${sub._id}/edit`}
+                            className="inline-flex items-center gap-1 rounded border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs"
+                            title="Edit Subcategory"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            <span>Edit</span>
+                          </Link>
 
-                              <Link
-                                to={`/categories/${sub._id}/edit`}
-                                onClick={() => setActiveMenuId(null)}
-                                className="w-full text-left px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition block"
-                              >
-                                Edit
-                              </Link>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveMenuId(null);
-                                  setToDelete(sub);
-                                }}
-                                className="w-full text-left px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 hover:bg-rose-50 transition"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => setToDelete(sub)}
+                            className="rounded border border-rose-200 bg-rose-50 p-1 text-rose-600 hover:bg-rose-100 transition shadow-2xs"
+                            title="Delete Subcategory"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
                     ))}

@@ -278,13 +278,21 @@ function ReelCard({ item, onOpenModal }) {
         </div>
       ) : (
         <video
-          ref={videoRef}
-          src={item.video}
+          ref={(el) => {
+            videoRef.current = el;
+            if (el) el.muted = true;
+          }}
+          src={item.video || item.altVideo}
           autoPlay
           loop
           muted
           playsInline
+          webkit-playsinline="true"
           preload="auto"
+          onLoadedData={(e) => {
+            e.currentTarget.muted = true;
+            e.currentTarget.play().catch(() => {});
+          }}
           onError={() => setHasError(true)}
           className="h-full w-full object-cover"
         />
@@ -459,7 +467,11 @@ function ReelShoppingModal({ reel, onClose, onNext, onPrev }) {
               loop
               muted={isMuted}
               playsInline
+              webkit-playsinline="true"
               preload="auto"
+              onLoadedData={(e) => {
+                e.currentTarget.play().catch(() => {});
+              }}
               className="h-full w-full object-cover"
             />
           )}

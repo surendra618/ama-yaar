@@ -985,10 +985,24 @@ export default function ReelsListPage() {
                       ) : null}
                     </label>
 
+                    {/* Autoplay recommendation banner */}
+                    <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 space-y-1 shadow-2xs">
+                      <div className="flex items-center gap-1.5 font-bold text-amber-950">
+                        <Sparkles className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                        <span>Autoplay Recommendation</span>
+                      </div>
+                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                        ⭐ For <strong>100% smooth video autoplay</strong> on the storefront rail, please upload an <strong>MP4 video file (Option A)</strong> or enter a direct <strong>.mp4 video link (Option B)</strong>.
+                      </p>
+                      <p className="text-[10px] text-amber-700 font-medium">
+                        (Note: Instagram embed links do not autoplay automatically without a visitor tap due to Meta/Instagram platform privacy restrictions).
+                      </p>
+                    </div>
+
                     {/* Option A: Direct Video File Upload */}
                     <div className="space-y-1">
                       <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
-                        <Upload className="h-3.5 w-3.5 text-indigo-600" /> Option A: Upload Video File from Computer (MP4, WebM, MOV)
+                        <Upload className="h-3.5 w-3.5 text-indigo-600" /> Option A: Upload Video File from Computer (Recommended for Autoplay)
                       </span>
                       <label className="relative flex flex-col items-center justify-center rounded-md border border-dashed border-indigo-300 bg-indigo-50/40 p-3 text-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition">
                         <input
@@ -1022,7 +1036,7 @@ export default function ReelsListPage() {
                     {/* Option B: Video Link / Instagram Reel URL */}
                     <div className="space-y-1">
                       <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
-                        <LinkIcon className="h-3.5 w-3.5 text-slate-700" /> Option B: Enter Video URL or Instagram Reel Link
+                        <LinkIcon className="h-3.5 w-3.5 text-slate-700" /> Option B: Direct Video URL (.mp4 / .webm for Autoplay) or Instagram Reel Link
                       </span>
                       <div className="relative flex items-center bg-white border border-slate-300 rounded-md shadow-xs focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                         <div className="pl-3 pr-2 text-slate-400">
@@ -1092,8 +1106,13 @@ export default function ReelsListPage() {
 
                     {/* Live Instagram Reel Preview Embed if Instagram link is entered */}
                     {isCurrentInsta && (
-                      <div className="mt-3 rounded-lg border border-pink-200 bg-gradient-to-br from-pink-50/50 via-purple-50/30 to-indigo-50/40 p-3 shadow-xs">
-                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-pink-100">
+                      <div className="mt-3 rounded-lg border border-pink-200 bg-gradient-to-br from-pink-50/50 via-purple-50/30 to-indigo-50/40 p-3 shadow-xs space-y-2">
+                        <div className="rounded-md bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-800 flex items-start gap-1.5">
+                          <span className="font-bold text-amber-900 shrink-0">ℹ️ Note:</span>
+                          <span>Instagram embeds cannot autoplay automatically without visitor interaction. For full automatic autoplay on your store homepage, upload the reel video file via Option A above.</span>
+                        </div>
+
+                        <div className="flex items-center justify-between pb-2 border-b border-pink-100">
                           <div className="flex items-center gap-2">
                             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white">
                               <InstagramIcon className="h-3 w-3" />

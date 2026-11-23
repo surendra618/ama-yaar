@@ -1,12 +1,21 @@
 import axios from 'axios';
 
+const sanitizeUrl = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  return url
+    .replace(/^-NoNewline\s*/i, '')
+    .trim()
+    .replace(/\/+$/, '');
+};
+
 const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
-  if (import.meta.env.MODE === 'production') return 'https://ama-yaar.vercel.app/api/v1';
+  const envUrl = sanitizeUrl(import.meta.env.VITE_API_BASE_URL);
+  if (envUrl) return envUrl;
+  if (import.meta.env.MODE === 'production') return 'https://ama-yaar-backend-dev.vercel.app/api/v1';
   if (typeof window !== 'undefined' && window.location.hostname) {
     return `http://${window.location.hostname}:5000/api/v1`;
   }
-  return 'http://192.168.1.12:5000/api/v1';
+  return 'http://localhost:5000/api/v1';
 };
 
 const defaultBaseUrl = getApiBaseUrl();

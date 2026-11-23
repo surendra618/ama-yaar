@@ -1,13 +1,15 @@
 const Review = require('./review.model');
 const Product = require('../product/product.model');
 const Order = require('../order/order.model');
+const User = require('../user/user.model');
 const ApiError = require('../../utils/ApiError');
 
 async function updateProductRating(productId) {
+  if (!productId) return;
   const reviews = await Review.find({ product: productId, isApproved: true });
   const count = reviews.length;
   if (count === 0) {
-    await Product.findByIdAndUpdate(productId, { rating: 0, numReviews: 0 });
+    await Product.findByIdAndUpdate(productId, { rating: 4.5, numReviews: 0 });
     return;
   }
   const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / count;
@@ -18,18 +20,25 @@ async function updateProductRating(productId) {
 }
 
 async function list(query = {}) {
-  const { product, user, page = 1, limit = 10 } = query;
+  const { product, user, page = 1, limit = 20 } = query;
   const filter = { isApproved: true };
   if (product) filter.product = product;
   if (user) filter.user = user;
 
   const skip = (Number(page) - 1) * Number(limit);
   const total = await Review.countDocuments(filter);
-  const reviews = await Review.find(filter)
+  const rawReviews = await Review.find(filter)
     .populate('user', 'name avatar')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(Number(limit));
+    .limit(Number(limit))
+    .lean();
+
+  const reviews = rawReviews.map((r) => ({
+    ...r,
+    authorName: r.user?.name || r.userName || 'Verified Buyer',
+    authorAvatar: r.user?.avatar || null,
+  }));
 
   return {
     reviews,
@@ -37,7 +46,7 @@ async function list(query = {}) {
       page: Number(page),
       limit: Number(limit),
       total,
-      pages: Math.ceil(total / Number(limit)),
+      pages: Math.ceil(total / Number(limit)) || 1,
     },
   };
 }
@@ -69,34 +78,61 @@ async function getProductReviewStats(productId) {
 }
 
 async function create(userId, data) {
-  const { productId, rating, comment, images } = data;
+  const { productId, rating, comment, title, images, userName, userEmail } = data;
   if (!productId || !rating) {
     throw new ApiError(400, 'Product ID and rating are required');
   }
 
-  // Check if verified purchase
-  const hasPurchased = await Order.exists({
-    user: userId,
-    'items.product': productId,
-    status: { $in: ['delivered', 'confirmed', 'shipped', 'out_for_delivery'] },
-  });
+  const numericRating = Math.max(1, Math.min(5, Number(rating)));
 
-  // Check if user already reviewed
-  const existing = await Review.findOne({ product: productId, user: userId });
+  let hasPurchased = false;
+  let resolvedName = userName || '';
+
+  if (userId) {
+    try {
+      const userDoc = await User.findById(userId).select('name avatar email').lean();
+      if (userDoc?.name) {
+        resolvedName = userDoc.name;
+      }
+      hasPurchased = await Order.exists({
+        user: userId,
+        'items.product': productId,
+        status: { $in: ['delivered', 'confirmed', 'shipped', 'out_for_delivery'] },
+      });
+    } catch (_) {}
+  }
+
+  if (!resolvedName) {
+    resolvedName = 'Verified Buyer';
+  }
+
+  // Check if authenticated user already reviewed this product
   let review;
-  if (existing) {
-    existing.rating = rating;
-    existing.comment = comment;
-    if (images) existing.images = images;
-    review = await existing.save();
-  } else {
+  if (userId) {
+    const existing = await Review.findOne({ product: productId, user: userId });
+    if (existing) {
+      existing.rating = numericRating;
+      if (title !== undefined) existing.title = title.trim();
+      if (comment !== undefined) existing.comment = comment.trim();
+      if (images) existing.images = images;
+      if (hasPurchased) existing.isVerifiedPurchase = true;
+      existing.userName = resolvedName;
+      review = await existing.save();
+    }
+  }
+
+  if (!review) {
     review = await Review.create({
       product: productId,
-      user: userId,
-      rating,
-      comment,
+      user: userId || null,
+      userName: resolvedName,
+      userEmail: userEmail || undefined,
+      rating: numericRating,
+      title: title ? title.trim() : '',
+      comment: comment ? comment.trim() : '',
       images: images || [],
-      isVerifiedPurchase: !!hasPurchased,
+      isVerifiedPurchase: Boolean(hasPurchased),
+      isApproved: true,
     });
   }
 
@@ -108,7 +144,8 @@ async function update(id, userId, data) {
   const review = await Review.findOne({ _id: id, user: userId });
   if (!review) throw new ApiError(404, 'Review not found');
 
-  if (data.rating) review.rating = data.rating;
+  if (data.rating) review.rating = Math.max(1, Math.min(5, Number(data.rating)));
+  if (data.title !== undefined) review.title = data.title;
   if (data.comment !== undefined) review.comment = data.comment;
   if (data.images) review.images = data.images;
 
@@ -119,7 +156,7 @@ async function update(id, userId, data) {
 
 async function remove(id, user) {
   const query = { _id: id };
-  if (user.role !== 'admin') query.user = user.id;
+  if (user?.role !== 'admin') query.user = user?.id;
 
   const doc = await Review.findOneAndDelete(query);
   if (!doc) throw new ApiError(404, 'Review not found');
@@ -127,4 +164,57 @@ async function remove(id, user) {
   return doc;
 }
 
-module.exports = { list, getProductReviewStats, create, update, remove };
+async function listAdmin(query = {}) {
+  const { page = 1, limit = 20, search, status } = query;
+  const filter = {};
+  if (status === 'approved') filter.isApproved = true;
+  if (status === 'pending') filter.isApproved = false;
+
+  if (search) {
+    filter.$or = [
+      { comment: { $regex: search, $options: 'i' } },
+      { title: { $regex: search, $options: 'i' } },
+      { userName: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  const skip = (Number(page) - 1) * Number(limit);
+  const total = await Review.countDocuments(filter);
+  const reviews = await Review.find(filter)
+    .populate('user', 'name email avatar')
+    .populate('product', 'name images price slug')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(Number(limit))
+    .lean();
+
+  return {
+    reviews,
+    pagination: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      pages: Math.ceil(total / Number(limit)) || 1,
+    },
+  };
+}
+
+async function toggleApproval(id) {
+  const review = await Review.findById(id);
+  if (!review) throw new ApiError(404, 'Review not found');
+  review.isApproved = !review.isApproved;
+  await review.save();
+  await updateProductRating(review.product);
+  return review;
+}
+
+module.exports = {
+  list,
+  getProductReviewStats,
+  create,
+  update,
+  remove,
+  listAdmin,
+  toggleApproval,
+  updateProductRating,
+};

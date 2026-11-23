@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Shirt,
   Sparkles,
@@ -18,9 +19,20 @@ import {
   ExternalLink,
   Flame,
   LayoutGrid,
+  Link as LinkIcon,
 } from 'lucide-react';
 import api from '../../../lib/axios';
 import { getMediaUrl } from '../../../utils/mediaUrl';
+
+function InstagramIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+    </svg>
+  );
+}
 
 const DEFAULT_WORKOUT_DATA = {
   tag: 'OUR TOP PICKS',
@@ -85,10 +97,21 @@ const DEFAULT_NOCTA_DATA = {
   ],
 };
 
+const DEFAULT_INSTAGRAM_DATA = {
+  image: '/insta-banner-1920x500.jpg',
+  link: 'https://instagram.com/amayaar.in',
+  title: 'Follow AMA YAAR on Instagram',
+  openInNewTab: true,
+  isActive: true,
+};
+
 export default function HomepageShowcasePage() {
-  const [activeTab, setActiveTab] = useState('workout'); // 'workout' | 'nocta'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'workout';
+  const [activeTab, setActiveTab] = useState(initialTab); // 'workout' | 'nocta' | 'instagram'
   const [workoutData, setWorkoutData] = useState(DEFAULT_WORKOUT_DATA);
   const [noctaData, setNoctaData] = useState(DEFAULT_NOCTA_DATA);
+  const [instagramData, setInstagramData] = useState(DEFAULT_INSTAGRAM_DATA);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingField, setUploadingField] = useState(null);
@@ -106,9 +129,10 @@ export default function HomepageShowcasePage() {
   const fetchSections = async () => {
     setLoading(true);
     try {
-      const [resWorkout, resNocta] = await Promise.allSettled([
+      const [resWorkout, resNocta, resInsta] = await Promise.allSettled([
         api.get('/homepage-sections/workout_top_picks', { params: { _t: Date.now() } }),
         api.get('/homepage-sections/editorial_nocta', { params: { _t: Date.now() } }),
+        api.get('/homepage-sections/instagram_banner', { params: { _t: Date.now() } }),
       ]);
 
       if (resWorkout.status === 'fulfilled' && resWorkout.value?.data?.data) {
@@ -116,6 +140,9 @@ export default function HomepageShowcasePage() {
       }
       if (resNocta.status === 'fulfilled' && resNocta.value?.data?.data) {
         setNoctaData((prev) => ({ ...prev, ...resNocta.value.data.data }));
+      }
+      if (resInsta.status === 'fulfilled' && resInsta.value?.data?.data) {
+        setInstagramData((prev) => ({ ...prev, ...resInsta.value.data.data }));
       }
     } catch (err) {
       console.warn('Failed to load homepage sections, using defaults:', err);
@@ -155,6 +182,24 @@ export default function HomepageShowcasePage() {
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
       setErrorMsg(err.response?.data?.message || err.message || 'Failed to update section');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveInstagram = async () => {
+    setSaving(true);
+    setSuccessMsg('');
+    setErrorMsg('');
+    try {
+      await api.put('/homepage-sections/instagram_banner', {
+        data: instagramData,
+        isActive: instagramData.isActive !== false,
+      });
+      setSuccessMsg('Instagram banner and redirect link updated successfully!');
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || err.message || 'Failed to update Instagram banner');
     } finally {
       setSaving(false);
     }
@@ -261,7 +306,13 @@ export default function HomepageShowcasePage() {
           <button
             type="button"
             disabled={saving}
-            onClick={activeTab === 'workout' ? handleSaveWorkout : handleSaveNocta}
+            onClick={
+              activeTab === 'workout'
+                ? handleSaveWorkout
+                : activeTab === 'nocta'
+                ? handleSaveNocta
+                : handleSaveInstagram
+            }
             className="inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-xs font-bold text-white hover:bg-neutral-800 shadow-md transition disabled:opacity-50 cursor-pointer"
           >
             {saving ? (
@@ -291,7 +342,10 @@ export default function HomepageShowcasePage() {
       <div className="flex border-b border-slate-200 gap-3">
         <button
           type="button"
-          onClick={() => setActiveTab('workout')}
+          onClick={() => {
+            setActiveTab('workout');
+            setSearchParams({ tab: 'workout' });
+          }}
           className={`flex items-center gap-2 py-3 px-4 border-b-2 font-bold text-xs transition cursor-pointer ${
             activeTab === 'workout'
               ? 'border-black text-black'
@@ -306,7 +360,10 @@ export default function HomepageShowcasePage() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('nocta')}
+          onClick={() => {
+            setActiveTab('nocta');
+            setSearchParams({ tab: 'nocta' });
+          }}
           className={`flex items-center gap-2 py-3 px-4 border-b-2 font-bold text-xs transition cursor-pointer ${
             activeTab === 'nocta'
               ? 'border-black text-black'
@@ -317,6 +374,24 @@ export default function HomepageShowcasePage() {
           <span>2. The Nocta Collection (Interactive Outfits)</span>
           <span className="rounded bg-purple-100 text-purple-700 px-1.5 py-0.5 text-[10px] font-mono font-bold">
             Interactive
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('instagram');
+            setSearchParams({ tab: 'instagram' });
+          }}
+          className={`flex items-center gap-2 py-3 px-4 border-b-2 font-bold text-xs transition cursor-pointer ${
+            activeTab === 'instagram'
+              ? 'border-black text-black'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <InstagramIcon className="h-4 w-4 text-pink-600" />
+          <span>3. Instagram Promo Banner</span>
+          <span className="rounded bg-pink-100 text-pink-700 px-1.5 py-0.5 text-[10px] font-mono font-bold">
+            Redirect Link
           </span>
         </button>
       </div>
@@ -1110,6 +1185,330 @@ export default function HomepageShowcasePage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: INSTAGRAM PROMO BANNER */}
+      {activeTab === 'instagram' && (
+        <div className="space-y-6">
+          {/* Header & Quick Action Bar */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white rounded-xl shadow-xs">
+                <InstagramIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-extrabold text-slate-900">
+                  Homepage Instagram Promo Banner
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Full-width streetwear banner displayed across your storefront homepage. Edit the graphic and click redirect link.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => setInstagramData(DEFAULT_INSTAGRAM_DATA)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-xs transition cursor-pointer"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset to Default</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveInstagram}
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-black px-5 py-2 text-xs font-bold text-white hover:bg-neutral-800 shadow-sm transition disabled:opacity-50 cursor-pointer"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5" />
+                    <span>Save Banner Changes</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* LIVE STOREFRONT PREVIEW */}
+          {showPreview && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Realtime Storefront Preview
+                  </span>
+                  <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                    {instagramData.isActive !== false ? '● Visible on Homepage' : '○ Hidden from Homepage'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                  <span className="font-mono text-xs text-indigo-600 font-semibold truncate max-w-xs">
+                    Target: {instagramData.link || 'https://instagram.com/amayaar.in'}
+                  </span>
+                  {instagramData.openInNewTab !== false && (
+                    <span className="rounded bg-slate-100 text-slate-600 text-[10px] px-1.5 py-0.5 font-medium">
+                      New Tab ↗
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Banner Graphic Preview */}
+              <div className="overflow-hidden rounded-xl bg-black p-2 sm:p-4 border border-neutral-900 shadow-inner">
+                <div className="relative group overflow-hidden rounded-lg">
+                  <a
+                    href={instagramData.link || 'https://instagram.com/amayaar.in'}
+                    target={instagramData.openInNewTab !== false ? '_blank' : '_self'}
+                    rel="noopener noreferrer"
+                    className="block w-full cursor-pointer"
+                    title={instagramData.title || 'Follow AMA YAAR on Instagram'}
+                  >
+                    <img
+                      src={getMediaUrl(instagramData.image || '/insta-banner-1920x500.jpg')}
+                      alt={instagramData.title || 'Instagram Banner Preview'}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/insta-banner-1920x500.jpg';
+                      }}
+                      className="w-full h-auto aspect-[1920/500] object-cover object-center transition-transform duration-500 group-hover:scale-[1.01]"
+                    />
+                  </a>
+                  <div className="absolute top-3 right-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-[11px] font-bold flex items-center gap-1.5 border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <ExternalLink className="h-3 w-3 text-pink-400" />
+                    <span>Clicking redirects to {instagramData.link || 'Instagram'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                <span className="italic">
+                  * Hover over or click the preview banner to test the redirect link.
+                </span>
+                <a
+                  href={instagramData.link || 'https://instagram.com/amayaar.in'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-indigo-600 font-bold hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  <span>Test Redirect in New Tab</span>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Configuration Form Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Banner Configuration & Click Action
+            </h3>
+
+            {/* Banner Image Upload & URL */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold uppercase text-slate-700">
+                Banner Graphic Image *
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <div className="md:col-span-8 flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={instagramData.image || ''}
+                      onChange={(e) =>
+                        setInstagramData((prev) => ({ ...prev, image: e.target.value }))
+                      }
+                      placeholder="/insta-banner-1920x500.jpg or Cloudinary Image URL"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-mono text-slate-800 focus:border-black focus:ring-1 focus:ring-black outline-none"
+                    />
+                  </div>
+                  <label className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs transition shrink-0">
+                    {uploadingField === 'insta_banner' ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-3.5 w-3.5" />
+                        <span>Upload Graphic</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        handleUploadImage(
+                          e,
+                          (url) => setInstagramData((prev) => ({ ...prev, image: url })),
+                          'insta_banner'
+                        )
+                      }
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <div className="md:col-span-4 flex items-center gap-3">
+                  <div className="h-12 w-28 rounded-lg bg-black overflow-hidden border border-slate-200 shrink-0">
+                    <img
+                      src={getMediaUrl(instagramData.image || '/insta-banner-1920x500.jpg')}
+                      alt="Thumbnail"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/insta-banner-1920x500.jpg';
+                      }}
+                    />
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    <p className="font-semibold text-slate-700">Recommended Size:</p>
+                    <p>1920 x 500 px (Landscape wide banner)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Click Redirect Link */}
+            <div className="space-y-2 border-t border-slate-100 pt-5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold uppercase text-slate-700">
+                  Banner Click Redirect Link *
+                </label>
+                <span className="text-[11px] text-slate-400">Where visitors go when clicking</span>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <LinkIcon className="h-4 w-4" />
+                </div>
+                <input
+                  type="text"
+                  value={instagramData.link || ''}
+                  onChange={(e) =>
+                    setInstagramData((prev) => ({ ...prev, link: e.target.value }))
+                  }
+                  placeholder="https://instagram.com/amayaar.in or /products"
+                  className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-3.5 py-2.5 text-xs font-mono font-medium text-slate-900 focus:border-black focus:ring-1 focus:ring-black outline-none"
+                />
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <span className="text-[11px] text-slate-500 font-medium">Quick Presets:</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInstagramData((prev) => ({
+                      ...prev,
+                      link: 'https://instagram.com/amayaar.in',
+                      openInNewTab: true,
+                    }))
+                  }
+                  className="rounded-lg bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                >
+                  Instagram Profile (@amayaar.in)
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInstagramData((prev) => ({
+                      ...prev,
+                      link: '/products',
+                      openInNewTab: false,
+                    }))
+                  }
+                  className="rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                >
+                  All Products (/products)
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInstagramData((prev) => ({
+                      ...prev,
+                      link: '/products?category=men',
+                      openInNewTab: false,
+                    }))
+                  }
+                  className="rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 text-[11px] font-bold transition cursor-pointer"
+                >
+                  Men Collection
+                </button>
+              </div>
+            </div>
+
+            {/* Link Behavior & Title */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 border-t border-slate-100 pt-5">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  Banner Accessibility Title / Alt Text
+                </label>
+                <input
+                  type="text"
+                  value={instagramData.title || ''}
+                  onChange={(e) =>
+                    setInstagramData((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  placeholder="Follow AMA YAAR on Instagram (@amayaar.in)"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-800 focus:border-black focus:ring-1 focus:ring-black outline-none"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  Redirect Behavior
+                </label>
+                <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3 cursor-pointer hover:bg-slate-100/70 transition">
+                  <input
+                    type="checkbox"
+                    checked={instagramData.openInNewTab !== false}
+                    onChange={(e) =>
+                      setInstagramData((prev) => ({ ...prev, openInNewTab: e.target.checked }))
+                    }
+                    className="h-4 w-4 rounded border-slate-300 text-black focus:ring-black"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 block">
+                      Open in New Tab (target="_blank")
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Recommended for Instagram so customers don't lose their place on your store
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Visibility Toggle */}
+            <div className="border-t border-slate-100 pt-5">
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5 cursor-pointer hover:bg-slate-100 transition">
+                <input
+                  type="checkbox"
+                  checked={instagramData.isActive !== false}
+                  onChange={(e) =>
+                    setInstagramData((prev) => ({ ...prev, isActive: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-slate-300 text-black focus:ring-black"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">
+                    Publish this Instagram Banner on Storefront Homepage
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    When unchecked, the banner will be hidden from the homepage without deleting your settings.
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
         </div>

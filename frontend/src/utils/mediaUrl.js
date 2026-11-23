@@ -47,7 +47,9 @@ export function getMediaUrl(path, fallbackName = '') {
     path.startsWith('/home img/') ||
     path.startsWith('home img/') ||
     path.startsWith('/nocta-stage/') ||
-    path.startsWith('nocta-stage/')
+    path.startsWith('nocta-stage/') ||
+    path.startsWith('/insta-banner') ||
+    path.startsWith('insta-banner')
   ) {
     return path.startsWith('/') ? path : `/${path}`;
   }
