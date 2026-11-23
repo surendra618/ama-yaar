@@ -14,7 +14,7 @@ import {
   Check,
   LayoutGrid,
 } from 'lucide-react';
-import { fetchCardSliderById, createCardSlider, updateCardSlider, clearCurrentCardSlider, fetchCardSliders } from '../cardSlidersSlice';
+import { fetchCardSliderById, createCardSlider, updateCardSlider, clearCurrentCardSlider, clearCardSliderError, fetchCardSliders } from '../cardSlidersSlice';
 import api from '../../../lib/axios';
 import getMediaUrl from '../../../utils/mediaUrl';
 
@@ -43,8 +43,12 @@ export default function CardSliderFormPage() {
   const [previewStaggered, setPreviewStaggered] = useState(false);
 
   useEffect(() => {
+    dispatch(clearCardSliderError());
     if (isEdit) dispatch(fetchCardSliderById(id));
-    return () => dispatch(clearCurrentCardSlider());
+    return () => {
+      dispatch(clearCurrentCardSlider());
+      dispatch(clearCardSliderError());
+    };
   }, [dispatch, id, isEdit]);
 
   // Load available store categories for quick picking
@@ -181,8 +185,23 @@ export default function CardSliderFormPage() {
         {/* LEFT COLUMN: THE FORM */}
         <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           {error && (
-            <div className="rounded-lg bg-rose-50 p-3 text-xs font-semibold text-rose-700 border border-rose-200/80">
-              {error}
+            <div className="rounded-lg bg-rose-50 p-3 text-xs font-semibold text-rose-700 border border-rose-200/80 flex items-center justify-between">
+              <div>
+                <p className="font-bold">{error}</p>
+                {error.toLowerCase().includes('network') && (
+                  <p className="text-[11px] font-normal text-rose-600 mt-0.5">
+                    Backend connection could not be reached. Please verify backend server status.
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => dispatch(clearCardSliderError())}
+                className="text-rose-500 hover:text-rose-800 p-1"
+                title="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           )}
 

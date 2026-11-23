@@ -58,6 +58,10 @@ const cardSlidersSlice = createSlice({
   reducers: {
     clearCurrentCardSlider: (state) => {
       state.current = null;
+      state.error = null;
+    },
+    clearCardSliderError: (state) => {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -115,5 +119,5 @@ const cardSlidersSlice = createSlice({
   },
 });
 
-export const { clearCurrentCardSlider } = cardSlidersSlice.actions;
+export const { clearCurrentCardSlider, clearCardSliderError } = cardSlidersSlice.actions;
 export default cardSlidersSlice.reducer;

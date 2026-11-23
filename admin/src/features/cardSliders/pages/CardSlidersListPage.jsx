@@ -178,7 +178,7 @@ export default function CardSlidersListPage() {
       header: '',
       className: 'text-right',
       render: (card) => (
-        <div className="flex justify-end gap-1.5">
+        <div className="flex justify-end items-center gap-1.5">
           <button
             onClick={() => handleToggleActive(card)}
             disabled={togglingId === card._id}
@@ -193,10 +193,11 @@ export default function CardSlidersListPage() {
           </button>
           <Link
             to={`/card-sliders/${card._id}/edit`}
-            className="inline-flex items-center justify-center rounded-md border border-indigo-200/70 bg-indigo-50/80 p-1.5 text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-700 hover:scale-105 active:scale-95"
-            title="Edit"
+            className="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 hover:text-indigo-800 hover:scale-105 active:scale-95 shadow-2xs"
+            title="Edit Category Card"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-3.5 w-3.5" />
+            <span>Edit</span>
           </Link>
           <button
             onClick={() => setToDelete(card)}
@@ -304,9 +305,20 @@ export default function CardSlidersListPage() {
                 <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
                 {item.badge && (
-                  <span className="absolute top-2.5 left-2.5 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-black">
+                  <span className="absolute top-2.5 left-2.5 z-20 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-black shadow-sm">
                     {item.badge}
                   </span>
+                )}
+
+                {item._id && (
+                  <Link
+                    to={`/card-sliders/${item._id}/edit`}
+                    className="absolute top-2.5 right-2.5 z-20 inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-bold text-indigo-700 shadow-md backdrop-blur-xs transition hover:bg-white hover:scale-105"
+                    title="Edit this category card"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    <span>Edit</span>
+                  </Link>
                 )}
 
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3.5">
