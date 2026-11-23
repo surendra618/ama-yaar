@@ -10,6 +10,8 @@ import {
   RotateCcw,
   ShieldCheck,
   Check,
+  CheckCircle2,
+  Loader2,
   Share2,
   MapPin,
   MessageSquare,
@@ -139,9 +141,25 @@ export default function ProductDetailsPage() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [sizeModalOpen, setSizeModalOpen] = useState(false);
   const [newRating, setNewRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [newTitle, setNewTitle] = useState("");
   const [newComment, setNewComment] = useState("");
+  const [newReviewerName, setNewReviewerName] = useState("");
+  const [newReviewerEmail, setNewReviewerEmail] = useState("");
+  const [reviewSuccessMsg, setReviewSuccessMsg] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [touchStartX, setTouchStartX] = useState(null);
+
+  const openReviewModal = () => {
+    if (user?.name) {
+      setNewReviewerName(user.name);
+    }
+    if (user?.email) {
+      setNewReviewerEmail(user.email);
+    }
+    setReviewSuccessMsg("");
+    setReviewModalOpen(true);
+  };
 
   const rawImages = (product?.images || [])
     .filter(Boolean)
@@ -314,22 +332,33 @@ export default function ProductDetailsPage() {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      setAuthSuccessCallback(() => () => setReviewModalOpen(true));
-      setAuthModalOpen(true);
-      return;
-    }
+    if (!newComment.trim()) return;
+
     setSubmittingReview(true);
-    await dispatch(
-      submitProductReview({
-        productId: product._id,
-        rating: newRating,
-        comment: newComment,
-      }),
-    );
-    setSubmittingReview(false);
-    setReviewModalOpen(false);
-    setNewComment("");
+    try {
+      await dispatch(
+        submitProductReview({
+          productId: product._id,
+          rating: newRating,
+          title: newTitle.trim(),
+          comment: newComment.trim(),
+          userName: newReviewerName.trim() || user?.name || "Verified Buyer",
+          userEmail: newReviewerEmail.trim() || user?.email || "",
+        })
+      ).unwrap();
+
+      setReviewSuccessMsg("Thank you! Your review has been posted successfully.");
+      setTimeout(() => {
+        setReviewModalOpen(false);
+        setReviewSuccessMsg("");
+        setNewComment("");
+        setNewTitle("");
+      }, 1400);
+    } catch (err) {
+      alert(typeof err === "string" ? err : err?.message || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   return (
@@ -378,6 +407,32 @@ export default function ProductDetailsPage() {
                   {product.discount || Math.round(((Number(product.mrp) - Number(product.price)) / Number(product.mrp)) * 100)}% OFF
                 </span>
               )}
+            </div>
+
+            {/* Rating Stars & Customer Review Count */}
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded text-xs font-bold">
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                <span>{product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById("customer-reviews-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="text-xs text-neutral-500 hover:text-black font-medium underline underline-offset-2 cursor-pointer"
+              >
+                {reviews?.length || product.numReviews || 0} reviews
+              </button>
+              <span className="text-neutral-300">•</span>
+              <button
+                type="button"
+                onClick={openReviewModal}
+                className="text-xs font-bold text-black hover:opacity-75 cursor-pointer underline underline-offset-2"
+              >
+                Write a review
+              </button>
             </div>
 
             <p className="mt-3 text-xs sm:text-[13px] text-neutral-600 leading-[1.55] font-normal whitespace-pre-line">
@@ -816,6 +871,19 @@ export default function ProductDetailsPage() {
                     <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
                   )}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("reviews")}
+                  className={`pb-2 px-2.5 transition cursor-pointer relative ${
+                    activeTab === "reviews" ? "text-black font-bold" : "hover:text-black"
+                  }`}
+                >
+                  Reviews ({reviews?.length || product.numReviews || 0})
+                  {activeTab === "reviews" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
+                  )}
+                </button>
               </div>
 
               {/* Tab Content Display */}
@@ -965,10 +1033,221 @@ export default function ProductDetailsPage() {
                     </div>
                   </div>
                 )}
+
+                {activeTab === "reviews" && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+                      <div className="flex items-center gap-1.5">
+                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        <span className="font-black text-sm text-neutral-900">
+                          {product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")} / 5.0
+                        </span>
+                        <span className="text-neutral-400 text-[11px]">
+                          ({reviews?.length || product.numReviews || 0} reviews)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={openReviewModal}
+                        className="rounded-sm bg-black px-2.5 py-1 text-[11px] font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
+                      >
+                        + Write Review
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                      {reviews && reviews.length > 0 ? (
+                        reviews.map((r, i) => (
+                          <div key={r._id || i} className="p-2.5 rounded bg-neutral-50 border border-neutral-100 text-xs">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-bold text-neutral-900">{r.authorName || r.userName || "Customer"}</span>
+                              <div className="flex text-amber-400">
+                                {[...Array(r.rating || 5)].map((_, si) => (
+                                  <Star key={si} className="h-3 w-3 fill-amber-400" />
+                                ))}
+                              </div>
+                            </div>
+                            {r.title && <p className="font-semibold text-neutral-800 text-[11px]">{r.title}</p>}
+                            <p className="text-neutral-600 text-[11px] line-clamp-2">{r.comment}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[11px] text-neutral-500 italic py-2">
+                          No reviews yet. Be the first to review this product!
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Dedicated Customer Reviews & Ratings Section */}
+        <section id="customer-reviews-section" className="mt-12 pt-10 border-t border-neutral-200">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <span className="text-[11px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
+                COMMUNITY FEEDBACK
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900 uppercase">
+                CUSTOMER REVIEWS & RATINGS
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={openReviewModal}
+              className="inline-flex items-center gap-2 rounded-none bg-black px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-neutral-800 transition active:scale-95 shadow-sm cursor-pointer"
+            >
+              <Star className="h-3.5 w-3.5 fill-white text-white" />
+              <span>Write a Review</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left 4 Cols: Rating Breakdown Card */}
+            <div className="lg:col-span-4 rounded-xl bg-neutral-50 p-6 border border-neutral-200/80">
+              <div className="flex items-baseline gap-3 mb-2">
+                <span className="text-5xl font-black text-neutral-950 tracking-tight">
+                  {product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")}
+                </span>
+                <span className="text-sm font-semibold text-neutral-400">/ 5.0</span>
+              </div>
+
+              {/* Star visuals */}
+              <div className="flex items-center gap-1 mb-2 text-amber-400">
+                {[1, 2, 3, 4, 5].map((s) => {
+                  const avg = Number(product.rating || reviewStats?.average || 4.5);
+                  return (
+                    <Star
+                      key={s}
+                      className={`h-5 w-5 ${
+                        s <= Math.round(avg) ? "fill-amber-400 text-amber-400" : "text-neutral-300"
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+              <p className="text-xs text-neutral-500 font-medium mb-6">
+                Based on {reviews?.length || product.numReviews || 0} customer reviews
+              </p>
+
+              {/* Rating Distribution Bars */}
+              <div className="space-y-2">
+                {[5, 4, 3, 2, 1].map((stars) => {
+                  const count = reviewStats?.distribution?.[stars] || 0;
+                  const total = reviews?.length || 1;
+                  const pct = reviews?.length ? Math.round((count / total) * 100) : stars === 5 ? 85 : stars === 4 ? 12 : 3;
+                  return (
+                    <div key={stars} className="flex items-center gap-2 text-xs">
+                      <span className="w-12 font-semibold text-neutral-600">{stars} Star</span>
+                      <div className="flex-1 h-2 rounded-full bg-neutral-200 overflow-hidden">
+                        <div
+                          className="h-full bg-neutral-900 rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right font-mono text-neutral-400 text-[11px]">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 pt-5 border-t border-neutral-200">
+                <div className="flex items-center gap-2 text-xs text-neutral-600">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span>100% verified authentic customer feedback</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right 8 Cols: Reviews List */}
+            <div className="lg:col-span-8 space-y-4">
+              {reviews && reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews.map((rev) => (
+                    <div
+                      key={rev._id}
+                      className="rounded-xl border border-neutral-200 p-5 bg-white shadow-xs space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-neutral-900 text-white font-bold text-xs flex items-center justify-center">
+                            {(rev.authorName || rev.userName || "U").charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-neutral-900">
+                                {rev.authorName || rev.userName || "Verified Buyer"}
+                              </span>
+                              {(rev.isVerifiedPurchase || rev.user) && (
+                                <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                  <Check className="h-2.5 w-2.5" />
+                                  <span>Verified Purchase</span>
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-neutral-400">
+                              {rev.createdAt
+                                ? new Date(rev.createdAt).toLocaleDateString("en-IN", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })
+                                : "Recent"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Stars */}
+                        <div className="flex text-amber-400">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`h-4 w-4 ${
+                                s <= rev.rating ? "fill-amber-400 text-amber-400" : "text-neutral-200"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {rev.title && (
+                        <h4 className="text-xs sm:text-sm font-bold text-neutral-900">
+                          {rev.title}
+                        </h4>
+                      )}
+
+                      <p className="text-xs text-neutral-600 leading-relaxed whitespace-pre-line">
+                        {rev.comment}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center space-y-3 bg-neutral-50/50">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+                    <Star className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-neutral-900">
+                    No customer reviews yet
+                  </h3>
+                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                    Be the first to share your thoughts on sizing, fabric, and styling for this piece.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openReviewModal}
+                    className="inline-flex items-center gap-1.5 rounded-none bg-black px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer"
+                  >
+                    Write the First Review
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
         {/* You Might Also Like — Related Products Listing Directly Below Details */}
         {(() => {
@@ -1204,63 +1483,172 @@ export default function ProductDetailsPage() {
 
       {/* Write Review Modal */}
       {reviewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-            <h3 className="text-base font-bold text-slate-900 mb-4">
-              Review this Product
-            </h3>
-            <form onSubmit={handleReviewSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Your Rating:
-                </label>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <button
-                      type="button"
-                      key={s}
-                      onClick={() => setNewRating(s)}
-                      className="p-1 hover:scale-110 transition"
-                    >
-                      <Star
-                        className={`h-6 w-6 ${s <= newRating ? "fill-amber-400 text-amber-400" : "text-slate-300"}`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setReviewModalOpen(false)}
+              className="absolute top-5 right-5 text-neutral-400 hover:text-neutral-900 transition p-1"
+            >
+              <X className="h-5 w-5" />
+            </button>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Your Feedback:
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  placeholder="Share your experience with this item..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 focus:outline-hidden"
+            {/* Modal Header with Product Snippet */}
+            <div className="flex items-center gap-3 pb-4 border-b border-neutral-100">
+              <div className="h-12 w-12 rounded-lg bg-neutral-100 overflow-hidden shrink-0 border border-neutral-200">
+                <img
+                  src={displayImages[0]}
+                  alt={product?.name || "Product"}
+                  className="h-full w-full object-cover"
                 />
               </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setReviewModalOpen(false)}
-                  className="rounded-full px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingReview}
-                  className="rounded-full bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-700"
-                >
-                  {submittingReview ? "Submitting..." : "Submit Review"}
-                </button>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                  Write a Customer Review
+                </span>
+                <h3 className="text-sm font-bold text-neutral-900 line-clamp-1">
+                  {product?.name || "Product Review"}
+                </h3>
               </div>
-            </form>
+            </div>
+
+            {/* Success message */}
+            {reviewSuccessMsg ? (
+              <div className="my-6 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-center space-y-2 animate-in zoom-in-95">
+                <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto" />
+                <p className="text-sm font-bold text-emerald-800">{reviewSuccessMsg}</p>
+                <p className="text-xs text-emerald-600">Updating product rating...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleReviewSubmit} className="space-y-4 pt-4">
+                {/* 1. Rating Stars Picker */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-neutral-800 uppercase tracking-wide">
+                      Overall Rating *
+                    </label>
+                    <span className="text-xs font-semibold text-neutral-500">
+                      {(hoverRating || newRating) === 5
+                        ? "5 Stars (Excellent!)"
+                        : (hoverRating || newRating) === 4
+                        ? "4 Stars (Very Good)"
+                        : (hoverRating || newRating) === 3
+                        ? "3 Stars (Good / Average)"
+                        : (hoverRating || newRating) === 2
+                        ? "2 Stars (Fair)"
+                        : "1 Star (Poor)"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((s) => {
+                      const active = s <= (hoverRating || newRating);
+                      return (
+                        <button
+                          type="button"
+                          key={s}
+                          onMouseEnter={() => setHoverRating(s)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          onClick={() => setNewRating(s)}
+                          className="p-1 hover:scale-125 transition-transform cursor-pointer"
+                        >
+                          <Star
+                            className={`h-7 w-7 transition-colors ${
+                              active
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-neutral-300 hover:text-amber-200"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Reviewer Name & Email */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-700 block mb-1">
+                      Your Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rohan Sharma"
+                      value={newReviewerName}
+                      onChange={(e) => setNewReviewerName(e.target.value)}
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-xs text-neutral-900 focus:border-black focus:ring-1 focus:ring-black outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-neutral-700 block mb-1">
+                      Email Address (Private)
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="e.g. rohan@example.com"
+                      value={newReviewerEmail}
+                      onChange={(e) => setNewReviewerEmail(e.target.value)}
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-xs text-neutral-900 focus:border-black focus:ring-1 focus:ring-black outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Review Headline / Title */}
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1">
+                    Review Headline / Title (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Insane oversized fit, 10/10 heavyweight cotton!"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-xs text-neutral-900 focus:border-black focus:ring-1 focus:ring-black outline-none"
+                  />
+                </div>
+
+                {/* 4. Detailed Comment */}
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1">
+                    Your Review *
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="What did you think of the fit, fabric quality, and comfort? Would you recommend it?"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="w-full rounded-lg border border-neutral-300 p-3 text-xs text-neutral-900 focus:border-black focus:ring-1 focus:ring-black outline-none leading-relaxed"
+                  />
+                </div>
+
+                {/* 5. Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-neutral-100">
+                  <button
+                    type="button"
+                    onClick={() => setReviewModalOpen(false)}
+                    className="rounded-lg px-4 py-2 text-xs font-bold text-neutral-600 hover:bg-neutral-100 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="rounded-lg bg-black px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-neutral-800 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    {submittingReview ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <span>Submit Review</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

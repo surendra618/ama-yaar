@@ -62,6 +62,13 @@ const DEFAULT_SECTIONS = {
       },
     ],
   },
+  instagram_banner: {
+    image: '/insta-banner-1920x500.jpg',
+    link: 'https://instagram.com/amayaar.in',
+    title: 'Follow AMA YAAR on Instagram',
+    openInNewTab: true,
+    isActive: true,
+  },
 };
 
 let sectionCache = new Map();

@@ -160,6 +160,34 @@ export default function BannersListPage() {
         </Link>
       </div>
 
+      {/* Featured Instagram Banner Direct Link */}
+      <div className="rounded-xl border border-pink-200 bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white rounded-lg shadow-sm">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-900">
+              Homepage Instagram Promo Banner
+            </h3>
+            <p className="text-xs text-slate-600">
+              Customize the full-width Instagram banner displayed on the homepage with live preview & click redirect URL
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/homepage-showcase?tab=instagram"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-black text-white text-xs font-bold hover:bg-neutral-800 transition shadow-xs shrink-0"
+        >
+          <span>Manage Instagram Banner</span>
+          <span>&rarr;</span>
+        </Link>
+      </div>
+
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <DataTable columns={columns} rows={items} loading={status === 'loading'} emptyLabel="No banners yet" />
       </div>

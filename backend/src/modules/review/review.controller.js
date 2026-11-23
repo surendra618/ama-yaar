@@ -13,12 +13,13 @@ const getStats = asyncHandler(async (req, res) => {
 });
 
 const create = asyncHandler(async (req, res) => {
-  const data = await service.create(req.user.id, req.body);
-  res.status(201).json(new ApiResponse(201, data, 'Review submitted'));
+  const userId = req.user?.id || null;
+  const data = await service.create(userId, req.body);
+  res.status(201).json(new ApiResponse(201, data, 'Review submitted successfully'));
 });
 
 const update = asyncHandler(async (req, res) => {
-  const data = await service.update(req.params.id, req.user.id, req.body);
+  const data = await service.update(req.params.id, req.user?.id, req.body);
   res.status(200).json(new ApiResponse(200, data, 'Review updated'));
 });
 
@@ -27,4 +28,22 @@ const remove = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, null, 'Review deleted'));
 });
 
-module.exports = { list, getStats, create, update, remove };
+const adminList = asyncHandler(async (req, res) => {
+  const data = await service.listAdmin(req.query);
+  res.status(200).json(new ApiResponse(200, data));
+});
+
+const toggleApproval = asyncHandler(async (req, res) => {
+  const data = await service.toggleApproval(req.params.id);
+  res.status(200).json(new ApiResponse(200, data, 'Review status updated'));
+});
+
+module.exports = {
+  list,
+  getStats,
+  create,
+  update,
+  remove,
+  adminList,
+  toggleApproval,
+};

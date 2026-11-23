@@ -32,6 +32,7 @@ import DeliverySettingsPage from '../features/settings/pages/DeliverySettingsPag
 import NotificationSettingsPage from '../features/settings/pages/NotificationSettingsPage';
 import CreatorsListPage from '../features/creators/pages/CreatorsListPage';
 import HomepageShowcasePage from '../features/homepageShowcase/pages/HomepageShowcasePage';
+import ReviewsListPage from '../features/reviews/pages/ReviewsListPage';
 
 export const router = createBrowserRouter([
   {
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
       { path: '/products', element: <ProductsListPage /> },
       { path: '/products/new', element: <ProductFormPage /> },
       { path: '/products/:id/edit', element: <ProductFormPage /> },
+      { path: '/reviews', element: <ReviewsListPage /> },
       { path: '/categories', element: <CategoriesListPage /> },
       { path: '/categories/new', element: <CategoryFormPage /> },
       { path: '/categories/:id/edit', element: <CategoryFormPage /> },
