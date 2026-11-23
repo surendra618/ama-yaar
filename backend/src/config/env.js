@@ -6,7 +6,7 @@ module.exports = {
   port: process.env.PORT || 5000,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   adminUrl: process.env.ADMIN_URL || 'http://localhost:5174',
-  mongoUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ama-yaar',
+  mongoUri: (process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ama-yaar').trim(),
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
