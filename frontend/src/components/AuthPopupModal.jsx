@@ -1,20 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { X, CheckCircle2, Phone, User, KeyRound, Sparkles, ArrowLeft, RefreshCw, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import {
+  X,
+  CheckCircle2,
+  Phone,
+  User,
+  KeyRound,
+  Sparkles,
+  ArrowLeft,
+  RefreshCw,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { setCredentials } from '../features/auth/authSlice';
 import CaptchaBox from './CaptchaBox';
 import api from '../lib/axios';
+import { signInWithGoogle, isConfigured as isFirebaseConfigured } from '../lib/firebase';
 
 export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const dispatch = useDispatch();
 
-  // Step state: 'phone' | 'otp'
-  const [step, setStep] = useState('phone');
+  // Environment-driven toggle for Phone Login (Default: false because SMS OTP service is pending)
+  const isPhoneLoginEnabled = import.meta.env.VITE_ENABLE_PHONE_LOGIN === 'true';
+
+  // Mode: 'email' | 'phone'
+  const [authMode, setAuthMode] = useState(isPhoneLoginEnabled ? 'phone' : 'email');
+
+  // Step state: 'input' (email or phone + captcha) | 'otp' (verify OTP + name + pwd)
+  const [step, setStep] = useState('input');
 
   // Form states
   const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState(false);
@@ -30,16 +50,18 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   // Status states
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [verifiedUser, setVerifiedUser] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
-      setStep('phone');
+      setAuthMode(isPhoneLoginEnabled ? 'phone' : 'email');
+      setStep('input');
       setPhone('');
-      setName('');
       setEmail('');
+      setName('');
       setPassword('');
       setShowPassword(false);
       setIsExistingUser(false);
@@ -51,9 +73,10 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       setError('');
       setSuccess(false);
       setIsSubmitting(false);
+      setIsGoogleSubmitting(false);
       setResendCooldown(0);
     }
-  }, [isOpen]);
+  }, [isOpen, isPhoneLoginEnabled]);
 
   useEffect(() => {
     let timer;
@@ -65,16 +88,24 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null;
 
-  // Handle Step 1: Send OTP
+  // Handle Step 1: Send OTP to Email or Phone
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     setCaptchaError('');
 
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
-      setError('Please enter a valid 10-digit Indian mobile number');
-      return;
+    if (authMode === 'phone') {
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+        setError('Please enter a valid 10-digit Indian mobile number');
+        return;
+      }
+    } else {
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+        setError('Please enter a valid email address');
+        return;
+      }
     }
 
     if (!captchaInput || captchaInput.trim().toUpperCase() !== captchaCode.trim().toUpperCase()) {
@@ -85,27 +116,26 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     setIsSubmitting(true);
 
     try {
-      let serverData = null;
-      try {
-        const { data } = await api.post('/auth/send-otp', { phone: cleanPhone });
-        serverData = data?.data;
-      } catch (apiErr) {
-        console.warn('Backend send-otp failed, fallback to local simulator:', apiErr);
-      }
+      const payload = authMode === 'phone'
+        ? { phone: phone.replace(/\D/g, '') }
+        : { email: email.trim().toLowerCase() };
 
-      const randomOtp = serverData?.otp || Math.floor(1000 + Math.random() * 9000).toString();
+      const { data } = await api.post('/auth/send-otp', payload);
+      const serverData = data?.data;
+
+      const receivedOtp = serverData?.otp || (authMode === 'email' ? '123456' : '1234');
       const existing = !!serverData?.isExisting;
       setIsExistingUser(existing);
       if (serverData?.name) setName(serverData.name);
-      if (serverData?.email) setEmail(serverData.email);
+      if (serverData?.email && !email) setEmail(serverData.email);
 
-      setGeneratedOtp(randomOtp);
+      setGeneratedOtp(receivedOtp);
       setStep('otp');
       setResendCooldown(30);
 
-      // Auto-fill OTP on next step as requested!
+      // Auto-fill OTP on next step if available
       setIsAutoFilled(true);
-      setOtp(randomOtp);
+      setOtp(receivedOtp);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -118,19 +148,22 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     if (resendCooldown > 0) return;
     setError('');
     setIsSubmitting(true);
-    const cleanPhone = phone.replace(/\D/g, '');
-    const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
     try {
-      try {
-        await api.post('/auth/send-otp', { phone: cleanPhone });
-      } catch (_) {}
+      const payload = authMode === 'phone'
+        ? { phone: phone.replace(/\D/g, '') }
+        : { email: email.trim().toLowerCase() };
+
+      const { data } = await api.post('/auth/send-otp', payload);
+      const serverData = data?.data;
+      const newOtp = serverData?.otp || (authMode === 'email' ? '123456' : '1234');
+
       setGeneratedOtp(newOtp);
       setOtp(newOtp);
       setIsAutoFilled(true);
       setResendCooldown(30);
     } catch (err) {
-      setError('Failed to resend OTP');
+      setError(err.response?.data?.message || 'Failed to resend OTP');
     } finally {
       setIsSubmitting(false);
     }
@@ -142,26 +175,15 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     setError('');
 
     const cleanOtp = otp.trim();
-    if (!cleanOtp || cleanOtp.length < 4) {
-      setError('Please enter the 4-digit OTP');
-      return;
-    }
-
-    // Verify OTP matches
-    if (generatedOtp && cleanOtp !== generatedOtp) {
-      setError('Invalid OTP code. Please enter the correct OTP.');
+    const minLength = authMode === 'email' ? 6 : 4;
+    if (!cleanOtp || cleanOtp.length < minLength) {
+      setError(`Please enter the ${minLength}-digit verification code`);
       return;
     }
 
     const cleanName = name.trim();
     if (!cleanName) {
       setError('Please enter your full name to complete sign in');
-      return;
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail && (!cleanEmail.includes('@') || !cleanEmail.includes('.'))) {
-      setError('Please enter a valid email address');
       return;
     }
 
@@ -173,38 +195,28 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     setIsSubmitting(true);
 
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      let resData = null;
+      const payload = {
+        otp: cleanOtp,
+        name: cleanName,
+        password: password,
+      };
 
-      try {
-        const { data } = await api.post('/auth/verify-otp', {
-          phone: cleanPhone,
-          otp: cleanOtp,
-          name: cleanName,
-          email: cleanEmail || undefined,
-          password: password || undefined,
-        });
-        resData = data.data;
-      } catch (verifyErr) {
-        // Fallback to quickLogin if verify-otp endpoint failed
-        try {
-          const { data } = await api.post('/auth/quick-login', {
-            phone: cleanPhone,
-            name: cleanName,
-            email: cleanEmail || undefined,
-            password: password || undefined,
-          });
-          resData = data.data;
-        } catch (quickErr) {
-          console.warn('API fallback used for demo login:', quickErr);
-        }
+      if (authMode === 'email') {
+        payload.email = email.trim().toLowerCase();
+        if (phone) payload.phone = phone.replace(/\D/g, '');
+      } else {
+        payload.phone = phone.replace(/\D/g, '');
+        if (email) payload.email = email.trim().toLowerCase();
       }
+
+      const { data } = await api.post('/auth/verify-otp', payload);
+      const resData = data?.data;
 
       const userObj = resData?.user || {
         _id: 'user_' + Date.now(),
         name: cleanName,
-        phone: cleanPhone,
-        email: cleanEmail || `${cleanPhone}@mobile.ama-yaar.com`,
+        email: email || `${phone}@mobile.ama-yaar.com`,
+        phone: phone || '',
         role: 'customer',
       };
 
@@ -233,6 +245,64 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle Google Login via Firebase
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setIsGoogleSubmitting(true);
+
+    try {
+      const googleData = await signInWithGoogle();
+
+      // Exchange with backend
+      const { data } = await api.post('/auth/google', {
+        idToken: googleData.idToken,
+        googleId: googleData.googleId,
+        email: googleData.email,
+        name: googleData.name,
+        avatar: googleData.avatar,
+      });
+
+      const resData = data?.data;
+      const userObj = resData?.user || {
+        name: googleData.name,
+        email: googleData.email,
+        avatar: googleData.avatar,
+        role: 'customer',
+      };
+
+      dispatch(
+        setCredentials({
+          user: userObj,
+          accessToken: resData?.accessToken,
+        })
+      );
+
+      if (resData?.refreshToken) {
+        localStorage.setItem('ay_refresh_token', resData.refreshToken);
+      }
+
+      sessionStorage.setItem('auth_popup_shown', 'true');
+      setVerifiedUser(userObj);
+      setSuccess(true);
+
+      setTimeout(() => {
+        if (onSuccess) onSuccess(userObj);
+        onClose();
+      }, 900);
+    } catch (err) {
+      console.error('Google Sign-in failed:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign in popup was closed. Please try again.');
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        // user clicked again, no error needed
+      } else {
+        setError(err.response?.data?.message || err.message || 'Google Sign-in failed. Please try again.');
+      }
+    } finally {
+      setIsGoogleSubmitting(false);
     }
   };
 
@@ -285,7 +355,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                 Unlock instant access to exclusive fits!
               </h2>
               <p className="mt-3 text-xs text-neutral-400 leading-relaxed font-normal hidden sm:block">
-                Enter your mobile number to get instant OTP. No complicated passwords required.
+                Sign in with Email OTP or Google to manage your orders, wishlist, and exclusive streetwear drops.
               </p>
             </div>
           </div>
@@ -308,14 +378,50 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   Exclusive member deals activated
                 </div>
               </div>
-            ) : step === 'phone' ? (
-              /* STEP 1: MOBILE NUMBER + CAPTCHA */
+            ) : step === 'input' ? (
+              /* STEP 1: EMAIL / PHONE INPUT + GOOGLE LOGIN */
               <div>
+                {/* Optional Tabs if Phone Login is enabled via env */}
+                {isPhoneLoginEnabled && (
+                  <div className="flex rounded-xl bg-neutral-100 p-1 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('email');
+                        setError('');
+                      }}
+                      className={`flex-1 py-1.5 text-xs font-black rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        authMode === 'email'
+                          ? 'bg-white text-black shadow-xs'
+                          : 'text-neutral-500 hover:text-black'
+                      }`}
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('phone');
+                        setError('');
+                      }}
+                      className={`flex-1 py-1.5 text-xs font-black rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        authMode === 'phone'
+                          ? 'bg-white text-black shadow-xs'
+                          : 'text-neutral-500 hover:text-black'
+                      }`}
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      Mobile
+                    </button>
+                  </div>
+                )}
+
                 <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
-                  Enter Mobile Number
+                  {authMode === 'email' ? 'Enter Email Address' : 'Enter Mobile Number'}
                 </h3>
                 <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                  Sign in or create account with instant OTP
+                  Sign in or create account with instant verification OTP
                 </p>
 
                 {error && (
@@ -324,28 +430,90 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   </div>
                 )}
 
-                <form onSubmit={handleSendOtp} className="mt-4 space-y-3.5">
-                  {/* Phone Input with +91 prefix */}
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Mobile Number
-                    </label>
-                    <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black focus-within:ring-1 focus-within:ring-black transition overflow-hidden">
-                      <div className="bg-neutral-100 px-3 py-2.5 text-xs font-black text-neutral-700 border-r border-neutral-200 shrink-0">
-                        IN +91
-                      </div>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        placeholder="98765 43210"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
-                        required
-                        autoFocus
+                {/* Google Sign In Button */}
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={isGoogleSubmitting || isSubmitting}
+                    className="w-full flex items-center justify-center gap-3 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-xs font-bold text-neutral-800 hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.99] transition cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                       />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                      />
+                    </svg>
+                    {isGoogleSubmitting ? 'Connecting to Google...' : 'Continue with Google'}
+                  </button>
+
+                  <div className="relative my-3 text-center">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-neutral-200" />
                     </div>
+                    <span className="relative bg-white px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                      OR
+                    </span>
                   </div>
+                </div>
+
+                <form onSubmit={handleSendOtp} className="space-y-3">
+                  {authMode === 'email' ? (
+                    /* Email Input */
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
+                        Email Address
+                      </label>
+                      <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black focus-within:ring-1 focus-within:ring-black transition overflow-hidden">
+                        <div className="bg-neutral-100 px-3 py-2.5 text-xs text-neutral-600 border-r border-neutral-200 shrink-0">
+                          <Mail className="h-4 w-4" />
+                        </div>
+                        <input
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
+                          required
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    /* Phone Input */
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
+                        Mobile Number
+                      </label>
+                      <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black focus-within:ring-1 focus-within:ring-black transition overflow-hidden">
+                        <div className="bg-neutral-100 px-3 py-2.5 text-xs font-black text-neutral-700 border-r border-neutral-200 shrink-0">
+                          IN +91
+                        </div>
+                        <input
+                          type="tel"
+                          maxLength={10}
+                          placeholder="98765 43210"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                          className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
+                          required
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Captcha Verification */}
                   <CaptchaBox
@@ -362,21 +530,25 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting || phone.length !== 10 || captchaInput.length < 5}
-                    className="w-full rounded-xl bg-black py-3.5 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={
+                      isSubmitting ||
+                      (authMode === 'phone' ? phone.length !== 10 : !email.includes('@')) ||
+                      captchaInput.length < 5
+                    }
+                    className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? 'Sending OTP...' : 'GET OTP →'}
                   </button>
                 </form>
               </div>
             ) : (
-              /* STEP 2: AUTO-FILLED OTP + FULL NAME + OPTIONAL EMAIL */
+              /* STEP 2: VERIFY OTP + FULL NAME + PASSWORD */
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <button
                     type="button"
                     onClick={() => {
-                      setStep('phone');
+                      setStep('input');
                       setError('');
                     }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-neutral-500 hover:text-black transition cursor-pointer"
@@ -384,8 +556,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                     <ArrowLeft className="h-3.5 w-3.5" />
                     Back
                   </button>
-                  <span className="text-[11px] font-bold text-neutral-400">
-                    +91 {phone}
+                  <span className="text-[11px] font-bold text-neutral-500 truncate max-w-[200px]">
+                    {authMode === 'email' ? email : `+91 ${phone}`}
                   </span>
                 </div>
 
@@ -394,9 +566,12 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                     Verify &amp; Sign In
                   </h3>
                   <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                    We sent a 4-digit code to your phone
+                    {authMode === 'email'
+                      ? 'We sent a 6-digit verification code to your email'
+                      : 'We sent a 4-digit code to your mobile'}
                   </p>
                 </div>
+
                 {error && (
                   <div className="mb-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
                     {error}
@@ -404,20 +579,20 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                 )}
 
                 <form onSubmit={handleVerifyAndSignIn} className="space-y-3">
-                  {/* OTP Input with Auto-Fill */}
+                  {/* OTP Input */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Enter 4-Digit OTP
+                      {authMode === 'email' ? 'Enter 6-Digit OTP' : 'Enter 4-Digit OTP'}
                     </label>
                     <div className="relative">
                       <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                       <input
                         type="text"
-                        maxLength={4}
-                        placeholder="••••"
+                        maxLength={authMode === 'email' ? 6 : 4}
+                        placeholder={authMode === 'email' ? '••••••' : '••••'}
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2.5 text-base font-black tracking-[0.4em] text-neutral-900 placeholder:text-neutral-300 focus:border-black focus:ring-1 focus:ring-black transition"
+                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-base font-black tracking-[0.3em] text-neutral-900 placeholder:text-neutral-300 focus:border-black focus:ring-1 focus:ring-black transition"
                         required
                         autoFocus
                       />
@@ -438,23 +613,6 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                         onChange={(e) => setName(e.target.value)}
                         className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
                         required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Email Input (Optional) */}
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Email Address <span className="text-neutral-400 font-normal">(Optional)</span>
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                      <input
-                        type="email"
-                        placeholder="you@example.com (optional)"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
                       />
                     </div>
                   </div>
@@ -509,7 +667,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                     type="submit"
                     disabled={
                       isSubmitting ||
-                      otp.length < 4 ||
+                      otp.length < (authMode === 'email' ? 6 : 4) ||
                       !name.trim() ||
                       !password ||
                       password.length < 6

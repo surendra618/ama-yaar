@@ -3,7 +3,7 @@ const ApiResponse = require('../../utils/ApiResponse');
 const service = require('./notification.service');
 
 const list = asyncHandler(async (req, res) => {
-  const data = await service.list(req.user.id);
+  const data = await service.list(req.user.id, req.query);
   res.status(200).json(new ApiResponse(200, data));
 });
 

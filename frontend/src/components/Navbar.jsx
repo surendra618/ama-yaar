@@ -760,12 +760,14 @@ export default function Navbar() {
                             No notifications
                           </p>
                         ) : (
-                          notifications.map((n) => (
+                          notifications.slice(0, 5).map((n) => (
                             <div
                               key={n._id}
-                              onClick={() =>
-                                dispatch(markNotificationRead(n._id))
-                              }
+                              onClick={() => {
+                                dispatch(markNotificationRead(n._id));
+                                setNotifMenuOpen(false);
+                                navigate('/account/notifications');
+                              }}
                               className="cursor-pointer p-2.5 text-xs transition hover:bg-neutral-100 bg-white"
                             >
                               <p className="font-semibold text-black">
@@ -777,6 +779,21 @@ export default function Navbar() {
                             </div>
                           ))
                         )}
+                      </div>
+                      <div className="border-t border-black/10 pt-2 text-center">
+                        <Link
+                          to="/account/notifications"
+                          onClick={() => setNotifMenuOpen(false)}
+                          className="text-xs font-bold text-black hover:underline inline-flex items-center gap-1"
+                        >
+                          <span>View all notifications</span>
+                          {notifications.length > 5 && (
+                            <span className="rounded bg-neutral-100 text-neutral-800 px-1.5 py-0.2 text-[10px] font-mono font-bold">
+                              {notifications.length}
+                            </span>
+                          )}
+                          <span>&rarr;</span>
+                        </Link>
                       </div>
                     </div>
                   )}

@@ -34,12 +34,15 @@ import NotificationSettingsPage from '../features/settings/pages/NotificationSet
 import CreatorsListPage from '../features/creators/pages/CreatorsListPage';
 import HomepageShowcasePage from '../features/homepageShowcase/pages/HomepageShowcasePage';
 import ReviewsListPage from '../features/reviews/pages/ReviewsListPage';
+import ActivityNotificationsPage from '../features/activity/pages/ActivityNotificationsPage';
 
 export const router = createBrowserRouter([
   {
     element: <DashboardLayout />,
     children: [
       { path: '/', element: <DashboardPage /> },
+      { path: '/activity', element: <ActivityNotificationsPage /> },
+      { path: '/notifications', element: <ActivityNotificationsPage /> },
       { path: '/settings/team', element: <TeamSettingsPage /> },
       { path: '/team', element: <TeamSettingsPage /> },
       { path: '/customers', element: <CustomersListPage /> },

@@ -53,12 +53,24 @@ const verifyOtp = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, data, 'OTP verified successfully'));
 });
 
+const googleLogin = asyncHandler(async (req, res) => {
+  const data = await service.googleLogin(req.body);
+  res.status(200).json(new ApiResponse(200, data, 'Google login successful'));
+});
+
+const saveFcmToken = asyncHandler(async (req, res) => {
+  const data = await service.saveFcmToken(req.user?.id, req.body);
+  res.status(200).json(new ApiResponse(200, data, data.message));
+});
+
 module.exports = {
   register,
   login,
   quickLogin,
   sendOtp,
   verifyOtp,
+  googleLogin,
+  saveFcmToken,
   refreshToken,
   logout,
   forgotPassword,

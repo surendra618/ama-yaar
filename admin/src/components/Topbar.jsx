@@ -228,29 +228,57 @@ export default function Topbar({ onMenuClick }) {
               </div>
 
               <div className="mt-2 space-y-1">
-                {notificationsList.map((n) => {
-                  const IconComp = n.icon;
-                  return (
-                    <div
-                      key={n.id}
-                      className={`flex items-start gap-3 rounded-md p-2.5 transition hover:bg-slate-50 cursor-pointer ${n.unread ? 'bg-indigo-50/30' : ''
+                {notificationsList.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-slate-400 font-medium">
+                    No new notifications
+                  </p>
+                ) : (
+                  notificationsList.slice(0, 5).map((n) => {
+                    const IconComp = n.icon;
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => {
+                          setNotifOpen(false);
+                          const t = (n.title || '').toLowerCase();
+                          if (t.includes('order')) {
+                            navigate('/orders');
+                          } else if (t.includes('user') || t.includes('customer') || t.includes('login')) {
+                            navigate('/customers');
+                          } else {
+                            navigate('/activity');
+                          }
+                        }}
+                        className={`flex items-start gap-3 rounded-lg p-2 transition hover:bg-slate-50 cursor-pointer ${
+                          n.unread ? 'bg-indigo-50/40' : ''
                         }`}
-                    >
-                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-                        <IconComp className="h-3.5 w-3.5" />
+                      >
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                          <IconComp className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-xs font-semibold text-slate-800">{n.title}</p>
+                          <p className="text-[10px] font-medium text-slate-400">{n.time}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="truncate text-xs font-semibold text-slate-800">{n.title}</p>
-                        <p className="text-[10px] font-medium text-slate-400">{n.time}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
 
               <div className="mt-2 border-t border-slate-100 pt-2 text-center">
-                <Link to="/orders" className="text-xs font-bold text-indigo-600 hover:underline">
-                  View all activity &rarr;
+                <Link
+                  to="/activity"
+                  onClick={() => setNotifOpen(false)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                >
+                  <span>View all activity</span>
+                  {notificationsList.length > 5 && (
+                    <span className="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.2 text-[10px] font-mono font-bold">
+                      {notificationsList.length}
+                    </span>
+                  )}
+                  <span>&rarr;</span>
                 </Link>
               </div>
             </div>
