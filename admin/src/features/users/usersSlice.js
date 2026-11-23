@@ -55,6 +55,18 @@ export const updateUserRole = createAsyncThunk(
   }
 );
 
+export const deleteUser = createAsyncThunk(
+  'users/delete',
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/users/${id}`);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
 const usersSlice = createSlice({
   name: 'users',
   initialState: {
@@ -99,6 +111,10 @@ const usersSlice = createSlice({
         const idx = state.items.findIndex((u) => u._id === action.payload._id);
         if (idx !== -1) state.items[idx] = { ...state.items[idx], ...action.payload };
         if (state.current?._id === action.payload._id) state.current = { ...state.current, ...action.payload };
+      })
+      .addCase(deleteUser.fulfilled, (state, action) => {
+        state.items = state.items.filter((u) => u._id !== action.payload);
+        if (state.pagination?.total) state.pagination.total -= 1;
       });
   },
 });
