@@ -78,12 +78,14 @@ async function getProductReviewStats(productId) {
 }
 
 async function create(userId, data) {
-  const { productId, rating, comment, title, images, userName, userEmail } = data;
+  const { productId, rating, comment, title, images, videos, userName, userEmail } = data;
   if (!productId || !rating) {
     throw new ApiError(400, 'Product ID and rating are required');
   }
 
   const numericRating = Math.max(1, Math.min(5, Number(rating)));
+  const sanitizedImages = Array.isArray(images) ? images.filter(Boolean) : [];
+  const sanitizedVideos = Array.isArray(videos) ? videos.filter(Boolean) : [];
 
   let hasPurchased = false;
   let resolvedName = userName || '';
@@ -114,7 +116,8 @@ async function create(userId, data) {
       existing.rating = numericRating;
       if (title !== undefined) existing.title = title.trim();
       if (comment !== undefined) existing.comment = comment.trim();
-      if (images) existing.images = images;
+      if (images !== undefined) existing.images = sanitizedImages;
+      if (videos !== undefined) existing.videos = sanitizedVideos;
       if (hasPurchased) existing.isVerifiedPurchase = true;
       existing.userName = resolvedName;
       review = await existing.save();
@@ -130,7 +133,8 @@ async function create(userId, data) {
       rating: numericRating,
       title: title ? title.trim() : '',
       comment: comment ? comment.trim() : '',
-      images: images || [],
+      images: sanitizedImages,
+      videos: sanitizedVideos,
       isVerifiedPurchase: Boolean(hasPurchased),
       isApproved: true,
     });
@@ -147,7 +151,8 @@ async function update(id, userId, data) {
   if (data.rating) review.rating = Math.max(1, Math.min(5, Number(data.rating)));
   if (data.title !== undefined) review.title = data.title;
   if (data.comment !== undefined) review.comment = data.comment;
-  if (data.images) review.images = data.images;
+  if (data.images !== undefined) review.images = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
+  if (data.videos !== undefined) review.videos = Array.isArray(data.videos) ? data.videos.filter(Boolean) : [];
 
   await review.save();
   await updateProductRating(review.product);

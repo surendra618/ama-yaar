@@ -24,6 +24,13 @@ import {
   ShoppingBag,
   X,
   Ruler,
+  Camera,
+  Video,
+  Play,
+  Trash2,
+  Film,
+  Image as ImageIcon,
+  UploadCloud,
 } from "lucide-react";
 import {
   fetchProductDetails,
@@ -146,6 +153,13 @@ export default function ProductDetailsPage() {
   const [newComment, setNewComment] = useState("");
   const [newReviewerName, setNewReviewerName] = useState("");
   const [newReviewerEmail, setNewReviewerEmail] = useState("");
+  const [reviewImages, setReviewImages] = useState([]);
+  const [reviewVideos, setReviewVideos] = useState([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [uploadMediaError, setUploadMediaError] = useState("");
+  const [activeMediaModal, setActiveMediaModal] = useState(null);
+  const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
   const [reviewSuccessMsg, setReviewSuccessMsg] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [touchStartX, setTouchStartX] = useState(null);
@@ -158,7 +172,65 @@ export default function ProductDetailsPage() {
       setNewReviewerEmail(user.email);
     }
     setReviewSuccessMsg("");
+    setReviewImages([]);
+    setReviewVideos([]);
+    setUploadMediaError("");
     setReviewModalOpen(true);
+  };
+
+  const handleUploadReviewMedia = async (e, mediaType) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setUploadingMedia(true);
+    setUploadMediaError("");
+
+    try {
+      for (const file of files) {
+        if (file.size > 50 * 1024 * 1024) {
+          throw new Error(`"${file.name}" exceeds 50MB file size limit.`);
+        }
+
+        const isVid = file.type.startsWith("video/") || mediaType === "video";
+        if (isVid && reviewVideos.length >= 2) {
+          alert("Maximum 2 video clips per review allowed.");
+          continue;
+        }
+        if (!isVid && reviewImages.length >= 5) {
+          alert("Maximum 5 photos per review allowed.");
+          continue;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await api.post("/uploads/single", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        const uploadedUrl = res.data?.data?.url;
+        if (uploadedUrl) {
+          if (isVid) {
+            setReviewVideos((prev) => [...prev, uploadedUrl]);
+          } else {
+            setReviewImages((prev) => [...prev, uploadedUrl]);
+          }
+        }
+      }
+    } catch (err) {
+      setUploadMediaError(err.response?.data?.message || err.message || "Failed to upload file. Please try again.");
+    } finally {
+      setUploadingMedia(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    setReviewImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveVideo = (index) => {
+    setReviewVideos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const rawImages = (product?.images || [])
@@ -344,6 +416,8 @@ export default function ProductDetailsPage() {
           comment: newComment.trim(),
           userName: newReviewerName.trim() || user?.name || "Verified Buyer",
           userEmail: newReviewerEmail.trim() || user?.email || "",
+          images: reviewImages,
+          videos: reviewVideos,
         })
       ).unwrap();
 
@@ -353,6 +427,8 @@ export default function ProductDetailsPage() {
         setReviewSuccessMsg("");
         setNewComment("");
         setNewTitle("");
+        setReviewImages([]);
+        setReviewVideos([]);
       }, 1400);
     } catch (err) {
       alert(typeof err === "string" ? err : err?.message || "Failed to submit review");
@@ -1069,6 +1145,45 @@ export default function ProductDetailsPage() {
                             </div>
                             {r.title && <p className="font-semibold text-neutral-800 text-[11px]">{r.title}</p>}
                             <p className="text-neutral-600 text-[11px] line-clamp-2">{r.comment}</p>
+
+                            {/* Media preview in quick tab */}
+                            {((r.images && r.images.length > 0) || (r.videos && r.videos.length > 0)) && (
+                              <div className="flex items-center gap-1.5 pt-1.5">
+                                {r.videos?.map((v, vi) => (
+                                  <button
+                                    key={`tab-v-${vi}`}
+                                    type="button"
+                                    onClick={() =>
+                                      setActiveMediaModal({
+                                        url: getMediaUrl(v),
+                                        type: "video",
+                                        author: r.authorName || r.userName,
+                                      })
+                                    }
+                                    className="relative h-9 w-9 rounded-md overflow-hidden border border-neutral-300 bg-black cursor-pointer shrink-0"
+                                  >
+                                    <video src={getMediaUrl(v)} className="h-full w-full object-cover opacity-70" />
+                                    <Play className="absolute inset-0 m-auto h-3 w-3 text-white fill-white" />
+                                  </button>
+                                ))}
+                                {r.images?.map((im, imi) => (
+                                  <button
+                                    key={`tab-im-${imi}`}
+                                    type="button"
+                                    onClick={() =>
+                                      setActiveMediaModal({
+                                        url: getMediaUrl(im),
+                                        type: "image",
+                                        author: r.authorName || r.userName,
+                                      })
+                                    }
+                                    className="relative h-9 w-9 rounded-md overflow-hidden border border-neutral-200 bg-neutral-100 cursor-pointer shrink-0"
+                                  >
+                                    <img src={getMediaUrl(im)} alt="" className="h-full w-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))
                       ) : (
@@ -1222,6 +1337,72 @@ export default function ProductDetailsPage() {
                       <p className="text-xs text-neutral-600 leading-relaxed whitespace-pre-line">
                         {rev.comment}
                       </p>
+
+                      {/* Attached Customer Photos & Videos */}
+                      {((rev.images && rev.images.length > 0) || (rev.videos && rev.videos.length > 0)) && (
+                        <div className="pt-2.5 border-t border-neutral-100 space-y-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
+                            Customer Attached Media ({((rev.images?.length || 0) + (rev.videos?.length || 0))})
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Videos */}
+                            {rev.videos?.map((vidUrl, vidIdx) => (
+                              <button
+                                key={`vid-${vidIdx}`}
+                                type="button"
+                                onClick={() =>
+                                  setActiveMediaModal({
+                                    url: getMediaUrl(vidUrl),
+                                    type: "video",
+                                    author: rev.authorName || rev.userName,
+                                  })
+                                }
+                                className="relative h-18 w-18 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-neutral-300 bg-black group hover:scale-105 transition cursor-pointer shadow-xs shrink-0"
+                              >
+                                <video
+                                  src={getMediaUrl(vidUrl)}
+                                  className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/10 transition">
+                                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-neutral-900 shadow-md">
+                                    <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
+                                  </div>
+                                </div>
+                                <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.2 text-[8px] font-bold text-white flex items-center gap-0.5">
+                                  <Video className="h-2.5 w-2.5 text-rose-400" /> VIDEO
+                                </span>
+                              </button>
+                            ))}
+
+                            {/* Images */}
+                            {rev.images?.map((imgUrl, imgIdx) => (
+                              <button
+                                key={`img-${imgIdx}`}
+                                type="button"
+                                onClick={() =>
+                                  setActiveMediaModal({
+                                    url: getMediaUrl(imgUrl),
+                                    type: "image",
+                                    author: rev.authorName || rev.userName,
+                                  })
+                                }
+                                className="relative h-18 w-18 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 group hover:scale-105 transition cursor-pointer shadow-xs shrink-0"
+                              >
+                                <img
+                                  src={getMediaUrl(imgUrl)}
+                                  alt={`Customer photo ${imgIdx + 1}`}
+                                  className="h-full w-full object-cover group-hover:opacity-95 transition"
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-end justify-end p-1">
+                                  <span className="opacity-0 group-hover:opacity-100 transition rounded bg-black/80 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                                    Enlarge
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1623,7 +1804,135 @@ export default function ProductDetailsPage() {
                   />
                 </div>
 
-                {/* 5. Buttons */}
+                {/* 5. Attach Photos or Videos (Optional - Non-mandatory) */}
+                <div className="space-y-2 pt-1 border-t border-neutral-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                        <Camera className="h-3.5 w-3.5 text-neutral-700" />
+                        <span>Add Photos or Video</span>
+                        <span className="text-[10px] font-normal text-neutral-500 bg-neutral-100 px-1.5 py-0.2 rounded">
+                          Optional
+                        </span>
+                      </label>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">
+                        Share how it looks on you! (Max 5 photos, 2 videos • up to 50MB)
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={uploadingMedia || reviewImages.length >= 5}
+                        onClick={() => imageInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-[11px] font-bold text-neutral-800 hover:bg-neutral-50 hover:border-neutral-400 transition disabled:opacity-40 cursor-pointer shadow-2xs"
+                      >
+                        <Camera className="h-3.5 w-3.5 text-indigo-600" />
+                        <span>+ Photo ({reviewImages.length}/5)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={uploadingMedia || reviewVideos.length >= 2}
+                        onClick={() => videoInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-[11px] font-bold text-neutral-800 hover:bg-neutral-50 hover:border-neutral-400 transition disabled:opacity-40 cursor-pointer shadow-2xs"
+                      >
+                        <Video className="h-3.5 w-3.5 text-rose-600" />
+                        <span>+ Video ({reviewVideos.length}/2)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Hidden file inputs */}
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleUploadReviewMedia(e, 'image')}
+                  />
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={(e) => handleUploadReviewMedia(e, 'video')}
+                  />
+
+                  {/* Uploading indicator */}
+                  {uploadingMedia && (
+                    <div className="flex items-center gap-2.5 rounded-lg bg-indigo-50/70 border border-indigo-100 p-2 text-xs font-medium text-indigo-800">
+                      <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                      <span>Uploading media file to cloud storage...</span>
+                    </div>
+                  )}
+
+                  {/* Upload error */}
+                  {uploadMediaError && (
+                    <p className="text-xs font-semibold text-rose-600 bg-rose-50 p-2 rounded-lg border border-rose-200">
+                      {uploadMediaError}
+                    </p>
+                  )}
+
+                  {/* Previews grid */}
+                  {(reviewImages.length > 0 || reviewVideos.length > 0) && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {/* Video Previews */}
+                      {reviewVideos.map((vidUrl, idx) => (
+                        <div
+                          key={`vid-prev-${idx}`}
+                          className="relative h-18 w-18 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-neutral-300 bg-black shadow-xs group"
+                        >
+                          <video
+                            src={getMediaUrl(vidUrl)}
+                            className="h-full w-full object-cover opacity-80"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-neutral-900 shadow">
+                              <Play className="h-3 w-3 fill-current ml-0.5" />
+                            </div>
+                          </div>
+                          <span className="absolute bottom-1 left-1 rounded bg-black/80 px-1 py-0.2 text-[8px] font-bold text-white">
+                            VIDEO
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVideo(idx)}
+                            className="absolute top-1 right-1 rounded-full bg-neutral-900/90 text-white p-1 hover:bg-rose-600 transition cursor-pointer shadow"
+                            title="Remove video"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Image Previews */}
+                      {reviewImages.map((imgUrl, idx) => (
+                        <div
+                          key={`img-prev-${idx}`}
+                          className="relative h-18 w-18 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 shadow-xs group"
+                        >
+                          <img
+                            src={getMediaUrl(imgUrl)}
+                            alt={`Preview ${idx + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="absolute top-1 right-1 rounded-full bg-neutral-900/90 text-white p-1 hover:bg-rose-600 transition cursor-pointer shadow"
+                            title="Remove photo"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 6. Buttons */}
                 <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-neutral-100">
                   <button
                     type="button"
@@ -1679,6 +1988,49 @@ export default function ProductDetailsPage() {
         product={product}
         onSelectSize={(sz) => setSelectedSize(sz)}
       />
+
+      {/* Customer Review Media Lightbox Modal */}
+      {activeMediaModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          onClick={() => setActiveMediaModal(null)}
+        >
+          <div
+            className="relative max-w-3xl w-full max-h-[85vh] flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveMediaModal(null)}
+              className="absolute -top-10 right-0 text-white/90 hover:text-white transition p-2 cursor-pointer flex items-center gap-1.5 text-xs font-bold bg-neutral-900/80 rounded-full px-3 py-1 border border-white/20"
+            >
+              <span>Close</span>
+              <X className="h-4 w-4" />
+            </button>
+
+            {activeMediaModal.type === "video" ? (
+              <video
+                src={activeMediaModal.url}
+                controls
+                autoPlay
+                className="max-h-[75vh] w-auto max-w-full rounded-2xl shadow-2xl bg-black"
+              />
+            ) : (
+              <img
+                src={activeMediaModal.url}
+                alt="Customer Review Photo"
+                className="max-h-[75vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl bg-black/40"
+              />
+            )}
+
+            {activeMediaModal.author && (
+              <p className="mt-3 text-xs font-medium text-white/90 bg-black/60 px-3 py-1 rounded-full border border-white/10">
+                Shared by <strong className="text-white">{activeMediaModal.author}</strong>
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
