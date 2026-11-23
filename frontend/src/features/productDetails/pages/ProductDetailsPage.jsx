@@ -163,6 +163,13 @@ export default function ProductDetailsPage() {
   const [reviewSuccessMsg, setReviewSuccessMsg] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [touchStartX, setTouchStartX] = useState(null);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMobileZoomed, setIsMobileZoomed] = useState(false);
+  const [isDraggingZoom, setIsDraggingZoom] = useState(false);
+  const imageContainerRef = useRef(null);
+  const lastTapRef = useRef(0);
 
   const openReviewModal = () => {
     if (user?.name) {
@@ -246,6 +253,7 @@ export default function ProductDetailsPage() {
     }
     if (displayImages.length <= 1) return;
     setIsHoveringZoom(false);
+    setIsMobileZoomed(false);
     setZoomPos({ x: 50, y: 50 });
     setSelectedImage((prev) =>
       prev <= 0 ? displayImages.length - 1 : prev - 1,
@@ -259,6 +267,7 @@ export default function ProductDetailsPage() {
     }
     if (displayImages.length <= 1) return;
     setIsHoveringZoom(false);
+    setIsMobileZoomed(false);
     setZoomPos({ x: 50, y: 50 });
     setSelectedImage((prev) =>
       prev >= displayImages.length - 1 ? 0 : prev + 1,
@@ -266,22 +275,106 @@ export default function ProductDetailsPage() {
   };
 
   const handleTouchStart = (e) => {
-    if (e.touches && e.touches[0]) {
-      setTouchStartX(e.touches[0].clientX);
+    if (!e.touches || !e.touches[0]) return;
+    const touch = e.touches[0];
+
+    // Double tap detector to toggle zoom directly at touch position
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      if (imageContainerRef.current) {
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
+        setZoomPos({ x, y });
+      }
+      setIsMobileZoomed((prev) => !prev);
+      lastTapRef.current = 0;
+      return;
+    }
+    lastTapRef.current = now;
+
+    if (isMobileZoomed) {
+      // In zoom mode: start panning/sliding the zoomed view
+      setIsDraggingZoom(true);
+      if (imageContainerRef.current) {
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
+        setZoomPos({ x, y });
+      }
+    } else {
+      setTouchStartX(touch.clientX);
+      setTouchStartY(touch.clientY);
+      setDragOffset(0);
+      setIsDragging(true);
     }
   };
 
-  const handleTouchEnd = (e) => {
+  const handleTouchMove = (e) => {
+    if (!e.touches || !e.touches[0]) return;
+    const touch = e.touches[0];
+
+    if (isMobileZoomed) {
+      // Touch-sliding dynamically pans across zoomed image in real-time
+      if (imageContainerRef.current) {
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
+        setZoomPos({ x, y });
+      }
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+
     if (touchStartX === null || displayImages.length <= 1) return;
-    if (e.changedTouches && e.changedTouches[0]) {
-      const touchEndX = e.changedTouches[0].clientX;
-      const diff = touchStartX - touchEndX;
-      if (Math.abs(diff) > 40) {
-        if (diff > 0) handleNextImage();
-        else handlePrevImage();
+    const diffX = touch.clientX - touchStartX;
+    const diffY = touch.clientY - (touchStartY || touch.clientY);
+
+    // If horizontal dragging is dominant over vertical scrolling
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      setDragOffset(diffX);
+      if (e.cancelable && Math.abs(diffX) > 8) {
+        e.preventDefault();
       }
     }
+  };
+
+  const handleTouchEnd = () => {
+    if (isMobileZoomed) {
+      setIsDraggingZoom(false);
+      return;
+    }
+
+    setIsDragging(false);
+    if (touchStartX !== null && displayImages.length > 1) {
+      const SWIPE_THRESHOLD = 45;
+      if (dragOffset < -SWIPE_THRESHOLD) {
+        handleNextImage();
+      } else if (dragOffset > SWIPE_THRESHOLD) {
+        handlePrevImage();
+      }
+    }
+    setDragOffset(0);
     setTouchStartX(null);
+    setTouchStartY(null);
+  };
+
+  const handleImageClick = (e) => {
+    // If clicking on arrows or dots, ignore
+    if (e.target && e.target.closest && e.target.closest('button')) return;
+
+    if (imageContainerRef.current) {
+      const rect = imageContainerRef.current.getBoundingClientRect();
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+      if (clientX !== undefined && clientY !== undefined) {
+        const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+        setZoomPos({ x, y });
+      }
+    }
+    setIsMobileZoomed((prev) => !prev);
   };
 
   useEffect(() => {
@@ -517,37 +610,71 @@ export default function ProductDetailsPage() {
             </p>
           </div>
 
-          {/* CENTER COLUMN: Large Focused Product Image (Centered, High Visibility, No Padding Restriction) */}
+          {/* CENTER COLUMN: Large Focused Product Image with Smooth Sliding Carousel & Touch-Slide Zoom */}
           <div className="lg:col-span-6 flex flex-col items-center justify-start order-1 lg:order-2 pt-0">
             <div
-              className="relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group cursor-crosshair select-none"
+              ref={imageContainerRef}
+              className={`relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group select-none ${
+                isMobileZoomed ? "cursor-grab active:cursor-grabbing touch-none" : "cursor-crosshair"
+              }`}
+              onClick={handleImageClick}
               onMouseEnter={() => setIsHoveringZoom(true)}
-              onMouseLeave={() => setIsHoveringZoom(false)}
+              onMouseLeave={() => {
+                setIsHoveringZoom(false);
+                setIsMobileZoomed(false);
+              }}
               onMouseMove={handleMouseMove}
               onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <img
-                key={safeImageIndex}
-                src={displayImages[safeImageIndex] || displayImages[0]}
-                alt={product.name || "Product Showcase"}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src =
-                    "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=1200&q=85";
-                }}
+              {/* Sliding Carousel Track with Real-time Gesture Support */}
+              <div
+                className="flex h-full w-full select-none will-change-transform"
                 style={{
-                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                  transform: isHoveringZoom ? "scale(1.5)" : "scale(1)",
-                  transition: isHoveringZoom
-                    ? "transform 200ms ease-out, transform-origin 75ms ease-out"
-                    : "transform 200ms ease-out",
+                  transform: `translateX(calc(-${safeImageIndex * 100}% + ${dragOffset}px))`,
+                  transition: isDragging ? "none" : "transform 320ms cubic-bezier(0.25, 1, 0.5, 1)",
                 }}
-                className="h-full w-full object-cover object-top select-none pointer-events-none will-change-transform"
-              />
+              >
+                {displayImages.map((img, idx) => {
+                  const isActive = safeImageIndex === idx;
+                  const isZooming = isActive && (isHoveringZoom || isMobileZoomed);
+                  return (
+                    <div
+                      key={idx}
+                      className="h-full w-full shrink-0 relative overflow-hidden flex items-center justify-center bg-neutral-100"
+                    >
+                      <img
+                        src={img}
+                        alt={product.name || `Product View ${idx + 1}`}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src =
+                            "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=1200&q=85";
+                        }}
+                        style={
+                          isZooming
+                            ? {
+                                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                                transform: isMobileZoomed ? "scale(2.2)" : "scale(1.6)",
+                                transition: isDraggingZoom
+                                  ? "none"
+                                  : "transform-origin 80ms ease-out, transform 200ms ease-out",
+                              }
+                            : {
+                                transform: "scale(1)",
+                                transition: "transform 250ms ease-out",
+                              }
+                        }
+                        className="h-full w-full object-cover object-top select-none pointer-events-none will-change-transform"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
 
               {/* Left Arrow Button (Always clickable when multiple images exist) */}
-              {displayImages.length > 1 && (
+              {displayImages.length > 1 && !isMobileZoomed && (
                 <button
                   type="button"
                   onClick={handlePrevImage}
@@ -567,7 +694,7 @@ export default function ProductDetailsPage() {
               )}
 
               {/* Right Arrow Button (Always clickable when multiple images exist) */}
-              {displayImages.length > 1 && (
+              {displayImages.length > 1 && !isMobileZoomed && (
                 <button
                   type="button"
                   onClick={handleNextImage}
@@ -587,7 +714,7 @@ export default function ProductDetailsPage() {
               )}
 
               {/* Slide Dots Indicator */}
-              {displayImages.length > 1 && !isHoveringZoom && (
+              {displayImages.length > 1 && !isHoveringZoom && !isMobileZoomed && (
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full pointer-events-auto">
                   {displayImages.map((_, dotIdx) => (
                     <button
@@ -595,6 +722,7 @@ export default function ProductDetailsPage() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setIsMobileZoomed(false);
                         setSelectedImage(dotIdx);
                       }}
                       className={`h-1.5 rounded-full transition-all cursor-pointer ${
@@ -609,20 +737,38 @@ export default function ProductDetailsPage() {
               )}
 
               {/* Discount pill matching user screenshot */}
-              {!isHoveringZoom && product.discount > 0 && (
+              {!isHoveringZoom && !isMobileZoomed && product.discount > 0 && (
                 <span className="absolute top-3 left-3 z-10 rounded-xs bg-black px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
                   {product.discount}% OFF
                 </span>
               )}
 
-              {/* Zoom pill indicator */}
-              {isHoveringZoom ? (
+              {/* Zoom pill / Mode banner */}
+              {isMobileZoomed ? (
+                <div className="absolute top-3 inset-x-3 z-30 flex items-center justify-between bg-black/85 backdrop-blur-md text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-lg pointer-events-auto animate-in fade-in duration-150">
+                  <span className="flex items-center gap-1.5">
+                    <Search className="h-3 w-3 text-amber-400" />
+                    <span>Slide finger to explore details</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsMobileZoomed(false);
+                    }}
+                    className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition"
+                  >
+                    <span>Close Zoom</span>
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : isHoveringZoom ? (
                 <span className="absolute bottom-3 right-3 z-20 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
-                  1.5x Zoom
+                  1.6x Zoom
                 </span>
               ) : (
-                <span className="absolute bottom-3 left-3 z-10 bg-black/40 backdrop-blur-xs text-white/90 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                  <Search className="h-2.5 w-2.5" /> Hover to zoom
+                <span className="absolute bottom-3 left-3 z-10 bg-black/50 backdrop-blur-xs text-white/95 text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1 transition pointer-events-none shadow-xs">
+                  <Search className="h-3 w-3" /> Tap to zoom & slide
                 </span>
               )}
             </div>
@@ -634,7 +780,10 @@ export default function ProductDetailsPage() {
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSelectedImage(idx)}
+                    onClick={() => {
+                      setIsMobileZoomed(false);
+                      setSelectedImage(idx);
+                    }}
                     className={`h-14 w-11 sm:h-16 sm:w-13 overflow-hidden rounded-sm border transition cursor-pointer ${
                       safeImageIndex === idx
                         ? "border-neutral-900 ring-1 ring-neutral-900 opacity-100"
