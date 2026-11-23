@@ -16,7 +16,11 @@ export function getMediaUrl(path) {
     path.startsWith('/editorial-looks/') ||
     path.startsWith('editorial-looks/') ||
     path.startsWith('/video/') ||
-    path.startsWith('video/')
+    path.startsWith('video/') ||
+    path.startsWith('/home img/') ||
+    path.startsWith('home img/') ||
+    path.startsWith('/nocta-stage/') ||
+    path.startsWith('nocta-stage/')
   ) {
     return path.startsWith('/') ? path : `/${path}`;
   }

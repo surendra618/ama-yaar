@@ -65,6 +65,7 @@ app.use((req, res, next) => {
     req.method === 'GET' &&
     (req.path.includes('/categories') ||
       req.path.includes('/card-sliders') ||
+      req.path.includes('/homepage-sections') ||
       req.path.includes('/banners'))
   ) {
     res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
