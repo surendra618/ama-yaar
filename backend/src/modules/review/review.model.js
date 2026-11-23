@@ -10,6 +10,7 @@ const reviewSchema = new mongoose.Schema(
     title: { type: String, trim: true },
     comment: { type: String, trim: true },
     images: [{ type: String }],
+    videos: [{ type: String }],
     isVerifiedPurchase: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: true, index: true },
     helpfulCount: { type: Number, default: 0 },

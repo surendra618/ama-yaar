@@ -412,6 +412,11 @@ async function updateStatus(id, { status, note, trackingNumber }) {
       console.warn('Commission confirmation notice:', err.message)
     );
   } else if (['cancelled', 'returned', 'refunded'].includes(status)) {
+    if (order.paymentInfo) {
+      if (order.paymentInfo.status === 'pending' || order.paymentInfo.provider === 'cod') {
+        order.paymentInfo.status = 'cancelled';
+      }
+    }
     // Reverse creator commission if order is cancelled, returned or refunded
     reverseOrderCommission(order._id, note || `Order marked as ${status}`).catch((err) =>
       console.warn('Commission reversal notice:', err.message)
@@ -477,6 +482,13 @@ async function cancelOrder(id, user, { reason = 'Cancelled by user' }) {
 
   order.status = 'cancelled';
   order.cancelReason = reason;
+  if (order.paymentInfo) {
+    if (order.paymentInfo.status === 'pending' || order.paymentInfo.provider === 'cod' || (order.paymentInfo.method && order.paymentInfo.method.toLowerCase().includes('cash'))) {
+      order.paymentInfo.status = 'cancelled';
+    } else if (order.paymentInfo.status === 'paid') {
+      order.paymentInfo.status = 'refund_pending';
+    }
+  }
   order.statusHistory.push({
     status: 'cancelled',
     note: `Order cancelled: ${reason}`,

@@ -7,7 +7,7 @@ const ApiError = require('../../utils/ApiError');
 const { generateAccessToken, generateRefreshToken } = require('../../utils/generateTokens');
 const { sendEmail } = require('../../config/mailer');
 const { notifyAdmins } = require('../notification/adminNotifier');
-const { newUserTemplate } = require('../../utils/emailTemplates');
+const { newUserTemplate, emailOtpTemplate } = require('../../utils/emailTemplates');
 const env = require('../../config/env');
 
 async function register({ name, email, password, phone, role = 'customer' }) {
@@ -287,18 +287,55 @@ async function quickLogin({ email, phone, name, password }) {
 
 const otpStore = new Map();
 
-async function sendOtp({ phone }) {
-  if (!phone) throw new ApiError(400, 'Mobile number is required');
+async function sendOtp({ phone, email }) {
+  if (!phone && !email) {
+    throw new ApiError(400, 'Mobile number or Email address is required');
+  }
+
+  // Email OTP flow
+  if (email) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      throw new ApiError(400, 'Please enter a valid email address');
+    }
+
+    const existingUser = await User.findOne({ email: cleanEmail });
+    const isExisting = !!existingUser;
+
+    // Generate random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore.set(cleanEmail, {
+      otp,
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+    });
+
+    // Send email with custom OTP template
+    await sendEmail({
+      to: cleanEmail,
+      subject: `Your AMA-YAAR Verification Code: ${otp}`,
+      html: emailOtpTemplate({ otp, email: cleanEmail }),
+      text: `Your AMA-YAAR verification code is: ${otp}. It will expire in 10 minutes.`,
+    });
+
+    return {
+      type: 'email',
+      email: cleanEmail,
+      otp, // included for seamless development fallback
+      isExisting,
+      name: existingUser?.name || '',
+      message: 'Verification code sent to your email',
+    };
+  }
+
+  // Phone OTP flow
   const cleanPhone = phone.replace(/\D/g, '').slice(-10);
   if (cleanPhone.length < 10) {
     throw new ApiError(400, 'Please enter a valid 10-digit mobile number');
   }
 
-  // Check if user already exists
   const existingUser = await User.findOne({ phone: cleanPhone });
   const isExisting = !!existingUser;
 
-  // Generate random 4-digit OTP
   const otp = Math.floor(1000 + Math.random() * 9000).toString();
   otpStore.set(cleanPhone, {
     otp,
@@ -306,6 +343,7 @@ async function sendOtp({ phone }) {
   });
 
   return {
+    type: 'phone',
     phone: cleanPhone,
     otp,
     isExisting,
@@ -315,25 +353,115 @@ async function sendOtp({ phone }) {
   };
 }
 
-async function verifyOtp({ phone, otp, name, email, password }) {
-  if (!phone || !otp) {
-    throw new ApiError(400, 'Mobile number and OTP are required');
+async function verifyOtp({ phone, email, otp, name, password }) {
+  if ((!phone && !email) || !otp) {
+    throw new ApiError(400, 'Mobile/Email and OTP are required');
   }
-  const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-  const record = otpStore.get(cleanPhone);
+
+  const identifier = email
+    ? email.trim().toLowerCase()
+    : phone.replace(/\D/g, '').slice(-10);
+
+  const record = otpStore.get(identifier);
 
   if (!record || record.otp !== otp.toString().trim()) {
-    throw new ApiError(400, 'Invalid or expired OTP');
+    throw new ApiError(400, 'Invalid or expired verification code');
   }
 
   if (Date.now() > record.expiresAt) {
-    otpStore.delete(cleanPhone);
-    throw new ApiError(400, 'OTP has expired. Please request a new one.');
+    otpStore.delete(identifier);
+    throw new ApiError(400, 'Verification code has expired. Please request a new one.');
   }
 
-  otpStore.delete(cleanPhone);
+  otpStore.delete(identifier);
 
-  return await quickLogin({ phone: cleanPhone, name, email, password });
+  if (email) {
+    return await quickLogin({ email: identifier, name, password });
+  } else {
+    return await quickLogin({ phone: identifier, name, email, password });
+  }
+}
+
+async function googleLogin({ email, name, avatar, googleId }) {
+  if (!email) {
+    throw new ApiError(400, 'Google email is required');
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  let user = await User.findOne({
+    $or: [{ email: cleanEmail }, { googleId: googleId || '__none__' }],
+  });
+
+  if (!user) {
+    const defaultPassword = `google_${Date.now()}_auth`;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(defaultPassword, salt);
+
+    user = await User.create({
+      name: name || cleanEmail.split('@')[0],
+      email: cleanEmail,
+      avatar: avatar || '',
+      googleId: googleId || '',
+      password: hashedPassword,
+      role: 'customer',
+    });
+
+    await Cart.create({ user: user._id, items: [] }).catch(() => {});
+    await Wishlist.create({ user: user._id, products: [] }).catch(() => {});
+
+    notifyAdmins({
+      event: 'newUser',
+      subject: `New User Joined via Google: ${user.name}`,
+      html: newUserTemplate({
+        name: user.name,
+        email: user.email,
+        phone: user.phone || 'Google Sign-In',
+        role: user.role,
+        viewUrl: `${env.adminUrl}/customers`,
+      }),
+      text: `New user via Google: ${user.name} (${user.email})`,
+    }).catch(() => {});
+  } else {
+    let updated = false;
+    if (googleId && !user.googleId) {
+      user.googleId = googleId;
+      updated = true;
+    }
+    if (avatar && !user.avatar) {
+      user.avatar = avatar;
+      updated = true;
+    }
+    if (name && (!user.name || user.name === 'Customer')) {
+      user.name = name;
+      updated = true;
+    }
+    if (updated) await user.save();
+  }
+
+  if (user.status === 'blocked') {
+    throw new ApiError(403, 'Your account has been suspended. Please contact support.');
+  }
+
+  const isMainAdmin = user.isSuperAdmin || (user.email && user.email.toLowerCase() === (env.adminSeed.email || '').toLowerCase());
+  const tokenPayload = { id: user._id, role: user.role, email: user.email, name: user.name, isSuperAdmin: isMainAdmin };
+  const accessToken = generateAccessToken(tokenPayload);
+  const refreshToken = generateRefreshToken(tokenPayload);
+
+  const sanitizedUser = user.toObject();
+  sanitizedUser.isSuperAdmin = isMainAdmin;
+  delete sanitizedUser.password;
+
+  return { user: sanitizedUser, accessToken, refreshToken };
+}
+
+async function saveFcmToken(userId, { token }) {
+  if (!token) throw new ApiError(400, 'FCM token is required');
+  if (userId) {
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { fcmTokens: token },
+    });
+  }
+  return { message: 'FCM token registered successfully' };
 }
 
 module.exports = {
@@ -342,6 +470,8 @@ module.exports = {
   quickLogin,
   sendOtp,
   verifyOtp,
+  googleLogin,
+  saveFcmToken,
   refreshToken,
   logout,
   forgotPassword,

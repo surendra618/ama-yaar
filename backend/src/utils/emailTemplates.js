@@ -197,9 +197,39 @@ function newOrderTemplate({ orderNumber, customerName, customerPhone, total, ite
   });
 }
 
+function emailOtpTemplate({ otp, email }) {
+  const contentHtml = `
+    <p style="color:#475569;font-size:14px;line-height:1.6;margin-top:0">
+      You are signing in to your <strong>AMA-YAAR</strong> account with ${email}. Use the one-time verification code below to complete your login.
+    </p>
+
+    <div style="text-align:center;margin:32px 0 24px">
+      <div style="display:inline-block;letter-spacing:8px;font-size:36px;font-weight:900;color:#090d16;background:#f8fafc;padding:16px 28px;border-radius:12px;border:2px dashed #090d16">
+        ${otp}
+      </div>
+    </div>
+
+    <p style="color:#64748b;font-size:12px;text-align:center;margin:0 0 16px">
+      ⏱️ This code will expire in <strong>10 minutes</strong>. Do not share this code with anyone.
+    </p>
+    <p style="color:#94a3b8;font-size:11px;text-align:center;margin:0">
+      If you did not request this code, you can safely ignore this email.
+    </p>
+  `;
+
+  return getBaseTemplate({
+    previewText: `Your AMA-YAAR Verification Code is ${otp}`,
+    title: '🔐 Your One-Time Sign-In Code',
+    badge: 'VERIFICATION CODE',
+    badgeColor: '#f59e0b',
+    contentHtml,
+  });
+}
+
 module.exports = {
   getBaseTemplate,
   newUserTemplate,
   newOrderTemplate,
+  emailOtpTemplate,
 };
 

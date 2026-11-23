@@ -12,6 +12,9 @@ import {
   ShieldCheck,
   AlertCircle,
   ExternalLink,
+  Play,
+  Video,
+  X,
 } from 'lucide-react';
 import api from '../../../lib/axios';
 import { getMediaUrl } from '../../../utils/mediaUrl';
@@ -27,6 +30,7 @@ export default function ReviewsListPage() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
+  const [activeMediaModal, setActiveMediaModal] = useState(null);
 
   useEffect(() => {
     fetchReviews();
@@ -258,6 +262,46 @@ export default function ReviewsListPage() {
                       <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-3 rounded-lg border border-slate-100">
                         {rev.comment}
                       </p>
+
+                      {/* Customer Attached Media */}
+                      {((rev.images && rev.images.length > 0) || (rev.videos && rev.videos.length > 0)) && (
+                        <div className="pt-2 flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 w-full block">
+                            Attached Media ({((rev.images?.length || 0) + (rev.videos?.length || 0))})
+                          </span>
+
+                          {rev.videos?.map((v, vi) => (
+                            <button
+                              key={`v-${vi}`}
+                              type="button"
+                              onClick={() => setActiveMediaModal({ url: getMediaUrl(v), type: 'video', author })}
+                              className="relative h-14 w-14 rounded-lg overflow-hidden border border-slate-300 bg-black cursor-pointer group hover:opacity-90 transition shadow-2xs"
+                            >
+                              <video src={getMediaUrl(v)} className="h-full w-full object-cover opacity-75" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Play className="h-4 w-4 text-white fill-white" />
+                              </div>
+                              <span className="absolute bottom-0.5 right-0.5 rounded bg-black/80 px-1 text-[7px] font-black text-rose-300">
+                                VID
+                              </span>
+                            </button>
+                          ))}
+
+                          {rev.images?.map((im, imi) => (
+                            <button
+                              key={`im-${imi}`}
+                              type="button"
+                              onClick={() => setActiveMediaModal({ url: getMediaUrl(im), type: 'image', author })}
+                              className="relative h-14 w-14 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer group hover:opacity-90 transition shadow-2xs"
+                            >
+                              <img src={getMediaUrl(im)} alt="" className="h-full w-full object-cover" />
+                              <span className="absolute bottom-0.5 right-0.5 rounded bg-black/75 px-1 text-[7px] font-black text-white">
+                                IMG
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -324,6 +368,49 @@ export default function ReviewsListPage() {
         onConfirm={handleDelete}
         onCancel={() => setToDelete(null)}
       />
+
+      {/* Media Lightbox Modal */}
+      {activeMediaModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4"
+          onClick={() => setActiveMediaModal(null)}
+        >
+          <div
+            className="relative max-w-2xl w-full max-h-[85vh] flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveMediaModal(null)}
+              className="absolute -top-10 right-0 text-white/90 hover:text-white transition p-2 cursor-pointer flex items-center gap-1.5 text-xs font-bold bg-slate-900/90 rounded-full px-3 py-1 border border-white/20"
+            >
+              <span>Close</span>
+              <X className="h-4 w-4" />
+            </button>
+
+            {activeMediaModal.type === 'video' ? (
+              <video
+                src={activeMediaModal.url}
+                controls
+                autoPlay
+                className="max-h-[75vh] w-auto max-w-full rounded-2xl shadow-2xl bg-black"
+              />
+            ) : (
+              <img
+                src={activeMediaModal.url}
+                alt="Review Attachment"
+                className="max-h-[75vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl bg-black/40"
+              />
+            )}
+
+            {activeMediaModal.author && (
+              <p className="mt-3 text-xs font-semibold text-white/90 bg-slate-900/80 px-3 py-1 rounded-full border border-white/10">
+                Uploaded by {activeMediaModal.author}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -39,6 +39,7 @@ const NAV_GROUPS = [
     title: 'MAIN',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+      { to: '/activity', label: 'Activity Log', icon: Bell, badge: 'LOG', badgeColor: 'bg-indigo-100 text-indigo-700', keywords: 'notifications activity history alerts orders users' },
     ],
   },
   {

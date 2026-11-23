@@ -325,9 +325,19 @@ export default function OrderDetailsPage() {
                   <span className="text-neutral-500 uppercase tracking-wider text-[10px] font-bold">Method:</span>
                   <span className="font-bold text-black">{currentOrder.paymentInfo?.method || 'Cash on Delivery'}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-neutral-500 uppercase tracking-wider text-[10px] font-bold">Status:</span>
-                  <span className="font-black text-emerald-600 uppercase">{currentOrder.paymentInfo?.status || 'Pending'}</span>
+                  <span className={`font-black uppercase text-xs ${
+                    isCancelled || currentOrder.paymentInfo?.status === 'cancelled'
+                      ? 'text-rose-600'
+                      : currentOrder.paymentInfo?.status === 'paid' || currentOrder.paymentInfo?.status === 'success'
+                      ? 'text-emerald-600'
+                      : 'text-amber-600'
+                  }`}>
+                    {isCancelled || currentOrder.paymentInfo?.status === 'cancelled'
+                      ? (currentOrder.paymentInfo?.status === 'paid' ? 'Refund Pending' : 'Cancelled')
+                      : (currentOrder.paymentInfo?.status || 'Pending')}
+                  </span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-neutral-100 text-sm font-black text-black">
                   <span>Total Amount:</span>
