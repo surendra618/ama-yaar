@@ -62,6 +62,7 @@ const NAV_GROUPS = [
       { to: '/coupons', label: 'Coupons', icon: Percent },
       { to: '/banners', label: 'Banners', icon: Image },
       { to: '/card-sliders', label: 'Shop By Category', icon: LayoutGrid, badge: 'HOMEPAGE', badgeColor: 'bg-amber-100 text-amber-800', keywords: 'card slider categories homepage rail shop by category' },
+      { to: '/homepage-showcase', label: 'Workout & Outfits', icon: Shirt, badge: 'SHOWCASE', badgeColor: 'bg-emerald-100 text-emerald-800', keywords: 'workout top picks peak performance nocta collection interactive editorial homepage showcase banner' },
       { to: '/reels', label: 'Reels Manager', icon: Video },
       { to: '/blogs', label: 'Blog & Stories', icon: BookOpen },
     ],

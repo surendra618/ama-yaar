@@ -1,45 +1,77 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../lib/axios';
+import { getMediaUrl } from '../utils/mediaUrl';
 
-const DEFAULT_SLIDES = [
-  {
-    id: 1,
-    name: 'PUFFER JACKET 01',
-    category: 'OUTERWEAR / DROP 01',
-    garment: '/nocta-stage/garment-01.png',
-    link: '/products',
-  },
-  {
-    id: 2,
-    name: 'TACTICAL HOODIE 02',
-    category: 'HEAVY FLEECE / DROP 02',
-    garment: '/nocta-stage/garment-02.png',
-    link: '/products',
-  },
-  {
-    id: 3,
-    name: 'CREWNECK SWEATSHIRT 03',
-    category: 'OVERSIZED TERRY / DROP 03',
-    garment: '/nocta-stage/garment-03.png',
-    link: '/products',
-  },
-  {
-    id: 4,
-    name: 'TECH FLEECE ZIP 04',
-    category: 'ESSENTIAL LAYER / DROP 04',
-    garment: '/nocta-stage/garment-04.png',
-    link: '/products',
-  },
-];
+const DEFAULT_NOCTA_CONFIG = {
+  headline: 'THE NOCTA\nCOLLECTION',
+  subtitle: 'Made for the night shift. / Worn around the clock.',
+  buttonText: 'Shop now',
+  buttonLink: '/products',
+  baseModelImage: '/nocta-stage/model-base.jpg',
+  isActive: true,
+  slides: [
+    {
+      id: 1,
+      name: 'PUFFER JACKET 01',
+      category: 'OUTERWEAR / DROP 01',
+      garment: '/nocta-stage/garment-01.png',
+      link: '/products',
+    },
+    {
+      id: 2,
+      name: 'TACTICAL HOODIE 02',
+      category: 'HEAVY FLEECE / DROP 02',
+      garment: '/nocta-stage/garment-02.png',
+      link: '/products',
+    },
+    {
+      id: 3,
+      name: 'CREWNECK SWEATSHIRT 03',
+      category: 'OVERSIZED TERRY / DROP 03',
+      garment: '/nocta-stage/garment-03.png',
+      link: '/products',
+    },
+    {
+      id: 4,
+      name: 'TECH FLEECE ZIP 04',
+      category: 'ESSENTIAL LAYER / DROP 04',
+      garment: '/nocta-stage/garment-04.png',
+      link: '/products',
+    },
+  ],
+};
 
 export default function EditorialBanner() {
-  const [slides, setSlides] = useState(DEFAULT_SLIDES);
+  const [config, setConfig] = useState(DEFAULT_NOCTA_CONFIG);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const touchStartX = useRef(null);
   const containerRef = useRef(null);
+
+  // Fetch admin-configured data
+  useEffect(() => {
+    let isMounted = true;
+    api
+      .get('/homepage-sections/editorial_nocta', {
+        params: { _t: Date.now() },
+      })
+      .then((res) => {
+        if (isMounted && res.data?.data) {
+          setConfig((prev) => ({ ...prev, ...res.data.data }));
+        }
+      })
+      .catch((err) => {
+        console.warn('[EditorialBanner] Using default photoshoot config:', err.message);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const slides = config.slides && config.slides.length > 0 ? config.slides : DEFAULT_NOCTA_CONFIG.slides;
 
   // Auto-play interval (3.5 seconds)
   useEffect(() => {
@@ -49,6 +81,10 @@ export default function EditorialBanner() {
     }, 3500);
     return () => clearInterval(interval);
   }, [isPlaying, slides.length]);
+
+  if (config.isActive === false) {
+    return null;
+  }
 
   const handlePrev = (e) => {
     e?.stopPropagation();
@@ -82,18 +118,18 @@ export default function EditorialBanner() {
 
         {/* Copy / Editorial Headline (Clean top-stacked on mobile, absolute left on desktop) */}
         <div className="relative md:absolute md:top-1/2 md:-translate-y-1/2 md:left-12 lg:left-16 z-30 w-full max-w-[340px] sm:max-w-[360px] md:max-w-[380px] text-left pointer-events-auto mb-6 md:mb-0">
-          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-[54px] font-black uppercase tracking-tight leading-[0.92] text-black">
-            THE NOCTA<br />COLLECTION
+          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-[54px] font-black uppercase tracking-tight leading-[0.92] text-black whitespace-pre-line">
+            {config.headline || 'THE NOCTA\nCOLLECTION'}
           </h2>
           <p className="mt-2.5 sm:mt-3 md:mt-4 text-xs sm:text-sm font-medium text-neutral-600 leading-relaxed tracking-normal">
-            Made for the night shift. / Worn around the clock.
+            {config.subtitle || 'Made for the night shift. / Worn around the clock.'}
           </p>
           <div className="mt-4 sm:mt-5 md:mt-6">
             <Link
-              to={currentSlide.link || '/products'}
+              to={currentSlide.link || config.buttonLink || '/products'}
               className="inline-flex items-center justify-center px-6 sm:px-8 py-2 sm:py-2.5 md:py-3 rounded-full border-[2px] border-black text-[11px] sm:text-xs md:text-[13px] font-black uppercase tracking-wider text-black bg-transparent hover:bg-black hover:text-white transition-colors duration-200 shadow-xs"
             >
-              Shop now
+              {config.buttonText || 'Shop now'}
             </Link>
           </div>
         </div>
@@ -107,7 +143,7 @@ export default function EditorialBanner() {
         >
           {/* Static High-Resolution Base Model Figure */}
           <img
-            src="/nocta-stage/model-base.jpg"
+            src={getMediaUrl(config.baseModelImage || '/nocta-stage/model-base.jpg')}
             alt="Model base silhouette"
             className="absolute inset-0 w-full h-full object-contain object-bottom pointer-events-none select-none z-10"
             draggable="false"
@@ -116,7 +152,6 @@ export default function EditorialBanner() {
           {/* Interactive Garment Carousel Track */}
           <div className="absolute inset-0 z-20 pointer-events-none overflow-visible">
             {slides.map((slide, idx) => {
-              // Calculate shortest circular difference so slides wrap around infinitely in one direction
               let diff = idx - currentIndex;
               const n = slides.length;
               if (diff > n / 2) diff -= n;
@@ -125,7 +160,6 @@ export default function EditorialBanner() {
               const isActive = diff === 0;
               const isNear = Math.abs(diff) === 1;
 
-              // Compute X shift percentage based on circular slot distance
               const translateX = `${diff * 115}%`;
               const opacity = isActive ? 1 : isNear ? 0.32 : 0;
               const scale = isActive ? 1 : 0.94;
@@ -145,10 +179,14 @@ export default function EditorialBanner() {
                   title={slide.name}
                 >
                   <img
-                    src={slide.garment}
+                    src={getMediaUrl(slide.garment)}
                     alt={slide.name}
                     className="w-full h-full object-contain object-bottom select-none"
                     draggable="false"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/nocta-stage/garment-01.png';
+                    }}
                   />
                 </div>
               );

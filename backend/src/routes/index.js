@@ -26,8 +26,8 @@ const { newsletterRoutes } = require('../modules/newsletter');
 const settingRoutes = require('../modules/setting');
 const shiprocketRoutes = require('../modules/shiprocket');
 const creatorRoutes = require('../modules/creator');
-
 const cardSliderRoutes = require('../modules/cardSlider');
+const homepageSectionRoutes = require('../modules/homepageSection');
 
 const router = express.Router();
 
@@ -58,6 +58,7 @@ router.use('/reports', reportRoutes);
 router.use('/settings', settingRoutes);
 router.use('/shiprocket', shiprocketRoutes);
 router.use('/creators', creatorRoutes);
+router.use('/homepage-sections', homepageSectionRoutes);
 
 module.exports = router;
 

@@ -31,6 +31,7 @@ import CardSliderFormPage from '../features/cardSliders/pages/CardSliderFormPage
 import DeliverySettingsPage from '../features/settings/pages/DeliverySettingsPage';
 import NotificationSettingsPage from '../features/settings/pages/NotificationSettingsPage';
 import CreatorsListPage from '../features/creators/pages/CreatorsListPage';
+import HomepageShowcasePage from '../features/homepageShowcase/pages/HomepageShowcasePage';
 
 export const router = createBrowserRouter([
   {
@@ -58,6 +59,9 @@ export const router = createBrowserRouter([
       { path: '/card-sliders', element: <CardSlidersListPage /> },
       { path: '/card-sliders/new', element: <CardSliderFormPage /> },
       { path: '/card-sliders/:id/edit', element: <CardSliderFormPage /> },
+      { path: '/homepage-showcase', element: <HomepageShowcasePage /> },
+      { path: '/workout-gear', element: <HomepageShowcasePage /> },
+      { path: '/editorial-banner', element: <HomepageShowcasePage /> },
       { path: '/reels', element: <ReelsListPage /> },
       { path: '/editorial-looks', element: <EditorialLooksListPage /> },
       { path: '/blogs', element: <BlogsListPage /> },
