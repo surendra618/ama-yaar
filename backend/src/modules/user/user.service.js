@@ -108,6 +108,13 @@ async function updateProfile(id, data) {
 
   const user = await User.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
   if (!user) throw new ApiError(404, 'User not found');
+
+  if (updateData.email && !user.welcomeEmailSent) {
+    try {
+      const { trySendWelcomeEmail } = require('../auth/auth.service');
+      trySendWelcomeEmail(user);
+    } catch (_) {}
+  }
   return user;
 }
 

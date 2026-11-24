@@ -226,10 +226,250 @@ function emailOtpTemplate({ otp, email }) {
   });
 }
 
+/**
+ * Generate Welcome Email Template for Customers
+ */
+function customerWelcomeTemplate({ name, email, storeUrl = 'https://amayaar.in' }) {
+  const contentHtml = `
+    <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
+      Hey <strong>${name || 'Streetwear Enthusiast'}</strong>,
+    </p>
+    <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
+      Welcome to the <strong>AMA-YAAR</strong> collective! You've just stepped into India's destination for oversized streetwear, heavyweight terry cottons, and high-density puff graphics designed to make a statement.
+    </p>
+
+    <!-- Welcome Perk Banner -->
+    <div style="background: linear-gradient(135deg, #1e1b4b 0%, #090d16 100%); border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0; border: 1px solid #facc15;">
+      <div style="color: #facc15; font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">SPECIAL WELCOME GIFT</div>
+      <div style="color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: 4px; margin: 8px 0; font-family: monospace;">WELCOME10</div>
+      <div style="color: #cbd5e1; font-size: 12px;">Get 10% OFF on your very first order at checkout!</div>
+    </div>
+
+    <div class="info-box">
+      <div style="font-weight: 800; font-size: 13px; color: #0f172a; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Why You'll Love AMA-YAAR:</div>
+      <table role="presentation" width="100%" cellpadding="4" cellspacing="0" style="font-size: 13px; color: #475569;">
+        <tr>
+          <td style="padding: 6px 0;">⚡ <strong>380 GSM Heavyweight Terry</strong>: Built to drape perfectly and last forever.</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0;">📦 <strong>Fast Express Shipping</strong>: Track real-time delivery via SMS & Email.</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0;">🔄 <strong>Hassle-Free 7-Day Doorstep Exchange</strong>: Sizing swaps right at your door.</td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  return getBaseTemplate({
+    previewText: `Welcome to AMA-YAAR! Use code WELCOME10 for 10% OFF your first order`,
+    title: `🔥 Welcome to the Crew, ${name || 'Fam'}!`,
+    badge: 'WELCOME TO AMA-YAAR',
+    badgeColor: '#facc15',
+    contentHtml,
+    actionBtn: {
+      label: 'Explore Fresh Drops',
+      url: storeUrl,
+      color: '#090d16',
+    },
+  });
+}
+
+/**
+ * Generate Order Confirmation Email Template for Customers
+ */
+function customerOrderConfirmationTemplate({ order, storeUrl = 'https://amayaar.in' }) {
+  const items = order.items || [];
+  const itemsHtml = items.map((it) => {
+    const itemTitle = it.product?.title || it.title || 'Streetwear Item';
+    const itemPrice = Number(it.price || 0);
+    const itemQty = Number(it.quantity || 1);
+    return `
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 10px 0;">
+          <div style="font-weight: 700; color: #0f172a; font-size: 13px;">${itemTitle}</div>
+          <div style="font-size: 11px; color: #64748b;">Size: ${it.size || 'Free'} | Qty: ${itemQty}</div>
+        </td>
+        <td align="right" style="padding: 10px 0; font-weight: 700; color: #0f172a; font-size: 13px;">
+          ₹${(itemPrice * itemQty).toLocaleString('en-IN')}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  const customerName = order.shippingAddress?.fullName || 'Customer';
+  const orderNum = order.orderNumber || String(order._id || '').slice(-6).toUpperCase();
+  const grandTotal = Number(order.totalAmount || order.total || 0);
+
+  const contentHtml = `
+    <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
+      Hey <strong>${customerName}</strong>,
+    </p>
+    <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
+      Thank you for shopping with <strong>AMA-YAAR</strong>! We have received your order <strong>#${orderNum}</strong> and our team is already prepping your drop for shipping.
+    </p>
+
+    <!-- Order Items Box -->
+    <div class="info-box">
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:800;text-transform:uppercase;color:#64748b;">Order #${orderNum}</span>
+        <span style="font-size:12px;font-weight:800;color:#059669;">${(order.paymentStatus || order.paymentInfo?.status || 'CONFIRMED').toUpperCase()}</span>
+      </div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${itemsHtml}
+        <tr>
+          <td style="padding-top: 12px; font-weight: 800; font-size: 14px; color: #0f172a;">Total Amount</td>
+          <td align="right" style="padding-top: 12px; font-weight: 900; font-size: 16px; color: #059669;">
+            ₹${grandTotal.toLocaleString('en-IN')}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Delivery Address Info -->
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 16px 0; font-size: 13px; color: #475569;">
+      <strong style="color: #0f172a; display: block; margin-bottom: 4px;">Shipping Address:</strong>
+      ${order.shippingAddress?.addressLine1 || order.shippingAddress?.line1 || order.shippingAddress?.address || ''}, 
+      ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} - ${order.shippingAddress?.pincode || order.shippingAddress?.postalCode || ''}<br/>
+      Phone: ${order.shippingAddress?.phone || 'On file'}
+    </div>
+  `;
+
+  return getBaseTemplate({
+    previewText: `Order #${orderNum} confirmed! Total ₹${grandTotal.toLocaleString('en-IN')}`,
+    title: `🛍️ Order Confirmed! #${orderNum}`,
+    badge: 'ORDER CONFIRMED',
+    badgeColor: '#059669',
+    contentHtml,
+    actionBtn: {
+      label: 'Track Order Status',
+      url: `${storeUrl}/orders`,
+      color: '#059669',
+    },
+  });
+}
+
+/**
+ * Generate Order Status Update Email Template for Customers
+ */
+function customerOrderStatusTemplate({ order, status, trackingNumber, trackingUrl, storeUrl = 'https://amayaar.in' }) {
+  const statusDisplay = {
+    shipped: { title: '🚚 Your Order is On Its Way!', badge: 'DISPATCHED', color: '#2563eb', desc: 'Your package has been dispatched by our courier partner and is on the move to your address.' },
+    delivered: { title: '📦 Package Delivered! Enjoy Your Fit', badge: 'DELIVERED', color: '#059669', desc: 'Your AMA-YAAR package has been delivered. We hope you love the fit and premium quality!' },
+    cancelled: { title: '❌ Order Cancellation Notice', badge: 'CANCELLED', color: '#e11d48', desc: 'Your order has been cancelled. Any pre-paid amount will be refunded to your original payment source within 3-5 business days.' },
+  }[status] || { title: `Order Status Update: ${status}`, badge: String(status).toUpperCase(), color: '#4f46e5', desc: `Your order status has been updated to ${status}.` };
+
+  const customerName = order.shippingAddress?.fullName || 'Customer';
+  const orderNum = order.orderNumber || String(order._id || '').slice(-6).toUpperCase();
+
+  const contentHtml = `
+    <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
+      Hey <strong>${customerName}</strong>,
+    </p>
+    <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
+      ${statusDisplay.desc}
+    </p>
+
+    <div class="info-box">
+      <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size: 14px;">
+        <tr style="border-bottom: 1px solid #edf2f7;">
+          <td style="color:#64748b;font-weight:600;padding:8px 0;">Order Number</td>
+          <td align="right" style="color:#0f172a;font-weight:800;padding:8px 0;">#${orderNum}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #edf2f7;">
+          <td style="color:#64748b;font-weight:600;padding:8px 0;">Current Status</td>
+          <td align="right" style="color:${statusDisplay.color};font-weight:800;padding:8px 0;">${String(status).toUpperCase()}</td>
+        </tr>
+        ${trackingNumber ? `
+        <tr>
+          <td style="color:#64748b;font-weight:600;padding:8px 0;">Tracking / AWB</td>
+          <td align="right" style="color:#0f172a;font-weight:700;padding:8px 0;">${trackingNumber}</td>
+        </tr>
+        ` : ''}
+      </table>
+    </div>
+  `;
+
+  return getBaseTemplate({
+    previewText: `Order #${orderNum} status: ${status}`,
+    title: statusDisplay.title,
+    badge: statusDisplay.badge,
+    badgeColor: statusDisplay.color,
+    contentHtml,
+    actionBtn: {
+      label: trackingUrl ? 'Track Courier Live' : 'View Order',
+      url: trackingUrl || `${storeUrl}/orders`,
+      color: statusDisplay.color,
+    },
+  });
+}
+
+/**
+ * Generate Broadcast / Announcement Email Template for Admin Campaigns
+ */
+function broadcastEmailTemplate({ title, message, badge = 'COMMUNITY DROP', actionBtn = null }) {
+  const formattedMessage = (message || '')
+    .split('\n\n')
+    .map((p) => `<p style="color: #475569; font-size: 14px; line-height: 1.7; margin: 0 0 16px;">${p.replace(/\n/g, '<br/>')}</p>`)
+    .join('');
+
+  return getBaseTemplate({
+    previewText: title,
+    title: title,
+    badge: badge,
+    badgeColor: '#facc15',
+    contentHtml: formattedMessage,
+    actionBtn,
+  });
+}
+
+/**
+ * Generate Test Email Template to verify SMTP
+ */
+function testEmailTemplate({ toEmail, senderEmail }) {
+  const contentHtml = `
+    <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
+      This is a test notification dispatched from the <strong>AMA-YAAR Admin Control Panel</strong>.
+    </p>
+    <div class="info-box">
+      <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size: 14px;">
+        <tr style="border-bottom: 1px solid #edf2f7;">
+          <td style="color:#64748b;font-weight:600;padding:8px 0;">SMTP Status</td>
+          <td align="right" style="color:#059669;font-weight:800;padding:8px 0;">ONLINE &amp; ACTIVE</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #edf2f7;">
+          <td style="color:#64748b;font-weight:600;padding:8px 0;">Dispatched To</td>
+          <td align="right" style="color:#0f172a;font-weight:700;padding:8px 0;">${toEmail}</td>
+        </tr>
+        <tr>
+          <td style="color:#64748b;font-weight:600;padding:8px 0;">Sender Account</td>
+          <td align="right" style="color:#4f46e5;font-weight:700;padding:8px 0;">${senderEmail || 'Default Store SMTP'}</td>
+        </tr>
+      </table>
+    </div>
+    <p style="color: #059669; font-size: 13px; font-weight: 700; text-align: center; margin-top: 16px;">
+      ✅ Your email notification pipeline is operational and ready for live order & customer updates.
+    </p>
+  `;
+
+  return getBaseTemplate({
+    previewText: 'AMA-YAAR Email System Test: All Systems Operational',
+    title: '🚀 Email System Test Succeeded',
+    badge: 'SYSTEM TEST',
+    badgeColor: '#059669',
+    contentHtml,
+  });
+}
+
 module.exports = {
   getBaseTemplate,
   newUserTemplate,
   newOrderTemplate,
   emailOtpTemplate,
+  customerWelcomeTemplate,
+  customerOrderConfirmationTemplate,
+  customerOrderStatusTemplate,
+  broadcastEmailTemplate,
+  testEmailTemplate,
 };
 

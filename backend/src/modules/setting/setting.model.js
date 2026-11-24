@@ -67,7 +67,13 @@ const settingSchema = new mongoose.Schema(
     notifyOrderCancelled: { type: Boolean, default: true },
     notifyNewReturn: { type: Boolean, default: true },
     notifyNewContact: { type: Boolean, default: true },
+    notifyLowStock: { type: Boolean, default: true },
     notifyAdminEmails: { type: [String], default: [] },
+
+    // 6. Customer Automated Email Preferences
+    customerWelcomeEmail: { type: Boolean, default: true },
+    customerOrderConfirmationEmail: { type: Boolean, default: true },
+    customerOrderStatusEmail: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

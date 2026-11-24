@@ -12,4 +12,9 @@ router.get('/delivery', controller.getDeliverySettings);
 router.put('/delivery', authenticate, authorize('admin'), controller.updateDeliverySettings);
 router.post('/delivery', authenticate, authorize('admin'), controller.updateDeliverySettings);
 
+// Admin-only email notification & broadcast operations
+router.get('/email-stats', authenticate, authorize('admin'), controller.getEmailStats);
+router.post('/test-email', authenticate, authorize('admin'), controller.sendTestEmail);
+router.post('/broadcast-email', authenticate, authorize('admin'), controller.broadcastEmail);
+
 module.exports = router;

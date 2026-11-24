@@ -216,6 +216,12 @@ async function verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_
         }),
         text: `New paid order #${order.orderNumber || order._id} (₹${order.total}) verified via Razorpay`,
       }).catch(() => { });
+
+      // Send customer order confirmation email for verified online order
+      try {
+        const { trySendCustomerOrderEmail } = require('../order/order.service');
+        trySendCustomerOrderEmail(order, 'confirmation');
+      } catch (_) {}
     }
   }
 

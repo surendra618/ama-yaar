@@ -12,13 +12,74 @@ const ApiError = require('../../utils/ApiError');
 const settingService = require('../setting/setting.service');
 const shiprocketService = require('../shiprocket/shiprocket.service');
 const { notifyAdmins } = require('../notification/adminNotifier');
-const { newOrderTemplate } = require('../../utils/emailTemplates');
+const { sendEmail } = require('../../config/mailer');
+const Setting = require('../setting/setting.model');
+const {
+  newOrderTemplate,
+  customerOrderConfirmationTemplate,
+  customerOrderStatusTemplate,
+} = require('../../utils/emailTemplates');
 const { emitAdminEvent, emitUserEvent, emitOrderEvent } = require('../../config/socket');
 const {
   attributeOrderCommission,
   confirmOrderCommission,
   reverseOrderCommission,
 } = require('../creator/creator.service');
+
+/**
+ * Dispatch customer email for order confirmation or status change
+ */
+async function trySendCustomerOrderEmail(order, type = 'confirmation', extra = {}) {
+  try {
+    if (!order) return;
+    const settings = await Setting.findOne({ key: 'delivery' }).lean();
+
+    if (type === 'confirmation') {
+      if (settings?.customerOrderConfirmationEmail === false) return;
+      let targetEmail = order.shippingAddress?.email;
+      if (!targetEmail && order.user) {
+        const u = await User.findById(order.user).select('email').lean();
+        targetEmail = u?.email;
+      }
+      if (!targetEmail || targetEmail.includes('@guest.') || targetEmail.includes('@mobile.') || !targetEmail.includes('@')) {
+        return;
+      }
+
+      await sendEmail({
+        to: targetEmail,
+        subject: `Order Confirmed: #${order.orderNumber || String(order._id).slice(-6).toUpperCase()} - AMA-YAAR`,
+        html: customerOrderConfirmationTemplate({
+          order,
+          storeUrl: process.env.CLIENT_URL || 'https://amayaar.in',
+        }),
+      });
+    } else if (type === 'status_update') {
+      if (settings?.customerOrderStatusEmail === false) return;
+      let targetEmail = order.shippingAddress?.email;
+      if (!targetEmail && order.user) {
+        const u = await User.findById(order.user).select('email').lean();
+        targetEmail = u?.email;
+      }
+      if (!targetEmail || targetEmail.includes('@guest.') || targetEmail.includes('@mobile.') || !targetEmail.includes('@')) {
+        return;
+      }
+
+      await sendEmail({
+        to: targetEmail,
+        subject: `Order #${order.orderNumber || String(order._id).slice(-6).toUpperCase()} Update: ${String(extra.status || '').toUpperCase()} - AMA-YAAR`,
+        html: customerOrderStatusTemplate({
+          order,
+          status: extra.status,
+          trackingNumber: extra.trackingNumber || order.shiprocket?.awbCode || order.trackingNumber,
+          trackingUrl: extra.trackingUrl || order.shiprocket?.trackingUrl || null,
+          storeUrl: process.env.CLIENT_URL || 'https://amayaar.in',
+        }),
+      });
+    }
+  } catch (err) {
+    console.warn('[order.service] Customer email error:', err.message);
+  }
+}
 
 async function createOrder(userId, payload) {
   const { shippingAddressId, shippingAddress: directAddress, paymentProvider = 'cod', paymentMethod = 'Cash on Delivery', paymentId } = payload;
@@ -283,6 +344,9 @@ async function createOrder(userId, payload) {
       }),
       text: `New COD order #${order.orderNumber || order._id} for ₹${total} by ${finalAddress?.fullName || 'Customer'}`,
     }).catch(() => {});
+
+    // Send customer order confirmation email for COD / placed order
+    trySendCustomerOrderEmail(order, 'confirmation');
   }
 
   // Auto-push order to Shiprocket if enabled in settings
@@ -439,6 +503,15 @@ async function updateStatus(id, { status, note, trackingNumber }) {
     message: `Your order #${order.orderNumber} is now ${status.replace(/_/g, ' ')}. ${note || ''}`,
   }).catch(() => {});
 
+  // Send customer status update email for shipped, delivered, or cancelled
+  if (['shipped', 'delivered', 'cancelled'].includes(status)) {
+    trySendCustomerOrderEmail(order, 'status_update', {
+      status,
+      trackingNumber: trackingNumber || order.shiprocket?.awbCode || order.trackingNumber,
+      trackingUrl: order.shiprocket?.trackingUrl || null,
+    });
+  }
+
   // Real-time Push to user & live tracking room
   try {
     emitUserEvent(String(order.user), 'order_status_updated', {
@@ -550,6 +623,9 @@ async function cancelOrder(id, user, { reason = 'Cancelled by user' }) {
     text: `Order #${order.orderNumber || order._id} was cancelled. Reason: ${reason}`,
   }).catch(() => {});
 
+  // Send customer order cancellation email
+  trySendCustomerOrderEmail(order, 'status_update', { status: 'cancelled' });
+
   return order;
 }
 
@@ -560,4 +636,5 @@ module.exports = {
   getById,
   updateStatus,
   cancelOrder,
+  trySendCustomerOrderEmail,
 };

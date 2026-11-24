@@ -7,7 +7,8 @@ const ApiError = require('../../utils/ApiError');
 const { generateAccessToken, generateRefreshToken } = require('../../utils/generateTokens');
 const { sendEmail } = require('../../config/mailer');
 const { notifyAdmins } = require('../notification/adminNotifier');
-const { newUserTemplate, emailOtpTemplate } = require('../../utils/emailTemplates');
+const { newUserTemplate, emailOtpTemplate, customerWelcomeTemplate } = require('../../utils/emailTemplates');
+const Setting = require('../setting/setting.model');
 const env = require('../../config/env');
 
 function isDummyEmail(em) {
@@ -21,6 +22,34 @@ function isDummyEmail(em) {
     !l.includes('@') ||
     !l.includes('.')
   );
+}
+
+/**
+ * Send Welcome Email to a newly registered customer (once per customer)
+ */
+async function trySendWelcomeEmail(user) {
+  try {
+    if (!user || !user.email || isDummyEmail(user.email)) return;
+    if (user.welcomeEmailSent) return;
+
+    const settings = await Setting.findOne({ key: 'delivery' }).lean();
+    if (settings?.customerWelcomeEmail === false) return;
+
+    await sendEmail({
+      to: user.email,
+      subject: `Welcome to AMA-YAAR, ${user.name || 'Fam'}! 🔥 (Use Code: WELCOME10)`,
+      html: customerWelcomeTemplate({
+        name: user.name,
+        email: user.email,
+        storeUrl: env.clientUrl || 'https://amayaar.in',
+      }),
+      text: `Welcome to AMA-YAAR! Use code WELCOME10 for 10% OFF your first order: ${env.clientUrl || 'https://amayaar.in'}`,
+    });
+
+    await User.findByIdAndUpdate(user._id, { welcomeEmailSent: true });
+  } catch (err) {
+    console.warn('[auth.service] Welcome email delivery error:', err.message);
+  }
 }
 
 async function register({ name, email, password, phone, role = 'customer' }) {
@@ -48,19 +77,8 @@ async function register({ name, email, password, phone, role = 'customer' }) {
   await Cart.create({ user: user._id, items: [] }).catch(() => {});
   await Wishlist.create({ user: user._id, products: [] }).catch(() => {});
 
-  sendEmail({
-    to: user.email,
-    subject: 'Welcome to AMA-YAAR!',
-    html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:auto">
-        <h2 style="color:#4f46e5">Welcome to AMA-YAAR, ${user.name}!</h2>
-        <p>Your account has been created successfully. Start exploring the latest fashion, electronics, and more.</p>
-        <a href="${env.clientUrl}" style="display:inline-block;margin-top:12px;padding:10px 20px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">
-          Start Shopping
-        </a>
-      </div>
-    `,
-  }).catch(() => {});
+  // Send branded Welcome Email to Customer
+  trySendWelcomeEmail(user);
 
   // Notify Admins about new registration with styled template
   notifyAdmins({
@@ -251,6 +269,9 @@ async function quickLogin({ email, phone, name, password }) {
     });
     await Cart.create({ user: user._id, items: [] }).catch(() => {});
     await Wishlist.create({ user: user._id, products: [] }).catch(() => {});
+
+    // Send Welcome Email to Customer if real email is present
+    trySendWelcomeEmail(user);
 
     notifyAdmins({
       event: 'newUser',
@@ -480,6 +501,9 @@ async function googleLogin({ email, name, avatar, googleId, phone }) {
     await Cart.create({ user: user._id, items: [] }).catch(() => {});
     await Wishlist.create({ user: user._id, products: [] }).catch(() => {});
 
+    // Send Welcome Email to Customer if real email is present
+    trySendWelcomeEmail(user);
+
     notifyAdmins({
       event: 'newUser',
       subject: `New User Joined via Google: ${user.name}`,
@@ -557,4 +581,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getMe,
+  trySendWelcomeEmail,
 };
