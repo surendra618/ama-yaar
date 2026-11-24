@@ -53,6 +53,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const [verifiedUser, setVerifiedUser] = useState(null);
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
   const [pendingPhoneUser, setPendingPhoneUser] = useState(null);
+  const [pendingPhonePromptUser, setPendingPhonePromptUser] = useState(null);
+  const [phonePromptSource, setPhonePromptSource] = useState('email');
   const [pendingAuthUser, setPendingAuthUser] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const confirmationResultRef = useRef(null);
@@ -79,6 +81,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       setVerifiedUser(null);
       setPendingGoogleUser(null);
       setPendingPhoneUser(null);
+      setPendingPhonePromptUser(null);
+      setPhonePromptSource('email');
       setPendingAuthUser(null);
     }
   }, [isOpen, isPhoneLoginEnabled]);
@@ -305,25 +309,15 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         return;
       }
 
-      // Check if user is missing either their Name or Phone Number
-      const cleanPhone = (userObj?.phone || phone || '').replace(/\D/g, '').slice(-10);
-      const hasValidPhone = cleanPhone.length === 10 && /^[6-9]\d{9}$/.test(cleanPhone);
+      // Check if user is missing their 10-digit mobile number (after Email OTP)
+      const cleanPhone = (userObj?.phone || '').replace(/\D/g, '').slice(-10);
+      const hasValidPhone = cleanPhone.length === 10 && /^[6-9]\d{9}$/.test(cleanPhone) && userObj?.phone !== 'Google Sign-In';
 
-      const rawName = (userObj?.name || name || '').trim();
-      const emailPrefix = (email || '').split('@')[0].trim().toLowerCase();
-      const isDefaultName =
-        !rawName ||
-        rawName.toLowerCase() === 'customer' ||
-        rawName.toLowerCase().startsWith('customer ') ||
-        rawName.toLowerCase() === emailPrefix;
-      const hasValidName = !isDefaultName && rawName.length >= 2;
-
-      // If user is new or missing Name / Phone, navigate to profile details step
-      if (!hasValidName || !hasValidPhone) {
-        setPendingAuthUser({ user: userObj, accessToken: token, refreshToken });
-        setName(hasValidName ? rawName : '');
-        setPhone(hasValidPhone ? cleanPhone : '');
-        setStep('profile_details');
+      if (authMode === 'email' && (!hasValidPhone || resData?.needsPhone)) {
+        setPendingPhonePromptUser(userObj);
+        setPhonePromptSource('email');
+        setPhone('');
+        setStep('phone-prompt');
         setIsSubmitting(false);
         return;
       }
@@ -470,12 +464,12 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // Handle Step 3: Save Mandatory Mobile Number after Google Sign-In
-  const handleSaveGooglePhone = async (e) => {
+  // Handle Save Mandatory Mobile Number after Google or Email OTP Sign-In
+  const handleSaveMobileNumber = async (e) => {
     e.preventDefault();
     setError('');
 
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
     if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
       setError('Please enter a valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9)');
       return;
@@ -483,14 +477,19 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
 
     setIsSubmitting(true);
     try {
-      const res = await api.put('/users/profile', { phone: cleanPhone });
+      const activeToken = localStorage.getItem('ay_access_token');
+      const config = activeToken ? { headers: { Authorization: `Bearer ${activeToken}` } } : {};
+      const res = await api.put('/users/profile', { phone: cleanPhone }, config);
+
+      const targetUser = pendingPhonePromptUser || pendingGoogleUser || {};
       const updatedUser = {
-        ...(pendingGoogleUser || {}),
+        ...targetUser,
         phone: cleanPhone,
         ...(res.data?.data || {}),
       };
 
-      dispatch(setCredentials({ user: updatedUser }));
+      dispatch(setCredentials({ user: updatedUser, accessToken: activeToken }));
+      localStorage.setItem('ay_user', JSON.stringify(updatedUser));
       sessionStorage.setItem('auth_popup_shown', 'true');
       setVerifiedUser(updatedUser);
       setSuccess(true);
@@ -505,6 +504,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       setIsSubmitting(false);
     }
   };
+  const handleSaveGooglePhone = handleSaveMobileNumber;
 
   // Handle Google Login via Firebase
   const handleGoogleSignIn = async () => {
@@ -542,13 +542,14 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         localStorage.setItem('ay_refresh_token', resData.refreshToken);
       }
 
-      const cleanPhone = (userObj.phone || '').replace(/\D/g, '');
-      const hasValidPhone = cleanPhone.length === 10 && userObj.phone !== 'Google Sign-In';
+      const cleanPhone = (userObj.phone || '').replace(/\D/g, '').slice(-10);
+      const hasValidPhone = cleanPhone.length === 10 && /^[6-9]\d{9}$/.test(cleanPhone) && userObj.phone !== 'Google Sign-In';
 
       if (!hasValidPhone || resData?.needsPhone) {
-        setPendingGoogleUser(userObj);
+        setPendingPhonePromptUser(userObj);
+        setPhonePromptSource('google');
         setPhone('');
-        setStep('google-phone');
+        setStep('phone-prompt');
         return;
       }
 
@@ -704,19 +705,21 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   </button>
                 </form>
               </div>
-            ) : step === 'google-phone' ? (
-              /* MANDATORY MOBILE NUMBER STEP AFTER GOOGLE LOGIN */
+            ) : step === 'phone-prompt' || step === 'google-phone' ? (
+              /* MANDATORY MOBILE NUMBER STEP AFTER EMAIL OTP OR GOOGLE SIGN-IN */
               <div className="animate-in fade-in duration-200">
                 <div className="mb-4">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                    Google Account Verified
+                    {phonePromptSource === 'google'
+                      ? 'Google Account Verified'
+                      : `Email Verified (${pendingPhonePromptUser?.email || email})`}
                   </span>
                   <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight mt-2">
-                    Enter Mobile Number
+                    Enter Mobile Number <span className="text-rose-500">*</span>
                   </h3>
                   <p className="text-xs text-neutral-500 font-medium mt-1 leading-relaxed">
-                    Signed in as <strong className="text-neutral-900 font-semibold">{pendingGoogleUser?.name || pendingGoogleUser?.email}</strong>. Mobile number is mandatory for courier delivery, SMS updates, and order confirmations.
+                    Mobile number is mandatory for courier delivery, SMS dispatch updates, and order confirmations.
                   </p>
                 </div>
 
@@ -726,7 +729,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   </div>
                 )}
 
-                <form onSubmit={handleSaveGooglePhone} className="space-y-4">
+                <form onSubmit={handleSaveMobileNumber} className="space-y-4">
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-700 block mb-1">
                       10-Digit Mobile Number <span className="text-rose-500">*</span>
@@ -963,7 +966,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   </div>
                 )}
 
-                <form onSubmit={handleVerifyAndSignIn} className="space-y-3">
+                <form onSubmit={handleVerifyAndSignIn} className="space-y-4">
                   {/* OTP Input */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
@@ -980,23 +983,6 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                         className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-base font-black tracking-[0.3em] text-neutral-900 placeholder:text-neutral-300 focus:border-black focus:outline-none focus:ring-0 transition"
                         required
                         autoFocus
-                      />
-                    </div>
-                  </div>
-
-                  {/* Full Name Input (Optional) */}
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Full Name <span className="text-neutral-400 font-normal">(Optional)</span>
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                      <input
-                        type="text"
-                        placeholder="Enter your name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-0 transition"
                       />
                     </div>
                   </div>

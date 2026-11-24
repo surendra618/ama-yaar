@@ -68,6 +68,8 @@ export default function LoginPage() {
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
   const [phoneEmailStep, setPhoneEmailStep] = useState(false);
   const [pendingPhoneUser, setPendingPhoneUser] = useState(null);
+  const [pendingPhoneUserObj, setPendingPhoneUserObj] = useState(null);
+  const [phonePromptSource, setPhonePromptSource] = useState('email');
   const [customError, setCustomError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -309,16 +311,127 @@ export default function LoginPage() {
     setCustomError('');
     const result = await dispatch(loginUser(form));
     if (loginUser.fulfilled.match(result)) {
-      handlePendingCartAndRedirect(result.payload?.user);
+      const userObj = result.payload?.user;
+      const cleanPhone = (userObj?.phone || '').replace(/\D/g, '').slice(-10);
+      const hasValidPhone = cleanPhone.length === 10 && /^[6-9]\d{9}$/.test(cleanPhone) && userObj?.phone !== 'Google Sign-In';
+
+      if (!hasValidPhone || result.payload?.needsPhone) {
+        setPendingPhoneUserObj(userObj);
+        setPhonePromptSource('email');
+        setPhone('');
+        setGooglePhoneStep(true);
+        return;
+      }
+
+      handlePendingCartAndRedirect(userObj);
     }
   };
 
-  // Save Mandatory Mobile Number after Google Sign-In
+  // Handle Email OTP Send
+  const handleSendEmailOtp = async (e) => {
+    e.preventDefault();
+    setCustomError('');
+    setCaptchaError('');
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      setCustomError('Please enter a valid email address');
+      return;
+    }
+
+    if (!captchaInput || captchaInput.trim().toUpperCase() !== captchaCode.trim().toUpperCase()) {
+      setCaptchaError('Incorrect captcha code. Please try again.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { data } = await api.post('/auth/send-otp', { email: cleanEmail });
+      setOtpStep('otp');
+      setResendCooldown(30);
+      setOtp('');
+      if (data?.data?.name) setName(data.data.name);
+    } catch (err) {
+      setCustomError(err.response?.data?.message || err.message || 'Failed to send verification code to email');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle Email OTP Verify
+  const handleVerifyEmailOtp = async (e) => {
+    e.preventDefault();
+    setCustomError('');
+
+    const cleanOtp = otp.trim();
+    if (!cleanOtp || cleanOtp.length < 6) {
+      setCustomError('Please enter the 6-digit verification code sent to your email');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      const { data } = await api.post('/auth/verify-otp', {
+        email: cleanEmail,
+        otp: cleanOtp,
+      });
+
+      const resData = data?.data;
+      const userObj = resData?.user || {
+        _id: 'user_' + Date.now(),
+        name: cleanEmail.split('@')[0],
+        email: cleanEmail,
+        phone: '',
+        role: 'customer',
+      };
+      const token = resData?.accessToken || 'ay_token_' + Date.now();
+
+      dispatch(setCredentials({ user: userObj, accessToken: token }));
+      if (token) localStorage.setItem('ay_access_token', token);
+      if (resData?.refreshToken) localStorage.setItem('ay_refresh_token', resData.refreshToken);
+
+      const cleanPhone = (userObj?.phone || '').replace(/\D/g, '').slice(-10);
+      const hasValidPhone = cleanPhone.length === 10 && /^[6-9]\d{9}$/.test(cleanPhone) && userObj?.phone !== 'Google Sign-In';
+
+      if (!hasValidPhone || resData?.needsPhone) {
+        setPendingPhoneUserObj(userObj);
+        setPhonePromptSource('email');
+        setPhone('');
+        setGooglePhoneStep(true);
+        return;
+      }
+
+      handlePendingCartAndRedirect(userObj);
+    } catch (err) {
+      setCustomError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Resend Email OTP
+  const handleResendEmailOtp = async () => {
+    if (resendCooldown > 0) return;
+    setCustomError('');
+    setIsSubmitting(true);
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      await api.post('/auth/send-otp', { email: cleanEmail });
+      setResendCooldown(30);
+    } catch (err) {
+      setCustomError(err.response?.data?.message || err.message || 'Failed to resend verification code');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Save Mandatory Mobile Number after Google or Email Sign-In
   const handleSaveGooglePhone = async (e) => {
     e.preventDefault();
     setCustomError('');
 
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
     if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
       setCustomError('Please enter a valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9)');
       return;
@@ -326,14 +439,19 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      const res = await api.put('/users/profile', { phone: cleanPhone });
+      const activeToken = localStorage.getItem('ay_access_token');
+      const config = activeToken ? { headers: { Authorization: `Bearer ${activeToken}` } } : {};
+      const res = await api.put('/users/profile', { phone: cleanPhone }, config);
+
+      const targetUser = pendingPhoneUserObj || pendingGoogleUser || {};
       const updatedUser = {
-        ...(pendingGoogleUser || {}),
+        ...targetUser,
         phone: cleanPhone,
         ...(res.data?.data || {}),
       };
 
-      dispatch(setCredentials({ user: updatedUser }));
+      dispatch(setCredentials({ user: updatedUser, accessToken: activeToken }));
+      localStorage.setItem('ay_user', JSON.stringify(updatedUser));
       handlePendingCartAndRedirect(updatedUser);
     } catch (err) {
       setCustomError(err.response?.data?.message || err.message || 'Failed to save mobile number');
@@ -375,11 +493,13 @@ export default function LoginPage() {
         localStorage.setItem('ay_refresh_token', resData.refreshToken);
       }
 
-      const cleanPhone = (userObj.phone || '').replace(/\D/g, '');
-      const hasValidPhone = cleanPhone.length === 10 && userObj.phone !== 'Google Sign-In';
+      const cleanPhone = (userObj.phone || '').replace(/\D/g, '').slice(-10);
+      const hasValidPhone = cleanPhone.length === 10 && /^[6-9]\d{9}$/.test(cleanPhone) && userObj.phone !== 'Google Sign-In';
 
       if (!hasValidPhone || resData?.needsPhone) {
         setPendingGoogleUser(userObj);
+        setPendingPhoneUserObj(userObj);
+        setPhonePromptSource('google');
         setPhone('');
         setGooglePhoneStep(true);
         return;
@@ -459,14 +579,20 @@ export default function LoginPage() {
           </form>
         </div>
       ) : googlePhoneStep ? (
-        /* MANDATORY MOBILE NUMBER STEP AFTER GOOGLE LOGIN */
+        /* MANDATORY MOBILE NUMBER STEP AFTER GOOGLE OR EMAIL SIGN-IN */
         <div className="space-y-4 animate-in fade-in duration-200">
           <div className="rounded-xl bg-emerald-50 border border-emerald-200/80 p-3.5 flex items-center gap-3 text-xs text-emerald-800 shadow-2xs">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
             <div>
-              <p className="font-bold text-emerald-950">Google Sign-In Successful!</p>
+              <p className="font-bold text-emerald-950">
+                {phonePromptSource === 'google'
+                  ? 'Google Sign-In Successful!'
+                  : `Email Verified (${pendingPhoneUserObj?.email || email})`}
+              </p>
               <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
-                Signed in as {pendingGoogleUser?.name || pendingGoogleUser?.email}
+                {phonePromptSource === 'google'
+                  ? `Signed in as ${pendingGoogleUser?.name || pendingGoogleUser?.email}`
+                  : 'Please enter your mobile number to complete sign in.'}
               </p>
             </div>
           </div>
@@ -531,6 +657,10 @@ export default function LoginPage() {
                 ? otpStep === 'phone'
                   ? 'Sign in or register with instant Mobile OTP'
                   : `Verify code sent to +91 ${phone}`
+                : loginMode === 'email_otp'
+                ? otpStep === 'phone'
+                  ? 'Sign in or register with instant Email OTP'
+                  : `Verify code sent to ${email}`
                 : 'Sign in to your account with email and password'}
             </p>
           </div>
@@ -574,43 +704,59 @@ export default function LoginPage() {
             </div>
           </div>
 
-      {/* Login Mode Toggle Tabs (Only shown if phone login is enabled) */}
-      {isPhoneLoginEnabled && (
-        <div className="mb-4 flex items-center p-1 bg-neutral-100 rounded-xl border border-neutral-200">
-          <button
-            type="button"
-            onClick={() => {
-              setLoginMode('otp');
-              setCustomError('');
-              dispatch(clearError());
-            }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${
-              loginMode === 'otp'
-                ? 'bg-black text-white shadow-xs'
-                : 'text-neutral-600 hover:text-black'
-            }`}
-          >
-            <Smartphone size={14} />
-            Mobile OTP
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setLoginMode('password');
-              setCustomError('');
-              dispatch(clearError());
-            }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${
-              loginMode === 'password'
-                ? 'bg-black text-white shadow-xs'
-                : 'text-neutral-600 hover:text-black'
-            }`}
-          >
-            <Mail size={14} />
-            Email &amp; Password
-          </button>
-        </div>
-      )}
+      {/* Login Mode Toggle Tabs */}
+      <div className="mb-4 flex items-center p-1 bg-neutral-100 rounded-xl border border-neutral-200">
+        <button
+          type="button"
+          onClick={() => {
+            setLoginMode('otp');
+            setCustomError('');
+            setOtpStep('phone');
+            dispatch(clearError());
+          }}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${
+            loginMode === 'otp'
+              ? 'bg-black text-white shadow-xs'
+              : 'text-neutral-600 hover:text-black'
+          }`}
+        >
+          <Smartphone size={14} />
+          Mobile OTP
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setLoginMode('email_otp');
+            setCustomError('');
+            setOtpStep('phone');
+            dispatch(clearError());
+          }}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${
+            loginMode === 'email_otp'
+              ? 'bg-black text-white shadow-xs'
+              : 'text-neutral-600 hover:text-black'
+          }`}
+        >
+          <Mail size={14} />
+          Email OTP
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setLoginMode('password');
+            setCustomError('');
+            dispatch(clearError());
+          }}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer ${
+            loginMode === 'password'
+              ? 'bg-black text-white shadow-xs'
+              : 'text-neutral-600 hover:text-black'
+          }`}
+        >
+          <Lock size={14} />
+          Password
+        </button>
+      </div>
 
       {/* Success banner after Registration */}
       {successMessage && (
@@ -780,6 +926,141 @@ export default function LoginPage() {
               )}
             </button>
             <div id="login-recaptcha-container" />
+          </form>
+        )
+      ) : loginMode === 'email_otp' ? (
+        otpStep === 'phone' ? (
+          /* EMAIL OTP STEP 1: EMAIL + CAPTCHA */
+          <form onSubmit={handleSendEmailOtp} className="af-form">
+            <div className={`af-field ${focused === 'email_otp_entry' ? 'af-field--focus' : ''}`}>
+              <label className="af-label">EMAIL ADDRESS</label>
+              <div className="af-input-box">
+                <Mail size={16} className="af-icon" />
+                <input
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setCustomError('');
+                  }}
+                  onFocus={() => setFocused('email_otp_entry')}
+                  onBlur={() => setFocused('')}
+                  className="af-input"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Captcha Verification */}
+            <div className="pt-1">
+              <CaptchaBox
+                value={captchaInput}
+                onChange={(val) => {
+                  setCaptchaInput(val);
+                  setCaptchaError('');
+                }}
+                onCodeChange={setCaptchaCode}
+                isDark={false}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || !email.includes('@') || !captchaInput}
+              className="af-btn cursor-pointer"
+            >
+              {isSubmitting ? (
+                <span className="af-spinner" />
+              ) : (
+                <>
+                  Get OTP &amp; Continue
+                  <ArrowRight size={17} className="af-btn-arrow" />
+                </>
+              )}
+            </button>
+          </form>
+        ) : (
+          /* EMAIL OTP STEP 2: VERIFY CODE */
+          <form onSubmit={handleVerifyEmailOtp} className="af-form">
+            <div className="flex items-center justify-between mb-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setOtpStep('phone');
+                  setCustomError('');
+                }}
+                className="inline-flex items-center gap-1 text-xs font-bold text-neutral-500 hover:text-black transition cursor-pointer"
+              >
+                <ArrowLeft size={14} />
+                Change Email
+              </button>
+              <span className="text-xs font-bold text-neutral-600 truncate max-w-[200px]">
+                {email}
+              </span>
+            </div>
+
+            <div className="mb-2">
+              <div className="text-xs font-black uppercase text-neutral-800 tracking-wider">
+                Verify Email Code
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-0.5">
+                Enter the 6-digit verification code sent to your email
+              </p>
+            </div>
+
+            {/* OTP Input */}
+            <div className="af-field af-field--focus">
+              <label className="af-label">ENTER 6-DIGIT OTP</label>
+              <div className="af-input-box">
+                <KeyRound size={16} className="af-icon" />
+                <input
+                  type="text"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  placeholder="••••••"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                  className="af-input font-mono font-black text-lg tracking-[0.4em]"
+                />
+              </div>
+            </div>
+
+            {/* Resend Link */}
+            <div className="flex items-center justify-between text-xs py-1">
+              <span className="text-neutral-500">Didn't receive code?</span>
+              {resendCooldown > 0 ? (
+                <span className="text-neutral-400 font-bold">
+                  Resend in {resendCooldown}s
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendEmailOtp}
+                  className="font-black text-black hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Resend OTP
+                </button>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || otp.length < 6}
+              className="af-btn cursor-pointer"
+            >
+              {isSubmitting ? (
+                <span className="af-spinner" />
+              ) : (
+                <>
+                  Verify &amp; Sign In
+                  <ArrowRight size={17} className="af-btn-arrow" />
+                </>
+              )}
+            </button>
           </form>
         )
       ) : (

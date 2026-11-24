@@ -75,7 +75,11 @@ async function updateProfile(id, data) {
   }
 
   if (updateData.phone !== undefined && typeof updateData.phone === 'string') {
-    updateData.phone = updateData.phone.replace(/\D/g, '').slice(-10);
+    const cleanPhone = updateData.phone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone && (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone))) {
+      throw new ApiError(400, 'Please enter a valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9)');
+    }
+    updateData.phone = cleanPhone;
   }
 
   if (data.email !== undefined) {
