@@ -6,8 +6,6 @@ import {
   X,
   Star,
   RotateCcw,
-  LayoutGrid,
-  List,
 } from 'lucide-react';
 import { fetchProducts, fetchCategories, fetchFilterOptions } from '../productsSlice';
 import ProductCard from '../../../components/ProductCard';
@@ -22,7 +20,6 @@ export default function ProductListPage() {
   );
 
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
 
   // Extract query params
   const search = searchParams.get('search') || '';
@@ -143,202 +140,110 @@ export default function ProductListPage() {
 
         {/* Main Content Area without fixed sidebar */}
         <main>
-          {/* Toolbar */}
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-200 pb-3.5">
-            {/* Top row on mobile: Filter button and Showing counts */}
-            <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => setFilterDrawerOpen(true)}
-                  className="inline-flex items-center gap-2 border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-900 hover:border-black transition cursor-pointer"
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  <span>Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-
+          {/* Toolbar: Filter on Left side, Sort by: on Right side in the same row */}
+          <div className="mb-6 flex items-center justify-between gap-3 border-b border-neutral-200 pb-3.5">
+            {/* Filter Button & Clear All */}
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setFilterDrawerOpen(true)}
+                className="inline-flex items-center gap-2 border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-900 hover:border-black transition cursor-pointer"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span>Filters</span>
                 {activeFilterCount > 0 && (
-                  <button
-                    onClick={clearAllFilters}
-                    className="text-xs font-bold text-rose-600 hover:underline uppercase tracking-wider cursor-pointer"
-                  >
-                    Clear all
-                  </button>
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
+                    {activeFilterCount}
+                  </span>
                 )}
-              </div>
+              </button>
 
-              {/* Products Count */}
-              <div className="text-xs text-neutral-500 font-medium">
-                Showing <strong className="text-black font-bold">{products.length}</strong> of{' '}
-                <strong className="text-black font-bold">{pagination.total || products.length}</strong>
-              </div>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearAllFilters}
+                  className="text-xs font-bold text-rose-600 hover:underline uppercase tracking-wider cursor-pointer"
+                >
+                  Clear all
+                </button>
+              )}
             </div>
 
-            {/* Bottom row on mobile / Right on desktop: View Mode & Sort Selector */}
-            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs w-full sm:w-auto">
-              {/* View Mode Toggle */}
-              <div className="flex items-center border border-neutral-200 p-0.5 bg-neutral-50">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  title="Grid View"
-                  className={`p-1.5 transition cursor-pointer ${viewMode === 'grid' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  title="List View"
-                  className={`p-1.5 transition cursor-pointer ${viewMode === 'list' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
-                >
-                  <List className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              {/* Sort Selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-neutral-500 uppercase tracking-wider font-bold text-[11px] hidden sm:inline">Sort by:</span>
-                <select
-                  value={sort}
-                  onChange={(e) => updateFilter('sort', e.target.value)}
-                  className="border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-black focus:border-black focus:outline-none focus:ring-0 cursor-pointer"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="rating-desc">Customer Rating</option>
-                  <option value="discount-desc">Better Discount</option>
-                </select>
-              </div>
+            {/* Sort Selector */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-neutral-500 uppercase tracking-wider font-bold text-[11px]">Sort by:</span>
+              <select
+                value={sort}
+                onChange={(e) => updateFilter('sort', e.target.value)}
+                className="border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-black focus:border-black focus:outline-none focus:ring-0 cursor-pointer"
+              >
+                <option value="newest">Newest First</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rating-desc">Customer Rating</option>
+                <option value="discount-desc">Better Discount</option>
+              </select>
             </div>
           </div>
 
-            {/* Active Filter Badges */}
-            {activeFilterCount > 0 && (
-              <div className="mb-6 flex flex-wrap items-center gap-2">
-                {category && (
-                  <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
-                    Category: {category}
-                    <button onClick={() => updateFilter('category', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
-                  </span>
-                )}
-                {minPrice && (
-                  <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
-                    Min: ₹{minPrice}
-                    <button onClick={() => updateFilter('minPrice', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
-                  </span>
-                )}
-                {maxPrice && (
-                  <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
-                    Max: ₹{maxPrice}
-                    <button onClick={() => updateFilter('maxPrice', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
-                  </span>
-                )}
-                {minRating && (
-                  <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
-                    {minRating}★ & Above
-                    <button onClick={() => updateFilter('minRating', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
-                  </span>
-                )}
-              </div>
-            )}
+          {/* Active Filter Badges */}
+          {activeFilterCount > 0 && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              {category && (
+                <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
+                  Category: {category}
+                  <button onClick={() => updateFilter('category', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
+                </span>
+              )}
+              {minPrice && (
+                <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
+                  Min: ₹{minPrice}
+                  <button onClick={() => updateFilter('minPrice', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
+                </span>
+              )}
+              {maxPrice && (
+                <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
+                  Max: ₹{maxPrice}
+                  <button onClick={() => updateFilter('maxPrice', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
+                </span>
+              )}
+              {minRating && (
+                <span className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-800">
+                  {minRating}★ & Above
+                  <button onClick={() => updateFilter('minRating', '')} className="hover:text-black cursor-pointer"><X className="h-3.5 w-3.5" /></button>
+                </span>
+              )}
+            </div>
+          )}
 
-            {/* Product Grid Area (Always 4 Columns on Desktop) */}
-            {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-5 lg:gap-x-6 gap-y-8 sm:gap-y-12">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="animate-pulse flex flex-col">
-                    <div className="aspect-[3/4.2] bg-neutral-200 w-full rounded-xs" />
-                    <div className="mt-3 h-4 bg-neutral-200 w-3/4" />
-                    <div className="mt-2 h-4 bg-neutral-200 w-1/3" />
-                  </div>
-                ))}
-              </div>
-            ) : products.length === 0 ? (
-              <EmptyState
-                title="NO PRODUCTS FOUND"
-                subtitle="Try adjusting or clearing your filters to explore our full streetwear catalogue."
-                badge="NO MATCHES"
-                actionText="Clear All Filters"
-                actionLink=""
-                onAction={clearAllFilters}
-                onRefresh={() => dispatch(fetchProducts({ limit: 12 }))}
-                secondaryActionText="Reset View"
-              />
-            ) : viewMode === 'list' ? (
-              /* List Mode */
-              <div className="flex flex-col gap-4">
-                {products.map((product) => {
-                  const mainImg = product.images?.[0] || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80';
-                  const discountPercent = product.discount > 0
-                    ? product.discount
-                    : (product.mrp && product.mrp > product.price)
-                    ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
-                    : null;
-
-                  return (
-                    <div
-                      key={product._id}
-                      className="group flex flex-col sm:flex-row overflow-hidden border border-neutral-200 bg-white p-4 transition hover:border-black gap-5"
-                    >
-                      <Link
-                        to={`/products/${product.slug || product._id}`}
-                        className="relative w-full sm:w-52 aspect-[3/4] shrink-0 overflow-hidden bg-neutral-100"
-                      >
-                        <img
-                          src={mainImg}
-                          alt={product.name}
-                          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                        />
-                        {discountPercent && discountPercent > 0 && (
-                          <span className="absolute top-2 left-2 bg-[#e11d48] text-white text-[10px] font-bold px-2 py-0.5 tracking-wider uppercase">
-                            {discountPercent}% OFF
-                          </span>
-                        )}
-                      </Link>
-
-                      <div className="flex flex-1 flex-col justify-between py-1">
-                        <div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
-                            {product.brand || 'AMA YAAR'}
-                          </p>
-                          <Link
-                            to={`/products/${product.slug || product._id}`}
-                            className="text-base sm:text-lg font-bold text-neutral-900 hover:underline leading-snug block mb-2"
-                          >
-                            {product.name}
-                          </Link>
-                          <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed mb-4">
-                            {product.description || 'Crafted with premium high-quality fabric for ultimate comfort and enduring modern streetwear presence.'}
-                          </p>
-                        </div>
-
-                        <div className="flex items-baseline gap-2 pt-3 border-t border-neutral-100">
-                          <span className="text-base font-bold text-neutral-900">
-                            ₹ {product.price?.toLocaleString('en-IN')}.00
-                          </span>
-                          {product.mrp && product.mrp > product.price && (
-                            <span className="text-xs text-neutral-400 line-through font-normal">
-                              ₹ {product.mrp?.toLocaleString('en-IN')}.00
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              /* Always 4 Columns Grid View */
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-5 lg:gap-x-6 gap-y-8 sm:gap-y-12">
-                {products.map((product) => (
-                  <ProductCard key={product._id} product={product} />
-                ))}
-              </div>
-            )}
+          {/* Product Grid Area (Always 4 Columns on Desktop) */}
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-5 lg:gap-x-6 gap-y-8 sm:gap-y-12">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="animate-pulse flex flex-col">
+                  <div className="aspect-[3/4.2] bg-neutral-200 w-full rounded-xs" />
+                  <div className="mt-3 h-4 bg-neutral-200 w-3/4" />
+                  <div className="mt-2 h-4 bg-neutral-200 w-1/3" />
+                </div>
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <EmptyState
+              title="NO PRODUCTS FOUND"
+              subtitle="Try adjusting or clearing your filters to explore our full streetwear catalogue."
+              badge="NO MATCHES"
+              actionText="Clear All Filters"
+              actionLink=""
+              onAction={clearAllFilters}
+              onRefresh={() => dispatch(fetchProducts({ limit: 12 }))}
+              secondaryActionText="Reset View"
+            />
+          ) : (
+            /* Always 4 Columns Grid View */
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-5 lg:gap-x-6 gap-y-8 sm:gap-y-12">
+              {products.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+          )}
 
             {/* Pagination */}
             {pagination.pages > 1 && (
