@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -21,7 +21,7 @@ import { loginUser, clearError, setCredentials } from '../authSlice';
 import { addToCart } from '../../cart/cartSlice';
 import CaptchaBox from '../../../components/CaptchaBox';
 import api from '../../../lib/axios';
-import { signInWithGoogle, isConfigured as isFirebaseConfigured } from '../../../lib/firebase';
+import { signInWithGoogle, isConfigured as isFirebaseConfigured, sendFirebasePhoneOtp } from '../../../lib/firebase';
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -48,6 +48,7 @@ export default function LoginPage() {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [isAutoFilled, setIsAutoFilled] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const confirmationResultRef = useRef(null);
 
   // Captcha states
   const [captchaInput, setCaptchaInput] = useState('');
@@ -97,13 +98,13 @@ export default function LoginPage() {
     }, 1200);
   };
 
-  // STEP 1: Mobile + Captcha -> Send OTP
+  // STEP 1: Mobile + Captcha -> Send OTP via Firebase Phone Auth
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setCustomError('');
     setCaptchaError('');
 
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
     if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
       setCustomError('Please enter a valid 10-digit Indian mobile number');
       return;
@@ -117,25 +118,26 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      let serverData = null;
-      try {
-        const { data } = await api.post('/auth/send-otp', { phone: cleanPhone });
-        serverData = data?.data;
-      } catch (err) {
-        console.warn('Backend send-otp fallback:', err);
-      }
-
-      const randomOtp = serverData?.otp || Math.floor(1000 + Math.random() * 9000).toString();
-      const existing = !!serverData?.isExisting;
-      setIsExistingUser(existing);
-      if (serverData?.name) setName(serverData.name);
-      if (serverData?.email) setEmail(serverData.email);
-
+      const confirmationResult = await sendFirebasePhoneOtp(cleanPhone, 'login-recaptcha-container');
+      confirmationResultRef.current = confirmationResult;
       setOtpStep('otp');
       setResendCooldown(30);
       setOtp('');
-    } catch (err) {
-      setCustomError(err.message || 'Failed to send OTP. Please try again.');
+    } catch (fbErr) {
+      console.error('[Firebase Phone Auth] Error:', fbErr);
+      let msg = fbErr.message || 'Failed to send SMS OTP via Firebase.';
+      if (fbErr.code === 'auth/invalid-phone-number') {
+        msg = 'Invalid phone number format (+91 XXXXXXXXXX).';
+      } else if (fbErr.code === 'auth/too-many-requests') {
+        msg = 'Too many requests. Please wait a few moments before trying again.';
+      } else if (fbErr.code === 'auth/quota-exceeded') {
+        msg = 'Firebase SMS quota exceeded. Check Firebase console billing or test numbers.';
+      } else if (fbErr.code === 'auth/captcha-check-failed') {
+        msg = 'reCAPTCHA verification failed. Please try again.';
+      } else if (fbErr.code === 'auth/invalid-app-credential') {
+        msg = 'Firebase app credential invalid. Check authorized domains in Firebase Console.';
+      }
+      setCustomError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -146,36 +148,28 @@ export default function LoginPage() {
     if (resendCooldown > 0) return;
     setCustomError('');
     setIsSubmitting(true);
-    const cleanPhone = phone.replace(/\D/g, '');
-    const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
 
     try {
-      try {
-        await api.post('/auth/send-otp', { phone: cleanPhone });
-      } catch (_) { }
-
+      const confirmationResult = await sendFirebasePhoneOtp(cleanPhone, 'login-recaptcha-container');
+      confirmationResultRef.current = confirmationResult;
       setOtp('');
       setResendCooldown(30);
-    } catch (_) {
-      setCustomError('Failed to resend OTP');
+    } catch (err) {
+      setCustomError(err.message || 'Failed to resend SMS OTP');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // STEP 2: Verify OTP + Name + Email + Password -> Sign In / Register
+  // STEP 2: Verify OTP via Firebase + Name + Email + Password -> Sign In / Register
   const handleVerifyOtpAndSignIn = async (e) => {
     e.preventDefault();
     setCustomError('');
 
     const cleanOtp = otp.trim();
-    if (!cleanOtp || cleanOtp.length < 4) {
-      setCustomError('Please enter the 4-digit OTP');
-      return;
-    }
-
-    if (generatedOtp && cleanOtp !== generatedOtp) {
-      setCustomError('Invalid OTP code. Please enter the correct OTP.');
+    if (!cleanOtp || cleanOtp.length < 6) {
+      setCustomError('Please enter the 6-digit OTP received via SMS');
       return;
     }
 
@@ -197,32 +191,29 @@ export default function LoginPage() {
       }
     }
 
+    if (!confirmationResultRef.current) {
+      setCustomError('OTP session expired. Please click "Change Number" and request a new OTP.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      let resData = null;
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      const userCredential = await confirmationResultRef.current.confirm(cleanOtp);
+      const fbUser = userCredential.user;
+      const idToken = await fbUser.getIdToken();
 
-      try {
-        const { data } = await api.post('/auth/verify-otp', {
-          phone: cleanPhone,
-          otp: cleanOtp,
-          name: cleanName || undefined,
-          email: cleanEmail || undefined,
-          password: password || undefined,
-        });
-        resData = data.data;
-      } catch (verifyErr) {
-        try {
-          const { data } = await api.post('/auth/quick-login', {
-            phone: cleanPhone,
-            name: cleanName || undefined,
-            email: cleanEmail || undefined,
-            password: password || undefined,
-          });
-          resData = data.data;
-        } catch (_) { }
-      }
+      const { data } = await api.post('/auth/phone-login', {
+        phone: cleanPhone,
+        name: cleanName || undefined,
+        email: cleanEmail || undefined,
+        password: password || undefined,
+        firebaseUid: fbUser.uid,
+        idToken: idToken,
+      });
+
+      const resData = data?.data;
 
       const userObj = resData?.user || {
         _id: 'user_' + Date.now(),
@@ -247,7 +238,14 @@ export default function LoginPage() {
 
       handlePendingCartAndRedirect(userObj);
     } catch (err) {
-      setCustomError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
+      console.error('[Firebase Phone Auth] Confirm error:', err);
+      if (err.code === 'auth/invalid-verification-code') {
+        setCustomError('Invalid verification code. Please check your SMS and enter the 6-digit OTP.');
+      } else if (err.code === 'auth/code-expired') {
+        setCustomError('Verification code expired. Please click "Resend OTP".');
+      } else {
+        setCustomError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -598,22 +596,22 @@ export default function LoginPage() {
               </div>
               <p className="text-[11px] text-neutral-500 mt-0.5">
                 {isExistingUser
-                  ? 'Verify the auto-filled code to sign in'
-                  : 'Enter your email & password to enable Email + Password sign in'}
+                  ? 'Enter the 6-digit SMS code sent via Firebase to sign in'
+                  : 'Enter the 6-digit SMS code sent via Firebase and your details to sign in'}
               </p>
             </div>
 
             {/* OTP Input */}
             <div className="af-field af-field--focus">
-              <label className="af-label">ENTER 4-DIGIT OTP</label>
+              <label className="af-label">ENTER 6-DIGIT SMS OTP</label>
               <div className="af-input-box">
                 <KeyRound size={16} className="af-icon" />
                 <input
                   type="text"
-                  maxLength={4}
+                  maxLength={6}
                   required
                   autoFocus
-                  placeholder="••••"
+                  placeholder="••••••"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   className="af-input font-mono font-black text-lg tracking-[0.4em]"
@@ -710,7 +708,7 @@ export default function LoginPage() {
               type="submit"
               disabled={
                 isSubmitting ||
-                otp.length < 4 ||
+                otp.length < 6 ||
                 (!isExistingUser && (!name.trim() || password.length < 6))
               }
               className="af-btn cursor-pointer"
@@ -724,6 +722,7 @@ export default function LoginPage() {
                 </>
               )}
             </button>
+            <div id="login-recaptcha-container" />
           </form>
         )
       ) : (

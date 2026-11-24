@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import {
   X,
@@ -17,7 +17,7 @@ import {
 import { setCredentials } from '../features/auth/authSlice';
 import CaptchaBox from './CaptchaBox';
 import api from '../lib/axios';
-import { signInWithGoogle, isConfigured as isFirebaseConfigured } from '../lib/firebase';
+import { signInWithGoogle, isConfigured as isFirebaseConfigured, sendFirebasePhoneOtp } from '../lib/firebase';
 
 export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const dispatch = useDispatch();
@@ -53,9 +53,11 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const [verifiedUser, setVerifiedUser] = useState(null);
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const confirmationResultRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
+      confirmationResultRef.current = null;
       setAuthMode(isPhoneLoginEnabled ? 'phone' : 'email');
       setStep('input');
       setPhone('');
@@ -85,24 +87,57 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null;
 
-  // Handle Step 1: Send OTP to Email or Phone
+  // Handle Step 1: Send OTP to Email or Phone (Firebase Phone Auth)
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     setCaptchaError('');
 
     if (authMode === 'phone') {
-      const cleanPhone = phone.replace(/\D/g, '');
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
       if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
         setError('Please enter a valid 10-digit Indian mobile number');
         return;
       }
-    } else {
-      const cleanEmail = email.trim().toLowerCase();
-      if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
-        setError('Please enter a valid email address');
+
+      if (!captchaInput || captchaInput.trim().toUpperCase() !== captchaCode.trim().toUpperCase()) {
+        setCaptchaError('Incorrect captcha code. Please try again.');
         return;
       }
+
+      setIsSubmitting(true);
+      try {
+        const confirmationResult = await sendFirebasePhoneOtp(cleanPhone, 'auth-recaptcha-container');
+        confirmationResultRef.current = confirmationResult;
+        setOtp('');
+        setStep('otp');
+        setResendCooldown(30);
+      } catch (fbErr) {
+        console.error('[Firebase Phone Auth] Error:', fbErr);
+        let msg = fbErr.message || 'Failed to send SMS OTP via Firebase.';
+        if (fbErr.code === 'auth/invalid-phone-number') {
+          msg = 'Invalid phone number format (+91 XXXXXXXXXX).';
+        } else if (fbErr.code === 'auth/too-many-requests') {
+          msg = 'Too many requests. Please wait a few moments before trying again.';
+        } else if (fbErr.code === 'auth/quota-exceeded') {
+          msg = 'Firebase SMS quota exceeded. Check Firebase console billing or test numbers.';
+        } else if (fbErr.code === 'auth/captcha-check-failed') {
+          msg = 'reCAPTCHA check failed. Please try again.';
+        } else if (fbErr.code === 'auth/invalid-app-credential') {
+          msg = 'Firebase app credential invalid. Check authorized domains in Firebase Console.';
+        }
+        setError(msg);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // Email OTP flow
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      setError('Please enter a valid email address');
+      return;
     }
 
     if (!captchaInput || captchaInput.trim().toUpperCase() !== captchaCode.trim().toUpperCase()) {
@@ -113,10 +148,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     setIsSubmitting(true);
 
     try {
-      const payload = authMode === 'phone'
-        ? { phone: phone.replace(/\D/g, '') }
-        : { email: email.trim().toLowerCase() };
-
+      const payload = { email: cleanEmail };
       const { data } = await api.post('/auth/send-otp', payload);
       const serverData = data?.data;
 
@@ -125,7 +157,6 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       if (serverData?.name) setName(serverData.name);
       if (serverData?.email && !email) setEmail(serverData.email);
 
-      // Do not pre-fill OTP; user enters the real code sent to email
       setOtp('');
       setStep('otp');
       setResendCooldown(30);
@@ -143,15 +174,20 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     setIsSubmitting(true);
 
     try {
-      const payload = authMode === 'phone'
-        ? { phone: phone.replace(/\D/g, '') }
-        : { email: email.trim().toLowerCase() };
-
-      await api.post('/auth/send-otp', payload);
-      setOtp('');
-      setResendCooldown(30);
+      if (authMode === 'phone') {
+        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+        const confirmationResult = await sendFirebasePhoneOtp(cleanPhone, 'auth-recaptcha-container');
+        confirmationResultRef.current = confirmationResult;
+        setOtp('');
+        setResendCooldown(30);
+      } else {
+        const payload = { email: email.trim().toLowerCase() };
+        await api.post('/auth/send-otp', payload);
+        setOtp('');
+        setResendCooldown(30);
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resend OTP');
+      setError(err.response?.data?.message || err.message || 'Failed to resend OTP');
     } finally {
       setIsSubmitting(false);
     }
@@ -163,9 +199,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     setError('');
 
     const cleanOtp = otp.trim();
-    const minLength = authMode === 'email' ? 6 : 4;
-    if (!cleanOtp || cleanOtp.length < minLength) {
-      setError(`Please enter the ${minLength}-digit verification code`);
+    if (!cleanOtp || cleanOtp.length < 6) {
+      setError('Please enter the 6-digit verification code');
       return;
     }
 
@@ -183,32 +218,65 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     setIsSubmitting(true);
 
     try {
-      const payload = {
-        otp: cleanOtp,
-        name: cleanName,
-        password: password,
-      };
+      let userObj = null;
+      let token = null;
+      let refreshToken = null;
 
-      if (authMode === 'email') {
-        payload.email = email.trim().toLowerCase();
-        if (phone) payload.phone = phone.replace(/\D/g, '');
+      if (authMode === 'phone') {
+        if (!confirmationResultRef.current) {
+          setError('Verification session expired. Please click Back and request a new OTP.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // 1. Confirm code with Firebase Phone Auth
+        const userCredential = await confirmationResultRef.current.confirm(cleanOtp);
+        const fbUser = userCredential.user;
+        const idToken = await fbUser.getIdToken();
+        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+
+        // 2. Authenticate or register with backend
+        const { data } = await api.post('/auth/phone-login', {
+          phone: cleanPhone,
+          name: cleanName,
+          password: password,
+          firebaseUid: fbUser.uid,
+          idToken: idToken,
+        });
+
+        const resData = data?.data;
+        userObj = resData?.user || {
+          _id: 'user_' + Date.now(),
+          name: cleanName,
+          email: `${cleanPhone}@mobile.ama-yaar.com`,
+          phone: cleanPhone,
+          role: 'customer',
+        };
+        token = resData?.accessToken || 'ay_token_' + Date.now();
+        refreshToken = resData?.refreshToken;
       } else {
-        payload.phone = phone.replace(/\D/g, '');
-        if (email) payload.email = email.trim().toLowerCase();
+        // Email OTP verification with backend
+        const payload = {
+          otp: cleanOtp,
+          name: cleanName,
+          password: password,
+          email: email.trim().toLowerCase(),
+        };
+        if (phone) payload.phone = phone.replace(/\D/g, '');
+
+        const { data } = await api.post('/auth/verify-otp', payload);
+        const resData = data?.data;
+
+        userObj = resData?.user || {
+          _id: 'user_' + Date.now(),
+          name: cleanName,
+          email: email || `${phone}@mobile.ama-yaar.com`,
+          phone: phone || '',
+          role: 'customer',
+        };
+        token = resData?.accessToken || 'ay_token_' + Date.now();
+        refreshToken = resData?.refreshToken;
       }
-
-      const { data } = await api.post('/auth/verify-otp', payload);
-      const resData = data?.data;
-
-      const userObj = resData?.user || {
-        _id: 'user_' + Date.now(),
-        name: cleanName,
-        email: email || `${phone}@mobile.ama-yaar.com`,
-        phone: phone || '',
-        role: 'customer',
-      };
-
-      const token = resData?.accessToken || 'ay_token_' + Date.now();
 
       dispatch(
         setCredentials({
@@ -217,8 +285,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         })
       );
 
-      if (resData?.refreshToken) {
-        localStorage.setItem('ay_refresh_token', resData.refreshToken);
+      if (refreshToken) {
+        localStorage.setItem('ay_refresh_token', refreshToken);
       }
 
       sessionStorage.setItem('auth_popup_shown', 'true');
@@ -231,7 +299,14 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         onClose();
       }, 900);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
+      console.error('Verification error:', err);
+      if (err.code === 'auth/invalid-verification-code') {
+        setError('Invalid OTP code. Please check your SMS and enter the correct 6-digit code.');
+      } else if (err.code === 'auth/code-expired') {
+        setError('OTP code has expired. Please click "Resend OTP".');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
+      }
       setIsSubmitting(false);
     }
   };
@@ -661,7 +736,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   <p className="text-xs text-neutral-500 font-medium mt-0.5">
                     {authMode === 'email'
                       ? 'We sent a 6-digit verification code to your email'
-                      : 'We sent a 4-digit code to your mobile'}
+                      : 'We sent a 6-digit SMS verification code to your phone via Firebase'}
                   </p>
                 </div>
 
@@ -675,14 +750,14 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* OTP Input */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      {authMode === 'email' ? 'Enter 6-Digit OTP' : 'Enter 4-Digit OTP'}
+                      {authMode === 'email' ? 'Enter 6-Digit Email Code' : 'Enter 6-Digit SMS OTP'}
                     </label>
                     <div className="relative">
                       <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                       <input
                         type="text"
-                        maxLength={authMode === 'email' ? 6 : 4}
-                        placeholder={authMode === 'email' ? '••••••' : '••••'}
+                        maxLength={6}
+                        placeholder="••••••"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                         className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-base font-black tracking-[0.3em] text-neutral-900 placeholder:text-neutral-300 focus:border-black focus:outline-none focus:ring-0 transition"
@@ -760,7 +835,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                     type="submit"
                     disabled={
                       isSubmitting ||
-                      otp.length < (authMode === 'email' ? 6 : 4) ||
+                      otp.length < 6 ||
                       !name.trim() ||
                       !password ||
                       password.length < 6
@@ -774,6 +849,9 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
             )}
           </div>
         </div>
+
+        {/* Invisible Firebase reCAPTCHA container */}
+        <div id="auth-recaptcha-container" />
       </div>
     </div>
   );
