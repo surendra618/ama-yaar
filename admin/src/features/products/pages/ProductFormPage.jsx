@@ -54,6 +54,7 @@ const emptyForm = {
   modelInfo: '',
   sizeChartType: 'default',
   sizeChartImage: '',
+  sizeChartPdf: '',
   customSizeChart: [],
   price: '',
   mrp: '',
@@ -167,6 +168,7 @@ export default function ProductFormPage() {
         modelInfo: current.modelInfo || '',
         sizeChartType: current.sizeChartType || 'default',
         sizeChartImage: current.sizeChartImage || '',
+        sizeChartPdf: current.sizeChartPdf || '',
         customSizeChart: Array.isArray(current.customSizeChart) ? current.customSizeChart : [],
         price: current.price ?? '',
         mrp: current.mrp ?? '',
@@ -342,6 +344,27 @@ export default function ProductFormPage() {
       }
     } catch (err) {
       setUploadError(err.response?.data?.message || 'Failed to upload size chart image.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSizeChartPdfUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || file.type !== 'application/pdf') return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/uploads/single', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data?.data?.url) {
+        setForm((f) => ({ ...f, sizeChartPdf: res.data.data.url }));
+      }
+    } catch (err) {
+      setUploadError(err.response?.data?.message || 'Failed to upload sizing chart PDF.');
     } finally {
       setUploading(false);
     }
@@ -1373,6 +1396,68 @@ export default function ProductFormPage() {
                   )}
                 </div>
               )}
+
+              {/* Size Chart PDF Section (Default or Custom Product-Specific PDF) */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700">Sizing Chart PDF Document</label>
+                    <p className="text-[11px] text-slate-500">
+                      Storefront Sizing Chart modal directly displays this PDF. Leave blank to use the official default (<code>/sizing-chart.pdf</code>).
+                    </p>
+                  </div>
+                  {form.sizeChartPdf && (
+                    <span className="rounded bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold">
+                      Custom PDF Configured
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex items-center gap-2 rounded-md bg-black px-3.5 py-2 text-xs font-bold text-white hover:bg-slate-800 transition cursor-pointer">
+                    <Upload className="h-3.5 w-3.5" />
+                    <span>Upload Custom PDF</span>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={handleSizeChartPdfUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="text-xs text-slate-400 font-medium">or paste PDF URL:</span>
+                  <input
+                    type="text"
+                    value={form.sizeChartPdf || ''}
+                    onChange={(e) => setForm((f) => ({ ...f, sizeChartPdf: e.target.value }))}
+                    placeholder="/sizing-chart.pdf or https://.../guide.pdf"
+                    className="flex-1 min-w-[200px] rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-900 focus:border-black focus:outline-none"
+                  />
+                  {form.sizeChartPdf && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, sizeChartPdf: '' }))}
+                      className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition"
+                    >
+                      Reset to Default
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <span className="font-bold text-slate-700">Active PDF:</span>
+                  <code className="text-slate-800 font-mono text-[11px]">
+                    {form.sizeChartPdf ? getMediaUrl(form.sizeChartPdf) : '/sizing-chart.pdf (Official Amayaar Guide)'}
+                  </code>
+                  <a
+                    href={form.sizeChartPdf ? getMediaUrl(form.sizeChartPdf) : '/sizing-chart.pdf'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-auto text-xs font-bold text-black underline flex items-center gap-1 hover:text-slate-700"
+                  >
+                    View PDF ↗
+                  </a>
+                </div>
+              </div>
 
               {/* LIVE CUSTOMER STOREFRONT PREVIEW (WHAT USERS WILL SEE ON ALL MODES) */}
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 mt-4">

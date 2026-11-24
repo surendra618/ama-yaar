@@ -104,13 +104,9 @@ export default function RegisterPage() {
         console.warn('Backend send-otp failed, fallback to simulator:', err);
       }
 
-      setGeneratedOtp(randomOtp);
       setStep('otp');
       setResendCooldown(30);
-
-      // Auto-fill OTP on next step as requested!
-      setIsAutoFilled(true);
-      setOtp(randomOtp);
+      setOtp('');
     } catch (err) {
       setCaptchaError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -132,9 +128,7 @@ export default function RegisterPage() {
         await api.post('/auth/send-otp', { phone: cleanPhone });
       } catch (_) {}
 
-      setGeneratedOtp(newOtp);
-      setOtp(newOtp);
-      setIsAutoFilled(true);
+      setOtp('');
       setResendCooldown(30);
     } catch (_) {
       setOtpError('Failed to resend OTP');

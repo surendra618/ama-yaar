@@ -12,7 +12,12 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 };
 
-const isConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+const isConfigured = Boolean(
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey.trim() !== '' &&
+  firebaseConfig.projectId &&
+  firebaseConfig.projectId.trim() !== ''
+);
 
 let app = null;
 let auth = null;
@@ -37,7 +42,7 @@ if (isConfigured) {
  */
 export async function signInWithGoogle() {
   if (!auth || !googleProvider) {
-    throw new Error('Firebase credentials not configured. Please add VITE_FIREBASE_API_KEY in .env file.');
+    throw new Error('Google Sign-In is not initialized. Please add your Firebase credentials in frontend/.env (VITE_FIREBASE_API_KEY & VITE_FIREBASE_PROJECT_ID).');
   }
 
   const result = await signInWithPopup(auth, googleProvider);

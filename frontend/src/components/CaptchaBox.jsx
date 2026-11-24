@@ -151,8 +151,8 @@ export default function CaptchaBox({
           autoComplete="off"
           spellCheck="false"
           className={`flex-1 min-w-0 w-full rounded-lg px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-xs sm:text-sm font-black tracking-normal uppercase transition outline-none ${isDark
-              ? 'bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:border-white focus:ring-1 focus:ring-white'
-              : 'bg-white border border-neutral-300 text-black placeholder-neutral-400 focus:border-black focus:ring-1 focus:ring-black'
+              ? 'bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:border-white focus:outline-none focus:ring-0'
+              : 'bg-white border border-neutral-300 text-black placeholder-neutral-400 focus:border-black focus:outline-none focus:ring-0'
             } ${error ? 'border-red-500 ring-1 ring-red-500' : ''}`}
         />
       </div>

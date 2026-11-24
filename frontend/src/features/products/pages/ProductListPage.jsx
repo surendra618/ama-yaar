@@ -204,7 +204,7 @@ export default function ProductListPage() {
                 <select
                   value={sort}
                   onChange={(e) => updateFilter('sort', e.target.value)}
-                  className="border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-black focus:border-black focus:outline-hidden cursor-pointer"
+                  className="border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-black focus:border-black focus:outline-none focus:ring-0 cursor-pointer"
                 >
                   <option value="newest">Newest First</option>
                   <option value="price-asc">Price: Low to High</option>
@@ -446,7 +446,7 @@ export default function ProductListPage() {
                     placeholder="Min"
                     value={priceRange.min}
                     onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                    className="w-full border border-neutral-300 px-3 py-2 text-xs focus:border-black focus:outline-hidden"
+                    className="w-full border border-neutral-300 px-3 py-2 text-xs focus:border-black focus:outline-none focus:ring-0"
                   />
                   <span className="text-neutral-400 font-bold">-</span>
                   <input
@@ -454,7 +454,7 @@ export default function ProductListPage() {
                     placeholder="Max"
                     value={priceRange.max}
                     onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                    className="w-full border border-neutral-300 px-3 py-2 text-xs focus:border-black focus:outline-hidden"
+                    className="w-full border border-neutral-300 px-3 py-2 text-xs focus:border-black focus:outline-none focus:ring-0"
                   />
                 </div>
                 <button

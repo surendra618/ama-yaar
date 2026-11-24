@@ -114,7 +114,7 @@ export default function TrackOrderPage() {
                   setError('');
                 }}
                 placeholder="e.g. AY-1029-491028 or AWB Code 143289012"
-                className="w-full h-12 rounded-xl border border-neutral-200 bg-neutral-50/50 pl-11 pr-4 text-xs font-semibold text-black placeholder:text-neutral-400 focus:bg-white focus:border-black focus:outline-hidden transition"
+                className="w-full h-12 rounded-xl border border-neutral-200 bg-neutral-50/50 pl-11 pr-4 text-xs font-semibold text-black placeholder:text-neutral-400 focus:bg-white focus:border-black focus:outline-none focus:ring-0 transition"
               />
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
             </div>

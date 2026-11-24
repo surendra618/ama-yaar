@@ -5,12 +5,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging-comp
 
 // Initialize the Firebase app in the service worker by passing in the messagingSenderId
 const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyBokabNiThLwTNU4gz2BhsmS01qFjXXAeQ",
+  authDomain: "amayaar.firebaseapp.com",
+  projectId: "amayaar",
+  storageBucket: "amayaar.firebasestorage.app",
+  messagingSenderId: "402132815063",
+  appId: "1:402132815063:web:7407c9f208971b56963492"
 };
 
 if (firebaseConfig.apiKey) {

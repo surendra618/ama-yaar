@@ -310,17 +310,27 @@ async function sendOtp({ phone, email }) {
     });
 
     // Send email with custom OTP template
-    await sendEmail({
+    const mailResult = await sendEmail({
       to: cleanEmail,
       subject: `Your AMA-YAAR Verification Code: ${otp}`,
       html: emailOtpTemplate({ otp, email: cleanEmail }),
       text: `Your AMA-YAAR verification code is: ${otp}. It will expire in 10 minutes.`,
     });
 
+    if (mailResult?.skipped && mailResult?.error) {
+      console.error(`[auth.service] Email delivery failed:`, mailResult.error);
+      if (mailResult.error.includes('Username and Password not accepted') || mailResult.error.includes('BadCredentials')) {
+        throw new ApiError(
+          500,
+          'Gmail authentication failed. Please update your 16-character Google App Password in backend .env (SMTP_PASS).'
+        );
+      }
+      throw new ApiError(500, `Failed to send verification code email: ${mailResult.error}`);
+    }
+
     return {
       type: 'email',
       email: cleanEmail,
-      otp, // included for seamless development fallback
       isExisting,
       name: existingUser?.name || '',
       message: 'Verification code sent to your email',

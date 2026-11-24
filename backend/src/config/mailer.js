@@ -7,30 +7,39 @@ function getTransporter() {
   if (!env.smtp.host || !env.smtp.user || !env.smtp.pass) return null;
 
   if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: env.smtp.host,
-      port: env.smtp.port,
-      secure: env.smtp.port === 465, // true for 465, false for other ports (STARTTLS)
-      auth: { user: env.smtp.user, pass: env.smtp.pass },
-    });
+    const isGmail = env.smtp.host.includes('gmail.com');
+    transporter = nodemailer.createTransport(
+      isGmail
+        ? {
+            service: 'gmail',
+            auth: { user: env.smtp.user.trim(), pass: env.smtp.pass.trim() },
+            tls: { rejectUnauthorized: false },
+          }
+        : {
+            host: env.smtp.host,
+            port: env.smtp.port,
+            secure: env.smtp.port === 465,
+            auth: { user: env.smtp.user.trim(), pass: env.smtp.pass.trim() },
+            tls: { rejectUnauthorized: false },
+          }
+    );
   }
   return transporter;
 }
 
 /**
- * Sends an email. If SMTP isn't configured, logs a warning and no-ops instead
- * of throwing — email delivery should never break the request that triggered it.
+ * Sends an email using configured SMTP transporter.
  */
 async function sendEmail({ to, subject, html, text }) {
   const t = getTransporter();
   if (!t) {
     console.warn(`[mailer] SMTP not configured — skipped email to ${to}: "${subject}"`);
-    return { skipped: true };
+    return { skipped: true, error: 'SMTP configuration is missing in backend .env' };
   }
 
   try {
     const info = await t.sendMail({
-      from: `"AMA-YAAR" <${env.smtp.user}>`,
+      from: `"AMA-YAAR" <${env.smtp.user.trim()}>`,
       to,
       subject,
       text: text || html?.replace(/<[^>]+>/g, ' '),

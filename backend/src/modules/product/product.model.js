@@ -38,6 +38,7 @@ const productSchema = new mongoose.Schema(
     // Size Chart & Fit Guide
     sizeChartType: { type: String, default: 'default' }, // 'default' | 'tops' | 'bottoms' | 'image' | 'custom'
     sizeChartImage: { type: String, default: '' },
+    sizeChartPdf: { type: String, default: '' },
     customSizeChart: [
       {
         size: String,

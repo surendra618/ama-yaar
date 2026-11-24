@@ -39,8 +39,6 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState(false);
   const [otp, setOtp] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
-  const [isAutoFilled, setIsAutoFilled] = useState(false);
 
   // Captcha states
   const [captchaInput, setCaptchaInput] = useState('');
@@ -66,8 +64,6 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       setShowPassword(false);
       setIsExistingUser(false);
       setOtp('');
-      setGeneratedOtp('');
-      setIsAutoFilled(false);
       setCaptchaInput('');
       setCaptchaError('');
       setError('');
@@ -123,19 +119,15 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       const { data } = await api.post('/auth/send-otp', payload);
       const serverData = data?.data;
 
-      const receivedOtp = serverData?.otp || (authMode === 'email' ? '123456' : '1234');
       const existing = !!serverData?.isExisting;
       setIsExistingUser(existing);
       if (serverData?.name) setName(serverData.name);
       if (serverData?.email && !email) setEmail(serverData.email);
 
-      setGeneratedOtp(receivedOtp);
+      // Do not pre-fill OTP; user enters the real code sent to email
+      setOtp('');
       setStep('otp');
       setResendCooldown(30);
-
-      // Auto-fill OTP on next step if available
-      setIsAutoFilled(true);
-      setOtp(receivedOtp);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -154,13 +146,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         ? { phone: phone.replace(/\D/g, '') }
         : { email: email.trim().toLowerCase() };
 
-      const { data } = await api.post('/auth/send-otp', payload);
-      const serverData = data?.data;
-      const newOtp = serverData?.otp || (authMode === 'email' ? '123456' : '1234');
-
-      setGeneratedOtp(newOtp);
-      setOtp(newOtp);
-      setIsAutoFilled(true);
+      await api.post('/auth/send-otp', payload);
+      setOtp('');
       setResendCooldown(30);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to resend OTP');
@@ -476,7 +463,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                       <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
                         Email Address
                       </label>
-                      <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black focus-within:ring-1 focus-within:ring-black transition overflow-hidden">
+                      <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black transition overflow-hidden bg-white">
                         <div className="bg-neutral-100 px-3 py-2.5 text-xs text-neutral-600 border-r border-neutral-200 shrink-0">
                           <Mail className="h-4 w-4" />
                         </div>
@@ -485,7 +472,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                           placeholder="you@example.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
+                          className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none"
                           required
                           autoFocus
                         />
@@ -497,7 +484,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                       <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
                         Mobile Number
                       </label>
-                      <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black focus-within:ring-1 focus-within:ring-black transition overflow-hidden">
+                      <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black transition overflow-hidden bg-white">
                         <div className="bg-neutral-100 px-3 py-2.5 text-xs font-black text-neutral-700 border-r border-neutral-200 shrink-0">
                           IN +91
                         </div>
@@ -507,7 +494,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                           placeholder="98765 43210"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                          className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden"
+                          className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none"
                           required
                           autoFocus
                         />
@@ -592,7 +579,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                         placeholder={authMode === 'email' ? '••••••' : '••••'}
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-base font-black tracking-[0.3em] text-neutral-900 placeholder:text-neutral-300 focus:border-black focus:ring-1 focus:ring-black transition"
+                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-base font-black tracking-[0.3em] text-neutral-900 placeholder:text-neutral-300 focus:border-black focus:outline-none focus:ring-0 transition"
                         required
                         autoFocus
                       />
@@ -611,7 +598,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                         placeholder="Enter your full name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
+                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-0 transition"
                         required
                       />
                     </div>
@@ -629,7 +616,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                         placeholder="Enter password (min 6 characters)"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-10 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black transition"
+                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-10 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-0 transition"
                         required
                         minLength={6}
                       />

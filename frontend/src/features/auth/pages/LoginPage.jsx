@@ -21,7 +21,7 @@ import { loginUser, clearError, setCredentials } from '../authSlice';
 import { addToCart } from '../../cart/cartSlice';
 import CaptchaBox from '../../../components/CaptchaBox';
 import api from '../../../lib/axios';
-import { signInWithGoogle } from '../../../lib/firebase';
+import { signInWithGoogle, isConfigured as isFirebaseConfigured } from '../../../lib/firebase';
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -129,13 +129,9 @@ export default function LoginPage() {
       if (serverData?.name) setName(serverData.name);
       if (serverData?.email) setEmail(serverData.email);
 
-      setGeneratedOtp(randomOtp);
       setOtpStep('otp');
       setResendCooldown(30);
-
-      // Auto-fill OTP on next step!
-      setIsAutoFilled(true);
-      setOtp(randomOtp);
+      setOtp('');
     } catch (err) {
       setCustomError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -156,9 +152,7 @@ export default function LoginPage() {
         await api.post('/auth/send-otp', { phone: cleanPhone });
       } catch (_) { }
 
-      setGeneratedOtp(newOtp);
-      setOtp(newOtp);
-      setIsAutoFilled(true);
+      setOtp('');
       setResendCooldown(30);
     } catch (_) {
       setCustomError('Failed to resend OTP');

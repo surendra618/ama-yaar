@@ -116,10 +116,9 @@ export default function CreatorLoginPage() {
       if (serverData?.name) setName(serverData.name);
       if (serverData?.email) setEmail(serverData.email);
 
-      setGeneratedOtp(randomOtp);
       setOtpStep('otp');
       setResendCooldown(30);
-      setOtp(randomOtp); // Instant autofill for smooth dev & user UX
+      setOtp('');
     } catch (err) {
       setCustomError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -139,8 +138,7 @@ export default function CreatorLoginPage() {
       try {
         await api.post('/auth/send-otp', { phone: cleanPhone });
       } catch (_) { }
-      setGeneratedOtp(newOtp);
-      setOtp(newOtp);
+      setOtp('');
       setResendCooldown(30);
     } catch (_) {
       setCustomError('Failed to resend OTP.');

@@ -14,6 +14,7 @@ async function uploadMediaFile(file) {
   }
 
   const isVideo = file.mimetype.startsWith('video/');
+  const isPdf = file.mimetype === 'application/pdf';
 
   // Try Cloudinary if configured
   if (env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret) {
@@ -21,7 +22,7 @@ async function uploadMediaFile(file) {
       const base64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
       const result = await cloudinary.uploader.upload(base64, {
         folder: 'ama-yaar',
-        resource_type: isVideo ? 'video' : 'image',
+        resource_type: isVideo ? 'video' : (isPdf ? 'raw' : 'image'),
       });
       return {
         url: result.secure_url,
@@ -51,8 +52,8 @@ async function uploadMediaFile(file) {
       }
     }
 
-    const prefix = isVideo ? 'video' : 'img';
-    const ext = path.extname(file.originalname || '') || (isVideo ? '.mp4' : '.jpg');
+    const prefix = isVideo ? 'video' : (isPdf ? 'pdf' : 'img');
+    const ext = path.extname(file.originalname || '') || (isVideo ? '.mp4' : (isPdf ? '.pdf' : '.jpg'));
     const filename = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
     const filePath = path.join(uploadDir, filename);
 

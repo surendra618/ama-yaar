@@ -31,6 +31,9 @@ import {
   Film,
   Image as ImageIcon,
   UploadCloud,
+  Maximize2,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import {
   fetchProductDetails,
@@ -44,6 +47,7 @@ import ProductCard from "../../../components/ProductCard";
 import Loader from "../../../components/Loader";
 import AuthPopupModal from "../../../components/AuthPopupModal";
 import SizeChartModal from "../components/SizeChartModal";
+import ProductFullscreenZoomModal from "../components/ProductFullscreenZoomModal";
 import api from "../../../lib/axios";
 import { getMediaUrl } from "../../../utils/mediaUrl";
 
@@ -149,10 +153,7 @@ export default function ProductDetailsPage() {
   const [sizeModalOpen, setSizeModalOpen] = useState(false);
   const [newRating, setNewRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
-  const [newTitle, setNewTitle] = useState("");
   const [newComment, setNewComment] = useState("");
-  const [newReviewerName, setNewReviewerName] = useState("");
-  const [newReviewerEmail, setNewReviewerEmail] = useState("");
   const [reviewImages, setReviewImages] = useState([]);
   const [reviewVideos, setReviewVideos] = useState([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -167,11 +168,56 @@ export default function ProductDetailsPage() {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isMobileZoomed, setIsMobileZoomed] = useState(false);
+  const [mobileZoomScale, setMobileZoomScale] = useState(1);
+  const [mobilePan, setMobilePan] = useState({ x: 0, y: 0 });
   const [isDraggingZoom, setIsDraggingZoom] = useState(false);
+  const [isFullscreenZoomOpen, setIsFullscreenZoomOpen] = useState(false);
   const imageContainerRef = useRef(null);
   const lastTapRef = useRef(0);
+  const pinchStartDistRef = useRef(null);
+  const pinchStartScaleRef = useRef(1);
+  const lastTouchRef = useRef({ x: 0, y: 0 });
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
+  const longPressTimerRef = useRef(null);
+  const isLongPressActiveRef = useRef(false);
+  const hasMovedRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(longPressTimerRef.current);
+    };
+  }, []);
+
+  const [helpfulVotes, setHelpfulVotes] = useState({});
+
+  const handleHelpfulVote = (reviewId, type) => {
+    setHelpfulVotes((prev) => {
+      const current = prev[reviewId];
+      if (current === type) {
+        const copy = { ...prev };
+        delete copy[reviewId];
+        return copy;
+      }
+      return { ...prev, [reviewId]: type };
+    });
+  };
 
   const openReviewModal = () => {
+    if (!isAuthenticated) {
+      setAuthSuccessCallback(() => (loggedInUser) => {
+        const currentUser = loggedInUser || user;
+        if (currentUser?.name) setNewReviewerName(currentUser.name);
+        if (currentUser?.email) setNewReviewerEmail(currentUser.email);
+        setReviewSuccessMsg("");
+        setReviewImages([]);
+        setReviewVideos([]);
+        setUploadMediaError("");
+        setReviewModalOpen(true);
+      });
+      setAuthModalOpen(true);
+      return;
+    }
     if (user?.name) {
       setNewReviewerName(user.name);
     }
@@ -246,6 +292,21 @@ export default function ProductDetailsPage() {
   const displayImages = rawImages.length > 0 ? rawImages : PLACEHOLDER_GALLERY;
   const safeImageIndex = selectedImage < displayImages.length ? selectedImage : 0;
 
+  const getMaxPan = (currentScale) => {
+    if (!imageContainerRef.current || currentScale <= 1) return { maxX: 0, maxY: 0 };
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const maxX = (rect.width * (currentScale - 1)) / 2;
+    const maxY = (rect.height * (currentScale - 1)) / 2;
+    return { maxX, maxY };
+  };
+
+  const resetMobileZoom = () => {
+    setIsMobileZoomed(false);
+    setMobileZoomScale(1);
+    setMobilePan({ x: 0, y: 0 });
+    setIsDraggingZoom(false);
+  };
+
   const handlePrevImage = (e) => {
     if (e) {
       e.preventDefault();
@@ -253,7 +314,7 @@ export default function ProductDetailsPage() {
     }
     if (displayImages.length <= 1) return;
     setIsHoveringZoom(false);
-    setIsMobileZoomed(false);
+    resetMobileZoom();
     setZoomPos({ x: 50, y: 50 });
     setSelectedImage((prev) =>
       prev <= 0 ? displayImages.length - 1 : prev - 1,
@@ -267,7 +328,7 @@ export default function ProductDetailsPage() {
     }
     if (displayImages.length <= 1) return;
     setIsHoveringZoom(false);
-    setIsMobileZoomed(false);
+    resetMobileZoom();
     setZoomPos({ x: 50, y: 50 });
     setSelectedImage((prev) =>
       prev >= displayImages.length - 1 ? 0 : prev + 1,
@@ -275,74 +336,151 @@ export default function ProductDetailsPage() {
   };
 
   const handleTouchStart = (e) => {
-    if (!e.touches || !e.touches[0]) return;
-    const touch = e.touches[0];
+    if (!e.touches) return;
+    hasMovedRef.current = false;
+    isLongPressActiveRef.current = false;
+    clearTimeout(longPressTimerRef.current);
 
-    // Double tap detector to toggle zoom directly at touch position
-    const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300;
-    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-      if (imageContainerRef.current) {
-        const rect = imageContainerRef.current.getBoundingClientRect();
-        const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
-        const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
-        setZoomPos({ x, y });
-      }
-      setIsMobileZoomed((prev) => !prev);
-      lastTapRef.current = 0;
+    // Two-finger Pinch Zoom (Flipkart style)
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[1].clientX - e.touches[0].clientX,
+        e.touches[1].clientY - e.touches[0].clientY
+      );
+      pinchStartDistRef.current = dist;
+      pinchStartScaleRef.current = mobileZoomScale > 1 ? mobileZoomScale : 1;
+      setIsDraggingZoom(true);
       return;
     }
-    lastTapRef.current = now;
 
-    if (isMobileZoomed) {
-      // In zoom mode: start panning/sliding the zoomed view
-      setIsDraggingZoom(true);
-      if (imageContainerRef.current) {
-        const rect = imageContainerRef.current.getBoundingClientRect();
-        const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
-        const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
-        setZoomPos({ x, y });
-      }
-    } else {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+      touchStartXRef.current = touch.clientX;
+      touchStartYRef.current = touch.clientY;
       setTouchStartX(touch.clientX);
       setTouchStartY(touch.clientY);
       setDragOffset(0);
-      setIsDragging(true);
+
+      // Long-press timer (~220ms).
+      // When held down, zooms directly on the touched position on phone screen!
+      longPressTimerRef.current = setTimeout(() => {
+        isLongPressActiveRef.current = true;
+        hasMovedRef.current = true;
+
+        if (imageContainerRef.current) {
+          const rect = imageContainerRef.current.getBoundingClientRect();
+          const W = rect.width;
+          const H = rect.height;
+          const S = 2.4;
+          const relX = touchStartXRef.current - rect.left - W / 2;
+          const relY = touchStartYRef.current - rect.top - H / 2;
+          const maxX = (W * (S - 1)) / 2;
+          const maxY = (H * (S - 1)) / 2;
+          const targetX = Math.max(-maxX, Math.min(maxX, -relX * (S - 1)));
+          const targetY = Math.max(-maxY, Math.min(maxY, -relY * (S - 1)));
+
+          setMobileZoomScale(S);
+          setMobilePan({ x: targetX, y: targetY });
+          setIsMobileZoomed(true);
+          setIsDraggingZoom(false);
+        }
+
+        // Haptic feedback tick on phone if supported
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          try {
+            navigator.vibrate(25);
+          } catch (_) {}
+        }
+      }, 220);
     }
   };
 
   const handleTouchMove = (e) => {
-    if (!e.touches || !e.touches[0]) return;
-    const touch = e.touches[0];
+    if (!e.touches) return;
 
-    if (isMobileZoomed) {
-      // Touch-sliding dynamically pans across zoomed image in real-time
-      if (imageContainerRef.current) {
-        const rect = imageContainerRef.current.getBoundingClientRect();
-        const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
-        const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
-        setZoomPos({ x, y });
+    // 2-Finger Pinch Zooming
+    if (e.touches.length === 2 && pinchStartDistRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      const dist = Math.hypot(
+        e.touches[1].clientX - e.touches[0].clientX,
+        e.touches[1].clientY - e.touches[0].clientY
+      );
+      const newScale = Math.max(1, Math.min(4, pinchStartScaleRef.current * (dist / pinchStartDistRef.current)));
+      const { maxX, maxY } = getMaxPan(newScale);
+      setMobileZoomScale(newScale);
+      setMobilePan((p) => ({
+        x: Math.max(-maxX, Math.min(maxX, p.x)),
+        y: Math.max(-maxY, Math.min(maxY, p.y)),
+      }));
+      if (!isMobileZoomed && newScale > 1.05) {
+        setIsMobileZoomed(true);
       }
+      hasMovedRef.current = true;
       if (e.cancelable) e.preventDefault();
       return;
     }
 
-    if (touchStartX === null || displayImages.length <= 1) return;
-    const diffX = touch.clientX - touchStartX;
-    const diffY = touch.clientY - (touchStartY || touch.clientY);
+    // 1-Finger Gesture
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - lastTouchRef.current.x;
+      const deltaY = touch.clientY - lastTouchRef.current.y;
+      lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
 
-    // If horizontal dragging is dominant over vertical scrolling
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-      setDragOffset(diffX);
-      if (e.cancelable && Math.abs(diffX) > 8) {
-        e.preventDefault();
+      const totalDist = Math.hypot(
+        touch.clientX - touchStartXRef.current,
+        touch.clientY - touchStartYRef.current
+      );
+
+      // If moved noticeably before long-press fires, cancel timer so normal swipe occurs
+      if (!isLongPressActiveRef.current && totalDist > 8) {
+        clearTimeout(longPressTimerRef.current);
+      }
+
+      // If long-press zoom is active, smoothly slide / pan image with finger
+      if (isLongPressActiveRef.current || isMobileZoomed) {
+        hasMovedRef.current = true;
+        setIsDraggingZoom(true);
+        const { maxX, maxY } = getMaxPan(mobileZoomScale || 2.4);
+        setMobilePan((prev) => ({
+          x: Math.max(-maxX, Math.min(maxX, prev.x + deltaX)),
+          y: Math.max(-maxY, Math.min(maxY, prev.y + deltaY)),
+        }));
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+
+      // Carousel horizontal swipe when not zoomed
+      if (touchStartX === null || displayImages.length <= 1) return;
+      const diffX = touch.clientX - touchStartX;
+      const diffY = touch.clientY - (touchStartY || touch.clientY);
+
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (Math.abs(diffX) > 6) {
+          hasMovedRef.current = true;
+        }
+        setDragOffset(diffX);
+        if (e.cancelable && Math.abs(diffX) > 8) {
+          e.preventDefault();
+        }
       }
     }
   };
 
-  const handleTouchEnd = () => {
-    if (isMobileZoomed) {
-      setIsDraggingZoom(false);
+  const handleTouchEnd = (e) => {
+    clearTimeout(longPressTimerRef.current);
+    setIsDraggingZoom(false);
+    pinchStartDistRef.current = null;
+
+    // When lifting finger, smoothly return image from zoom back to normal
+    if (isLongPressActiveRef.current || isMobileZoomed) {
+      resetMobileZoom();
+      isLongPressActiveRef.current = false;
+      hasMovedRef.current = true; // prevents firing click/fullscreen right after release
+      setDragOffset(0);
+      setTouchStartX(null);
+      setTouchStartY(null);
       return;
     }
 
@@ -361,20 +499,23 @@ export default function ProductDetailsPage() {
   };
 
   const handleImageClick = (e) => {
-    // If clicking on arrows or dots, ignore
+    // If clicking on arrows, dots, or buttons, ignore
     if (e.target && e.target.closest && e.target.closest('button')) return;
 
-    if (imageContainerRef.current) {
-      const rect = imageContainerRef.current.getBoundingClientRect();
-      const clientX = e.clientX;
-      const clientY = e.clientY;
-      if (clientX !== undefined && clientY !== undefined) {
-        const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-        const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
-        setZoomPos({ x, y });
-      }
+    // If user just dragged/slid fingers or finished long-press, do not open modal
+    if (hasMovedRef.current) {
+      hasMovedRef.current = false;
+      return;
     }
-    setIsMobileZoomed((prev) => !prev);
+
+    // Toggle zoom off if already zoomed
+    if (isMobileZoomed) {
+      resetMobileZoom();
+      return;
+    }
+
+    // Quick tap opens fullscreen zoom gallery modal
+    setIsFullscreenZoomOpen(true);
   };
 
   useEffect(() => {
@@ -505,10 +646,9 @@ export default function ProductDetailsPage() {
         submitProductReview({
           productId: product._id,
           rating: newRating,
-          title: newTitle.trim(),
           comment: newComment.trim(),
-          userName: newReviewerName.trim() || user?.name || "Verified Buyer",
-          userEmail: newReviewerEmail.trim() || user?.email || "",
+          userName: user?.name || "Verified Customer",
+          userEmail: user?.email || "",
           images: reviewImages,
           videos: reviewVideos,
         })
@@ -519,7 +659,6 @@ export default function ProductDetailsPage() {
         setReviewModalOpen(false);
         setReviewSuccessMsg("");
         setNewComment("");
-        setNewTitle("");
         setReviewImages([]);
         setReviewVideos([]);
       }, 1400);
@@ -578,29 +717,35 @@ export default function ProductDetailsPage() {
               )}
             </div>
 
-            {/* Rating Stars & Customer Review Count */}
-            <div className="mt-2 flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1 bg-neutral-100 text-neutral-900 px-2 py-0.5 rounded text-xs font-bold">
-                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            {/* Rating Stars & Customer Review Count (Flipkart Style) */}
+            <div className="mt-2 flex items-center gap-2.5 flex-wrap">
+              <div className="inline-flex items-center gap-1 bg-[#388e3c] text-white px-2 py-0.5 rounded text-xs font-bold shadow-2xs">
                 <span>{product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")}</span>
+                <Star className="h-3 w-3 fill-white text-white" />
               </div>
               <button
                 type="button"
                 onClick={() => {
                   const el = document.getElementById("customer-reviews-section");
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth" });
+                  } else {
+                    setActiveTab("reviews");
+                    const tabsEl = document.getElementById("product-tabs-section");
+                    if (tabsEl) tabsEl.scrollIntoView({ behavior: "smooth" });
+                  }
                 }}
-                className="text-xs text-neutral-500 hover:text-black font-medium underline underline-offset-2 cursor-pointer"
+                className="text-xs text-neutral-600 hover:text-black font-semibold hover:underline cursor-pointer"
               >
-                {reviews?.length || product.numReviews || 0} reviews
+                {reviewStats?.total || reviews?.length || product.numReviews || 0} Ratings & {reviews?.length || product.numReviews || 0} Reviews
               </button>
               <span className="text-neutral-300">•</span>
               <button
                 type="button"
                 onClick={openReviewModal}
-                className="text-xs font-bold text-black hover:opacity-75 cursor-pointer underline underline-offset-2"
+                className="text-xs font-bold text-[#2874f0] hover:underline cursor-pointer flex items-center gap-1"
               >
-                Write a review
+                Rate Product
               </button>
             </div>
 
@@ -615,7 +760,7 @@ export default function ProductDetailsPage() {
             <div
               ref={imageContainerRef}
               className={`relative aspect-[3/4] sm:aspect-[4/5] w-full max-w-[620px] overflow-hidden rounded-md bg-neutral-100 flex items-center justify-center shadow-xs group select-none ${
-                isMobileZoomed ? "cursor-grab active:cursor-grabbing touch-none" : "cursor-crosshair"
+                isMobileZoomed ? "cursor-grab active:cursor-grabbing touch-none" : "cursor-crosshair touch-pan-y"
               }`}
               onClick={handleImageClick}
               onMouseEnter={() => setIsHoveringZoom(true)}
@@ -627,6 +772,7 @@ export default function ProductDetailsPage() {
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
             >
               {/* Sliding Carousel Track with Real-time Gesture Support */}
               <div
@@ -653,16 +799,23 @@ export default function ProductDetailsPage() {
                             "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=1200&q=85";
                         }}
                         style={
-                          isZooming
+                          isMobileZoomed && isActive
                             ? {
-                                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                                transform: isMobileZoomed ? "scale(2.2)" : "scale(1.6)",
+                                transform: `translate3d(${mobilePan.x}px, ${mobilePan.y}px, 0px) scale(${mobileZoomScale})`,
+                                transformOrigin: "center center",
                                 transition: isDraggingZoom
                                   ? "none"
-                                  : "transform-origin 80ms ease-out, transform 200ms ease-out",
+                                  : "transform 250ms cubic-bezier(0.25, 1, 0.5, 1)",
+                              }
+                            : isHoveringZoom && isActive
+                            ? {
+                                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                                transform: "scale(1.6)",
+                                transition: "transform-origin 80ms ease-out, transform 200ms ease-out",
                               }
                             : {
-                                transform: "scale(1)",
+                                transform: "translate3d(0px, 0px, 0px) scale(1)",
+                                transformOrigin: "center center",
                                 transition: "transform 250ms ease-out",
                               }
                         }
@@ -722,7 +875,7 @@ export default function ProductDetailsPage() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setIsMobileZoomed(false);
+                        resetMobileZoom();
                         setSelectedImage(dotIdx);
                       }}
                       className={`h-1.5 rounded-full transition-all cursor-pointer ${
@@ -743,33 +896,29 @@ export default function ProductDetailsPage() {
                 </span>
               )}
 
-              {/* Zoom pill / Mode banner */}
-              {isMobileZoomed ? (
-                <div className="absolute top-3 inset-x-3 z-30 flex items-center justify-between bg-black/85 backdrop-blur-md text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-lg pointer-events-auto animate-in fade-in duration-150">
-                  <span className="flex items-center gap-1.5">
-                    <Search className="h-3 w-3 text-amber-400" />
-                    <span>Slide finger to explore details</span>
+              {/* Zoom pill / Mode banner - Completely clean viewport when zoomed (no top UI) */}
+              {isMobileZoomed ? null : isHoveringZoom ? (
+                <span className="absolute bottom-3 right-3 z-20 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
+                  1.6x Zoom
+                </span>
+              ) : (
+                <div className="absolute bottom-3 inset-x-3 z-10 flex items-center justify-between pointer-events-none">
+                  <span className="bg-black/60 backdrop-blur-xs text-white/95 text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1 shadow-xs">
+                    <Search className="h-3 w-3 text-amber-400" /> Hold & slide to zoom
                   </span>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsMobileZoomed(false);
+                      setIsFullscreenZoomOpen(true);
                     }}
-                    className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition"
+                    className="pointer-events-auto bg-black/60 backdrop-blur-xs hover:bg-black text-white p-1.5 rounded-full shadow-xs transition cursor-pointer"
+                    title="Open Fullscreen Gallery"
+                    aria-label="Open Fullscreen Gallery"
                   >
-                    <span>Close Zoom</span>
-                    <X className="h-3 w-3" />
+                    <Maximize2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              ) : isHoveringZoom ? (
-                <span className="absolute bottom-3 right-3 z-20 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm pointer-events-none">
-                  1.6x Zoom
-                </span>
-              ) : (
-                <span className="absolute bottom-3 left-3 z-10 bg-black/50 backdrop-blur-xs text-white/95 text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1 transition pointer-events-none shadow-xs">
-                  <Search className="h-3 w-3" /> Tap to zoom & slide
-                </span>
               )}
             </div>
 
@@ -781,7 +930,7 @@ export default function ProductDetailsPage() {
                     key={idx}
                     type="button"
                     onClick={() => {
-                      setIsMobileZoomed(false);
+                      resetMobileZoom();
                       setSelectedImage(idx);
                     }}
                     className={`h-14 w-11 sm:h-16 sm:w-13 overflow-hidden rounded-sm border transition cursor-pointer ${
@@ -993,7 +1142,7 @@ export default function ProductDetailsPage() {
                     setPincodeError('');
                   }}
                   placeholder="Enter 6-digit delivery PIN code"
-                  className="w-full h-9 rounded-sm border border-neutral-200 pl-3 pr-20 text-xs font-medium text-black placeholder:text-neutral-400 focus:border-black focus:outline-hidden"
+                  className="w-full h-9 rounded-sm border border-neutral-200 pl-3 pr-20 text-xs font-medium text-black placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-0"
                 />
                 <button
                   type="submit"
@@ -1055,8 +1204,8 @@ export default function ProductDetailsPage() {
               </button>
             </div>
 
-            {/* 3 TABS: Description | Details | Exchange Policy (Exact match to User Screenshot) */}
-            <div className="pt-4 border-t border-neutral-200">
+            {/* TABS: Description | Details | Exchange Policy | Reviews (Bonkers Corner Style) */}
+            <div id="product-tabs-section" className="pt-4 border-t border-neutral-200">
               <div className="flex border-b border-neutral-200 justify-between text-xs font-medium text-neutral-500">
                 <button
                   type="button"
@@ -1260,44 +1409,106 @@ export default function ProductDetailsPage() {
                 )}
 
                 {activeTab === "reviews" && (
-                  <div className="space-y-3 animate-in fade-in duration-200">
-                    <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-                      <div className="flex items-center gap-1.5">
-                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                        <span className="font-black text-sm text-neutral-900">
-                          {product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")} / 5.0
-                        </span>
-                        <span className="text-neutral-400 text-[11px]">
-                          ({reviews?.length || product.numReviews || 0} reviews)
-                        </span>
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    {/* Overall Rating & Breakdown */}
+                    <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-200/90 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-2xl font-black text-neutral-950">
+                              {product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")}
+                            </span>
+                            <span className="text-xs text-neutral-400 font-medium">/ 5.0</span>
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5 text-amber-400">
+                            {[1, 2, 3, 4, 5].map((s) => {
+                              const avg = Number(product.rating || reviewStats?.average || 4.5);
+                              return (
+                                <Star
+                                  key={s}
+                                  className={`h-3 w-3 ${
+                                    s <= Math.round(avg) ? "fill-amber-400 text-amber-400" : "text-neutral-300"
+                                  }`}
+                                />
+                              );
+                            })}
+                            <span className="text-[11px] text-neutral-500 font-medium ml-1">
+                              ({reviews?.length || product.numReviews || 0} reviews)
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={openReviewModal}
+                          className="rounded-lg bg-black px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-neutral-800 transition active:scale-95 cursor-pointer shadow-xs"
+                        >
+                          + Write Review
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={openReviewModal}
-                        className="rounded-sm bg-black px-2.5 py-1 text-[11px] font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
-                      >
-                        + Write Review
-                      </button>
+
+                      {/* Rating Distribution Bars */}
+                      <div className="space-y-1 pt-2 border-t border-neutral-200/70">
+                        {[5, 4, 3, 2, 1].map((stars) => {
+                          const count = reviewStats?.distribution?.[stars] || 0;
+                          const total = reviews?.length || 1;
+                          const pct = reviews?.length
+                            ? Math.round((count / total) * 100)
+                            : stars === 5
+                            ? 85
+                            : stars === 4
+                            ? 12
+                            : 3;
+                          return (
+                            <div key={stars} className="flex items-center gap-2 text-[10px]">
+                              <span className="w-8 font-semibold text-neutral-600">{stars} ★</span>
+                              <div className="flex-1 h-1.5 rounded-full bg-neutral-200 overflow-hidden">
+                                <div
+                                  className="h-full bg-neutral-900 rounded-full transition-all duration-500"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className="w-6 text-right font-mono text-neutral-400 text-[10px]">{pct}%</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
 
-                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {/* Reviews List */}
+                    <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
                       {reviews && reviews.length > 0 ? (
                         reviews.map((r, i) => (
-                          <div key={r._id || i} className="p-2.5 rounded bg-neutral-50 border border-neutral-100 text-xs">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-bold text-neutral-900">{r.authorName || r.userName || "Customer"}</span>
+                          <div
+                            key={r._id || i}
+                            className="p-3 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-neutral-900">
+                                  {r.authorName || r.userName || "Verified Buyer"}
+                                </span>
+                                {(r.isVerifiedPurchase || r.user) && (
+                                  <span className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1 py-0.2 text-[9px] font-bold text-emerald-700 border border-emerald-200">
+                                    <Check className="h-2 w-2" />
+                                    <span>Verified</span>
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex text-amber-400">
                                 {[...Array(r.rating || 5)].map((_, si) => (
                                   <Star key={si} className="h-3 w-3 fill-amber-400" />
                                 ))}
                               </div>
                             </div>
-                            {r.title && <p className="font-semibold text-neutral-800 text-[11px]">{r.title}</p>}
-                            <p className="text-neutral-600 text-[11px] line-clamp-2">{r.comment}</p>
 
-                            {/* Media preview in quick tab */}
+                            <p className="text-neutral-700 text-xs leading-relaxed whitespace-pre-line">
+                              {r.comment}
+                            </p>
+
+                            {/* Media preview in tab */}
                             {((r.images && r.images.length > 0) || (r.videos && r.videos.length > 0)) && (
-                              <div className="flex items-center gap-1.5 pt-1.5">
+                              <div className="flex items-center gap-1.5 pt-1">
                                 {r.videos?.map((v, vi) => (
                                   <button
                                     key={`tab-v-${vi}`}
@@ -1309,9 +1520,12 @@ export default function ProductDetailsPage() {
                                         author: r.authorName || r.userName,
                                       })
                                     }
-                                    className="relative h-9 w-9 rounded-md overflow-hidden border border-neutral-300 bg-black cursor-pointer shrink-0"
+                                    className="relative h-10 w-10 rounded-md overflow-hidden border border-neutral-300 bg-black cursor-pointer shrink-0"
                                   >
-                                    <video src={getMediaUrl(v)} className="h-full w-full object-cover opacity-70" />
+                                    <video
+                                      src={getMediaUrl(v)}
+                                      className="h-full w-full object-cover opacity-70"
+                                    />
                                     <Play className="absolute inset-0 m-auto h-3 w-3 text-white fill-white" />
                                   </button>
                                 ))}
@@ -1326,19 +1540,42 @@ export default function ProductDetailsPage() {
                                         author: r.authorName || r.userName,
                                       })
                                     }
-                                    className="relative h-9 w-9 rounded-md overflow-hidden border border-neutral-200 bg-neutral-100 cursor-pointer shrink-0"
+                                    className="relative h-10 w-10 rounded-md overflow-hidden border border-neutral-200 bg-neutral-100 cursor-pointer shrink-0"
                                   >
-                                    <img src={getMediaUrl(im)} alt="" className="h-full w-full object-cover" />
+                                    <img
+                                      src={getMediaUrl(im)}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                    />
                                   </button>
                                 ))}
                               </div>
                             )}
+
+                            <div className="text-[10px] text-neutral-400 pt-0.5">
+                              {r.createdAt
+                                ? new Date(r.createdAt).toLocaleDateString("en-IN", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })
+                                : "Recent"}
+                            </div>
                           </div>
                         ))
                       ) : (
-                        <p className="text-[11px] text-neutral-500 italic py-2">
-                          No reviews yet. Be the first to review this product!
-                        </p>
+                        <div className="py-6 text-center space-y-2 border border-dashed border-neutral-200 rounded-xl bg-neutral-50/50">
+                          <p className="text-xs text-neutral-500 font-medium">
+                            No customer reviews yet.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={openReviewModal}
+                            className="text-xs font-bold text-black underline underline-offset-2 cursor-pointer hover:opacity-80"
+                          >
+                            Be the first to write a review!
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1348,236 +1585,7 @@ export default function ProductDetailsPage() {
           </div>
         </div>
 
-        {/* Dedicated Customer Reviews & Ratings Section */}
-        <section id="customer-reviews-section" className="mt-12 pt-10 border-t border-neutral-200">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div>
-              <span className="text-[11px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
-                COMMUNITY FEEDBACK
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900 uppercase">
-                CUSTOMER REVIEWS & RATINGS
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={openReviewModal}
-              className="inline-flex items-center gap-2 rounded-none bg-black px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-neutral-800 transition active:scale-95 shadow-sm cursor-pointer"
-            >
-              <Star className="h-3.5 w-3.5 fill-white text-white" />
-              <span>Write a Review</span>
-            </button>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left 4 Cols: Rating Breakdown Card */}
-            <div className="lg:col-span-4 rounded-xl bg-neutral-50 p-6 border border-neutral-200/80">
-              <div className="flex items-baseline gap-3 mb-2">
-                <span className="text-5xl font-black text-neutral-950 tracking-tight">
-                  {product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")}
-                </span>
-                <span className="text-sm font-semibold text-neutral-400">/ 5.0</span>
-              </div>
-
-              {/* Star visuals */}
-              <div className="flex items-center gap-1 mb-2 text-amber-400">
-                {[1, 2, 3, 4, 5].map((s) => {
-                  const avg = Number(product.rating || reviewStats?.average || 4.5);
-                  return (
-                    <Star
-                      key={s}
-                      className={`h-5 w-5 ${
-                        s <= Math.round(avg) ? "fill-amber-400 text-amber-400" : "text-neutral-300"
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-              <p className="text-xs text-neutral-500 font-medium mb-6">
-                Based on {reviews?.length || product.numReviews || 0} customer reviews
-              </p>
-
-              {/* Rating Distribution Bars */}
-              <div className="space-y-2">
-                {[5, 4, 3, 2, 1].map((stars) => {
-                  const count = reviewStats?.distribution?.[stars] || 0;
-                  const total = reviews?.length || 1;
-                  const pct = reviews?.length ? Math.round((count / total) * 100) : stars === 5 ? 85 : stars === 4 ? 12 : 3;
-                  return (
-                    <div key={stars} className="flex items-center gap-2 text-xs">
-                      <span className="w-12 font-semibold text-neutral-600">{stars} Star</span>
-                      <div className="flex-1 h-2 rounded-full bg-neutral-200 overflow-hidden">
-                        <div
-                          className="h-full bg-neutral-900 rounded-full transition-all duration-500"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <span className="w-8 text-right font-mono text-neutral-400 text-[11px]">{pct}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 pt-5 border-t border-neutral-200">
-                <div className="flex items-center gap-2 text-xs text-neutral-600">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>100% verified authentic customer feedback</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right 8 Cols: Reviews List */}
-            <div className="lg:col-span-8 space-y-4">
-              {reviews && reviews.length > 0 ? (
-                <div className="space-y-4">
-                  {reviews.map((rev) => (
-                    <div
-                      key={rev._id}
-                      className="rounded-xl border border-neutral-200 p-5 bg-white shadow-xs space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-neutral-900 text-white font-bold text-xs flex items-center justify-center">
-                            {(rev.authorName || rev.userName || "U").charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-neutral-900">
-                                {rev.authorName || rev.userName || "Verified Buyer"}
-                              </span>
-                              {(rev.isVerifiedPurchase || rev.user) && (
-                                <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                                  <Check className="h-2.5 w-2.5" />
-                                  <span>Verified Purchase</span>
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[11px] text-neutral-400">
-                              {rev.createdAt
-                                ? new Date(rev.createdAt).toLocaleDateString("en-IN", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })
-                                : "Recent"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Stars */}
-                        <div className="flex text-amber-400">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star
-                              key={s}
-                              className={`h-4 w-4 ${
-                                s <= rev.rating ? "fill-amber-400 text-amber-400" : "text-neutral-200"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      {rev.title && (
-                        <h4 className="text-xs sm:text-sm font-bold text-neutral-900">
-                          {rev.title}
-                        </h4>
-                      )}
-
-                      <p className="text-xs text-neutral-600 leading-relaxed whitespace-pre-line">
-                        {rev.comment}
-                      </p>
-
-                      {/* Attached Customer Photos & Videos */}
-                      {((rev.images && rev.images.length > 0) || (rev.videos && rev.videos.length > 0)) && (
-                        <div className="pt-2.5 border-t border-neutral-100 space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                            Customer Attached Media ({((rev.images?.length || 0) + (rev.videos?.length || 0))})
-                          </span>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {/* Videos */}
-                            {rev.videos?.map((vidUrl, vidIdx) => (
-                              <button
-                                key={`vid-${vidIdx}`}
-                                type="button"
-                                onClick={() =>
-                                  setActiveMediaModal({
-                                    url: getMediaUrl(vidUrl),
-                                    type: "video",
-                                    author: rev.authorName || rev.userName,
-                                  })
-                                }
-                                className="relative h-18 w-18 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-neutral-300 bg-black group hover:scale-105 transition cursor-pointer shadow-xs shrink-0"
-                              >
-                                <video
-                                  src={getMediaUrl(vidUrl)}
-                                  className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/10 transition">
-                                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-neutral-900 shadow-md">
-                                    <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
-                                  </div>
-                                </div>
-                                <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.2 text-[8px] font-bold text-white flex items-center gap-0.5">
-                                  <Video className="h-2.5 w-2.5 text-rose-400" /> VIDEO
-                                </span>
-                              </button>
-                            ))}
-
-                            {/* Images */}
-                            {rev.images?.map((imgUrl, imgIdx) => (
-                              <button
-                                key={`img-${imgIdx}`}
-                                type="button"
-                                onClick={() =>
-                                  setActiveMediaModal({
-                                    url: getMediaUrl(imgUrl),
-                                    type: "image",
-                                    author: rev.authorName || rev.userName,
-                                  })
-                                }
-                                className="relative h-18 w-18 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 group hover:scale-105 transition cursor-pointer shadow-xs shrink-0"
-                              >
-                                <img
-                                  src={getMediaUrl(imgUrl)}
-                                  alt={`Customer photo ${imgIdx + 1}`}
-                                  className="h-full w-full object-cover group-hover:opacity-95 transition"
-                                />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-end justify-end p-1">
-                                  <span className="opacity-0 group-hover:opacity-100 transition rounded bg-black/80 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                                    Enlarge
-                                  </span>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center space-y-3 bg-neutral-50/50">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
-                    <Star className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-sm font-bold text-neutral-900">
-                    No customer reviews yet
-                  </h3>
-                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                    Be the first to share your thoughts on sizing, fabric, and styling for this piece.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={openReviewModal}
-                    className="inline-flex items-center gap-1.5 rounded-none bg-black px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer"
-                  >
-                    Write the First Review
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
 
         {/* You Might Also Like — Related Products Listing Directly Below Details */}
         {(() => {
@@ -1895,61 +1903,34 @@ export default function ProductDetailsPage() {
                   </div>
                 </div>
 
-                {/* 2. Reviewer Name & Email */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Your Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Rohan Sharma"
-                      value={newReviewerName}
-                      onChange={(e) => setNewReviewerName(e.target.value)}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-xs text-neutral-900 focus:border-black focus:ring-1 focus:ring-black outline-none"
-                    />
+                {/* 2. Reviewer Account Info (Auto-detected from Login) */}
+                <div className="rounded-lg bg-neutral-50 border border-neutral-200/80 px-3.5 py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-neutral-900 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                      {(user?.name || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs text-neutral-600">
+                      Posting review as <strong className="text-neutral-900 font-semibold">{user?.name || user?.email || "Verified Customer"}</strong>
+                    </span>
                   </div>
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Email Address (Private)
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="e.g. rohan@example.com"
-                      value={newReviewerEmail}
-                      onChange={(e) => setNewReviewerEmail(e.target.value)}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-xs text-neutral-900 focus:border-black focus:ring-1 focus:ring-black outline-none"
-                    />
-                  </div>
+                  <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 shrink-0">
+                    <Check className="h-2.5 w-2.5" />
+                    <span>Verified Buyer</span>
+                  </span>
                 </div>
 
-                {/* 3. Review Headline / Title */}
+                {/* 3. Detailed Review Comment */}
                 <div>
-                  <label className="text-xs font-bold text-neutral-700 block mb-1">
-                    Review Headline / Title (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Insane oversized fit, 10/10 heavyweight cotton!"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-xs text-neutral-900 focus:border-black focus:ring-1 focus:ring-black outline-none"
-                  />
-                </div>
-
-                {/* 4. Detailed Comment */}
-                <div>
-                  <label className="text-xs font-bold text-neutral-700 block mb-1">
+                  <label className="text-xs font-bold text-neutral-800 block mb-1">
                     Your Review *
                   </label>
                   <textarea
                     required
                     rows={4}
-                    placeholder="What did you think of the fit, fabric quality, and comfort? Would you recommend it?"
+                    placeholder="Write your honest review here... How is the fabric, fit, and comfort? Would you recommend it?"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    className="w-full rounded-lg border border-neutral-300 p-3 text-xs text-neutral-900 focus:border-black focus:ring-1 focus:ring-black outline-none leading-relaxed"
+                    className="w-full rounded-lg border border-neutral-300 p-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:ring-1 focus:ring-black outline-none leading-relaxed"
                   />
                 </div>
 
@@ -2136,6 +2117,15 @@ export default function ProductDetailsPage() {
         selectedSize={selectedSize}
         product={product}
         onSelectSize={(sz) => setSelectedSize(sz)}
+      />
+
+      {/* Fullscreen Flipkart-style Zoom Lightbox Modal */}
+      <ProductFullscreenZoomModal
+        isOpen={isFullscreenZoomOpen}
+        onClose={() => setIsFullscreenZoomOpen(false)}
+        images={displayImages}
+        initialIndex={safeImageIndex}
+        productName={product.name}
       />
 
       {/* Customer Review Media Lightbox Modal */}
