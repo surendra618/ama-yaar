@@ -1,5 +1,6 @@
 const Product = require('./product.model');
 const Category = require('../category/category.model');
+const Review = require('../review/review.model');
 const ApiError = require('../../utils/ApiError');
 
 const fallbackProducts = [
@@ -290,6 +291,17 @@ async function getByIdOrSlug(idOrSlug, query = {}) {
 
     const docObj = doc.toObject();
     docObj.related = related;
+
+    // Dynamically calculate genuine ratings & reviews from DB
+    try {
+      const realReviews = await Review.find({ product: doc._id, isApproved: true }).select('rating').lean();
+      const realCount = realReviews.length;
+      docObj.numReviews = realCount;
+      docObj.rating = realCount > 0
+        ? Number((realReviews.reduce((sum, r) => sum + r.rating, 0) / realCount).toFixed(1))
+        : 0;
+    } catch (_) {}
+
     return docObj;
   } catch (err) {
     if (err instanceof ApiError) throw err;

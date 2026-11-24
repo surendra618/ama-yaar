@@ -154,6 +154,9 @@ export default function ProductDetailsPage() {
   const [newRating, setNewRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [newComment, setNewComment] = useState("");
+  const [newReviewerName, setNewReviewerName] = useState("");
+  const [newReviewerEmail, setNewReviewerEmail] = useState("");
+  const [authIntendedAction, setAuthIntendedAction] = useState(null);
   const [reviewImages, setReviewImages] = useState([]);
   const [reviewVideos, setReviewVideos] = useState([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -205,6 +208,7 @@ export default function ProductDetailsPage() {
 
   const openReviewModal = () => {
     if (!isAuthenticated) {
+      setAuthIntendedAction('review');
       setAuthSuccessCallback(() => (loggedInUser) => {
         const currentUser = loggedInUser || user;
         if (currentUser?.name) setNewReviewerName(currentUser.name);
@@ -640,21 +644,29 @@ export default function ProductDetailsPage() {
     e.preventDefault();
     if (!newComment.trim()) return;
 
+    const targetProductId = product?._id || product?.id;
+    if (!targetProductId) {
+      alert("Unable to submit review: Product ID is missing.");
+      return;
+    }
+
     setSubmittingReview(true);
     try {
       await dispatch(
         submitProductReview({
-          productId: product._id,
+          productId: targetProductId,
           rating: newRating,
           comment: newComment.trim(),
-          userName: user?.name || "Verified Customer",
-          userEmail: user?.email || "",
+          userName: newReviewerName || user?.name || "Verified Customer",
+          userEmail: newReviewerEmail || user?.email || "",
           images: reviewImages,
           videos: reviewVideos,
         })
       ).unwrap();
 
       setReviewSuccessMsg("Thank you! Your review has been posted successfully.");
+      dispatch(fetchProductReviews(targetProductId));
+      if (slug) dispatch(fetchProductDetails(slug));
       setTimeout(() => {
         setReviewModalOpen(false);
         setReviewSuccessMsg("");
@@ -720,7 +732,15 @@ export default function ProductDetailsPage() {
             {/* Rating Stars & Customer Review Count (Flipkart Style) */}
             <div className="mt-2 flex items-center gap-2.5 flex-wrap">
               <div className="inline-flex items-center gap-1 bg-[#388e3c] text-white px-2 py-0.5 rounded text-xs font-bold shadow-2xs">
-                <span>{product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")}</span>
+                <span>
+                  {reviewStats?.total > 0
+                    ? reviewStats.average.toFixed(1)
+                    : reviews?.length > 0
+                    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+                    : (product?.rating > 0 && (reviewStats?.total > 0 || reviews?.length > 0)
+                      ? Number(product.rating).toFixed(1)
+                      : "0.0")}
+                </span>
                 <Star className="h-3 w-3 fill-white text-white" />
               </div>
               <button
@@ -737,7 +757,7 @@ export default function ProductDetailsPage() {
                 }}
                 className="text-xs text-neutral-600 hover:text-black font-semibold hover:underline cursor-pointer"
               >
-                {reviewStats?.total || reviews?.length || product.numReviews || 0} Ratings & {reviews?.length || product.numReviews || 0} Reviews
+                {reviewStats?.total || reviews?.length || 0} Ratings & {reviewStats?.total || reviews?.length || 0} Reviews
               </button>
               <span className="text-neutral-300">•</span>
               <button
@@ -1253,7 +1273,7 @@ export default function ProductDetailsPage() {
                     activeTab === "reviews" ? "text-black font-bold" : "hover:text-black"
                   }`}
                 >
-                  Reviews ({reviews?.length || product.numReviews || 0})
+                  Reviews ({reviewStats?.total || reviews?.length || 0})
                   {activeTab === "reviews" && (
                     <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
                   )}
@@ -1416,24 +1436,32 @@ export default function ProductDetailsPage() {
                         <div>
                           <div className="flex items-baseline gap-1.5">
                             <span className="text-2xl font-black text-neutral-950">
-                              {product.rating || (reviewStats?.average ? reviewStats.average.toFixed(1) : "4.5")}
+                              {reviewStats?.total > 0
+                                ? reviewStats.average.toFixed(1)
+                                : reviews?.length > 0
+                                ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+                                : "0.0"}
                             </span>
                             <span className="text-xs text-neutral-400 font-medium">/ 5.0</span>
                           </div>
                           <div className="flex items-center gap-1 mt-0.5 text-amber-400">
                             {[1, 2, 3, 4, 5].map((s) => {
-                              const avg = Number(product.rating || reviewStats?.average || 4.5);
+                              const avg = reviewStats?.total > 0
+                                ? reviewStats.average
+                                : reviews?.length > 0
+                                ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                                : 0;
                               return (
                                 <Star
                                   key={s}
                                   className={`h-3 w-3 ${
-                                    s <= Math.round(avg) ? "fill-amber-400 text-amber-400" : "text-neutral-300"
+                                    s <= Math.round(avg) && avg > 0 ? "fill-amber-400 text-amber-400" : "text-neutral-300"
                                   }`}
                                 />
                               );
                             })}
                             <span className="text-[11px] text-neutral-500 font-medium ml-1">
-                              ({reviews?.length || product.numReviews || 0} reviews)
+                              ({reviewStats?.total || reviews?.length || 0} reviews)
                             </span>
                           </div>
                         </div>
@@ -1451,14 +1479,8 @@ export default function ProductDetailsPage() {
                       <div className="space-y-1 pt-2 border-t border-neutral-200/70">
                         {[5, 4, 3, 2, 1].map((stars) => {
                           const count = reviewStats?.distribution?.[stars] || 0;
-                          const total = reviews?.length || 1;
-                          const pct = reviews?.length
-                            ? Math.round((count / total) * 100)
-                            : stars === 5
-                            ? 85
-                            : stars === 4
-                            ? 12
-                            : 3;
+                          const total = reviewStats?.total || reviews?.length || 0;
+                          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                           return (
                             <div key={stars} className="flex items-center gap-2 text-[10px]">
                               <span className="w-8 font-semibold text-neutral-600">{stars} ★</span>
@@ -1903,14 +1925,14 @@ export default function ProductDetailsPage() {
                   </div>
                 </div>
 
-                {/* 2. Reviewer Account Info (Auto-detected from Login) */}
+                {/* 2. Reviewer Account Info */}
                 <div className="rounded-lg bg-neutral-50 border border-neutral-200/80 px-3.5 py-2.5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-6 w-6 rounded-full bg-neutral-900 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
-                      {(user?.name || "U").charAt(0).toUpperCase()}
+                      {((newReviewerName || user?.name || "C").charAt(0)).toUpperCase()}
                     </div>
                     <span className="text-xs text-neutral-600">
-                      Posting review as <strong className="text-neutral-900 font-semibold">{user?.name || user?.email || "Verified Customer"}</strong>
+                      Posting review as <strong className="text-neutral-900 font-semibold">{newReviewerName || user?.name || user?.email || "Verified Customer"}</strong>
                     </span>
                   </div>
                   <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 shrink-0">
@@ -2098,12 +2120,21 @@ export default function ProductDetailsPage() {
         onClose={() => {
           setAuthModalOpen(false);
           setAuthSuccessCallback(null);
+          setAuthIntendedAction(null);
         }}
-        onSuccess={(user) => {
+        onSuccess={(loggedInUser) => {
           setAuthModalOpen(false);
-          if (authSuccessCallback) {
-            authSuccessCallback(user);
+          const currentUser = loggedInUser || user;
+          if (authIntendedAction === 'review' || authSuccessCallback) {
+            if (currentUser?.name) setNewReviewerName(currentUser.name);
+            if (currentUser?.email) setNewReviewerEmail(currentUser.email);
+            setReviewSuccessMsg("");
+            setReviewImages([]);
+            setReviewVideos([]);
+            setUploadMediaError("");
+            setReviewModalOpen(true);
             setAuthSuccessCallback(null);
+            setAuthIntendedAction(null);
           } else {
             navigate('/checkout');
           }

@@ -9,7 +9,7 @@ async function updateProductRating(productId) {
   const reviews = await Review.find({ product: productId, isApproved: true });
   const count = reviews.length;
   if (count === 0) {
-    await Product.findByIdAndUpdate(productId, { rating: 4.5, numReviews: 0 });
+    await Product.findByIdAndUpdate(productId, { rating: 0, numReviews: 0 });
     return;
   }
   const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / count;
