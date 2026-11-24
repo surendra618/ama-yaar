@@ -870,6 +870,19 @@ export default function HomePage() {
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const [newsletterStatus, setNewsletterStatus] = useState(null); // { type: 'success' | 'error', message: '' }
 
+  // Happy Customers Reviews section state
+  const [happyCustomers, setHappyCustomers] = useState(null);
+
+  useEffect(() => {
+    api
+      .get('/homepage-sections/happy_customers', { params: { _t: Date.now() } })
+      .then((res) => {
+        const d = res.data?.data || res.data;
+        if (d) setHappyCustomers(d);
+      })
+      .catch(() => {});
+  }, []);
+
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
     if (!newsletterEmail || !/^\S+@\S+\.\S+$/.test(newsletterEmail.trim())) {
@@ -1542,143 +1555,157 @@ export default function HomePage() {
       {/* 7. Instagram Banner */}
       <InstagramBanner />
 
-      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
-        {/* 8. Customer reviews with AOS Animation & Functional Scroll */}
-        <section className="pt-8 pb-1 sm:pt-10 sm:pb-2 overflow-hidden">
-          <div
-            data-aos="fade-up"
-            data-aos-duration="600"
-            className="mb-4 flex items-center justify-between gap-4"
-          >
-            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
-              <h2 className="text-xl sm:text-2xl lg:text-[28px] font-black uppercase tracking-tight text-black font-sans leading-none">
-                OUR HAPPY
-              </h2>
-              <span className="font-script italic text-2xl sm:text-3xl lg:text-[34px] font-normal text-black leading-none">
-                Customers
-              </span>
+      {/* 8. Customer reviews with AOS Animation & Functional Scroll */}
+      {happyCustomers?.isActive !== false && (
+        <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-12">
+          <section className="pt-8 pb-1 sm:pt-10 sm:pb-2 overflow-hidden">
+            <div
+              data-aos="fade-up"
+              data-aos-duration="600"
+              className="mb-4 flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                <h2 className="text-xl sm:text-2xl lg:text-[28px] font-black uppercase tracking-tight text-black font-sans leading-none">
+                  {happyCustomers?.headingPrefix || "OUR HAPPY"}
+                </h2>
+                <span className="font-script italic text-2xl sm:text-3xl lg:text-[34px] font-normal text-black leading-none">
+                  {happyCustomers?.headingHighlight || "Customers"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5 text-black shrink-0">
+                <button
+                  onClick={() => {
+                    const rail = document.getElementById("customer-reviews-rail");
+                    if (rail) rail.scrollBy({ left: -360, behavior: "smooth" });
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-xs transition-all duration-300 hover:bg-black hover:text-white hover:border-black active:scale-90"
+                  aria-label="Previous review"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    const rail = document.getElementById("customer-reviews-rail");
+                    if (rail) rail.scrollBy({ left: 360, behavior: "smooth" });
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-xs transition-all duration-300 hover:bg-black hover:text-white hover:border-black active:scale-90"
+                  aria-label="Next review"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2.5 text-black shrink-0">
-              <button
-                onClick={() => {
-                  const rail = document.getElementById("customer-reviews-rail");
-                  if (rail) rail.scrollBy({ left: -360, behavior: "smooth" });
-                }}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-xs transition-all duration-300 hover:bg-black hover:text-white hover:border-black active:scale-90"
-                aria-label="Previous review"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => {
-                  const rail = document.getElementById("customer-reviews-rail");
-                  if (rail) rail.scrollBy({ left: 360, behavior: "smooth" });
-                }}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-xs transition-all duration-300 hover:bg-black hover:text-white hover:border-black active:scale-90"
-                aria-label="Next review"
-              >
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
 
-          <div
-            id="customer-reviews-rail"
-            className="flex gap-5 overflow-x-auto pt-2 pb-3 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth items-stretch"
-          >
-            {REVIEWS.map((r, idx) => (
-              <motion.div
-                key={r.name + idx}
-                data-aos="fade-up"
-                data-aos-delay={idx * 100}
-                data-aos-duration="600"
-                whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className="relative flex flex-col justify-between w-[280px] sm:w-[340px] min-w-[270px] sm:min-w-[340px] max-w-[370px] shrink-0 snap-start rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs hover:shadow-xl transition-all duration-300 hover:border-neutral-400 group"
-              >
-                <div>
-                  {/* Top rating & date */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: r.rating || 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className="h-4 w-4 fill-amber-400 text-amber-400"
-                        />
-                      ))}
-                    </div>
-                    {r.date && (
-                      <span className="text-[11px] font-medium text-neutral-400">
-                        {r.date}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Customer Info */}
-                  <div className="mt-4 flex items-center gap-3">
-                    {r.avatar ? (
-                      <img
-                        src={r.avatar}
-                        alt={r.name}
-                        className="h-10 w-10 rounded-full object-cover border border-neutral-200 shrink-0 shadow-xs"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white font-bold text-xs">
-                        {r.name.charAt(0)}
+            <div
+              id="customer-reviews-rail"
+              className="flex gap-5 overflow-x-auto pt-2 pb-3 px-1 scrollbar-hide snap-x snap-mandatory scroll-smooth items-stretch"
+            >
+              {(happyCustomers?.reviews && happyCustomers.reviews.length > 0 ? happyCustomers.reviews : REVIEWS).map((r, idx) => (
+                <motion.div
+                  key={(r.id || r.name) + idx}
+                  data-aos="fade-up"
+                  data-aos-delay={idx * 100}
+                  data-aos-duration="600"
+                  whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                  className="relative flex flex-col justify-between w-[280px] sm:w-[340px] min-w-[270px] sm:min-w-[340px] max-w-[370px] shrink-0 snap-start rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs hover:shadow-xl transition-all duration-300 hover:border-neutral-400 group"
+                >
+                  <div>
+                    {/* Top rating & date */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: r.rating || 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className="h-4 w-4 fill-amber-400 text-amber-400"
+                          />
+                        ))}
                       </div>
-                    )}
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-neutral-900">
-                          {r.name}
+                      {r.date && (
+                        <span className="text-[11px] font-medium text-neutral-400">
+                          {r.date}
                         </span>
-                        <CheckCircle2 className="h-3.5 w-3.5 fill-emerald-600 text-white shrink-0" />
-                      </div>
-                      <span className="text-[11px] font-semibold text-emerald-700">
-                        Verified Buyer
-                      </span>
+                      )}
                     </div>
+
+                    {/* Customer Info */}
+                    <div className="mt-4 flex items-center gap-3">
+                      {r.avatar ? (
+                        <img
+                          src={getMediaUrl(r.avatar)}
+                          alt={r.name}
+                          className="h-10 w-10 rounded-full object-cover border border-neutral-200 shrink-0 shadow-xs"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white font-bold text-xs">
+                          {(r.name || 'C').charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-bold text-neutral-900">
+                            {r.name}
+                          </span>
+                          {r.isVerified !== false && (
+                            <CheckCircle2 className="h-3.5 w-3.5 fill-emerald-600 text-white shrink-0" />
+                          )}
+                        </div>
+                        {r.isVerified !== false && (
+                          <span className="text-[11px] font-semibold text-emerald-700">
+                            Verified Buyer
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Review Text */}
+                    <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-600 font-normal">
+                      &ldquo;{r.text}&rdquo;
+                    </p>
                   </div>
 
-                  {/* Review Text */}
-                  <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-600 font-normal">
-                    &ldquo;{r.text}&rdquo;
-                  </p>
-                </div>
-
-                {/* Purchased Product Badge */}
-                {r.product && (
-                  <Link
-                    to={r.product.slug ? `/products/${r.product.slug}` : '/products'}
-                    className="mt-5 flex items-center gap-3 rounded-xl border border-neutral-200/80 bg-neutral-50/80 p-2.5 transition-all duration-200 hover:bg-neutral-100 hover:border-black/30 group/prod"
-                  >
-                    <img
-                      src={r.product.image}
-                      alt={r.product.name}
-                      className="h-12 w-12 rounded-lg object-cover bg-white border border-neutral-200 shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <span className="inline-block text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
-                        Purchased Item
-                      </span>
-                      <p className="mt-0.5 text-xs font-bold text-neutral-900 truncate group-hover/prod:text-black">
-                        {r.product.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-neutral-500">
-                        <span className="font-medium text-neutral-600 truncate">{r.product.variant}</span>
-                        <span>•</span>
-                        <span className="font-extrabold text-black">₹{r.product.price}</span>
+                  {/* Purchased Product Badge */}
+                  {r.product && (
+                    <Link
+                      to={
+                        r.product.slug
+                          ? (r.product.slug.startsWith('/') ? r.product.slug : `/products/${r.product.slug}`)
+                          : (r.product.link || '/products')
+                      }
+                      className="mt-5 flex items-center gap-3 rounded-xl border border-neutral-200/80 bg-neutral-50/80 p-2.5 transition-all duration-200 hover:bg-neutral-100 hover:border-black/30 group/prod"
+                    >
+                      <img
+                        src={getMediaUrl(r.product.image || '/model01.png')}
+                        alt={r.product.name}
+                        className="h-12 w-12 rounded-lg object-cover bg-white border border-neutral-200 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className="inline-block text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
+                          Purchased Item
+                        </span>
+                        <p className="mt-0.5 text-xs font-bold text-neutral-900 truncate group-hover/prod:text-black">
+                          {r.product.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-neutral-500">
+                          {r.product.variant && (
+                            <span className="font-medium text-neutral-600 truncate">{r.product.variant}</span>
+                          )}
+                          {r.product.variant && r.product.price && <span>•</span>}
+                          {r.product.price && (
+                            <span className="font-extrabold text-black">₹{r.product.price}</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="h-7 w-7 rounded-full bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-neutral-500 group-hover/prod:bg-black group-hover/prod:text-white group-hover/prod:border-black transition-colors">
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </div>
-                  </Link>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      </div>
+                      <div className="h-7 w-7 rounded-full bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-neutral-500 group-hover/prod:bg-black group-hover/prod:text-white group-hover/prod:border-black transition-colors">
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </div>
+                    </Link>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* 9. Newsletter floating card */}
       <section className="bg-white pt-2 pb-5 sm:pt-3 sm:pb-6 lg:pt-4 lg:pb-8 px-3 sm:px-6 lg:px-12">

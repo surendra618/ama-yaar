@@ -69,6 +69,7 @@ export const router = createBrowserRouter([
       { path: '/homepage-showcase', element: <HomepageShowcasePage /> },
       { path: '/workout-gear', element: <HomepageShowcasePage /> },
       { path: '/editorial-banner', element: <HomepageShowcasePage /> },
+      { path: '/happy-customers', element: <HomepageShowcasePage /> },
       { path: '/reels', element: <ReelsListPage /> },
       { path: '/editorial-looks', element: <EditorialLooksListPage /> },
       { path: '/blogs', element: <BlogsListPage /> },

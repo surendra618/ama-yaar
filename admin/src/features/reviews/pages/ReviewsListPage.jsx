@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Star,
   Trash2,
@@ -136,6 +137,24 @@ export default function ReviewsListPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Quick link to Homepage Happy Customers Slider */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 shadow-2xs">
+        <div className="flex items-center gap-2.5">
+          <Star className="h-4 w-4 text-amber-600 fill-amber-500 shrink-0" />
+          <div>
+            <p className="text-xs font-bold text-amber-950">Looking to edit the &ldquo;OUR HAPPY Customers&rdquo; homepage slider?</p>
+            <p className="text-[11px] text-amber-800 font-medium">Manage featured customer testimonials, photos, ratings, and purchased products shown on the homepage.</p>
+          </div>
+        </div>
+        <Link
+          to="/happy-customers"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3.5 py-1.5 text-xs font-bold text-white hover:bg-neutral-800 transition shrink-0 shadow-xs cursor-pointer"
+        >
+          <span>Edit Happy Customers</span>
+          <ExternalLink className="h-3 w-3" />
+        </Link>
       </div>
 
       {/* Search Bar */}
