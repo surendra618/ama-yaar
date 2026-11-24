@@ -21,6 +21,7 @@ async function connectDB() {
     await mongoose.connect(cleanUri, {
       serverSelectionTimeoutMS: 10000,
       bufferCommands: true,
+      tlsAllowInvalidCertificates: true,
     });
     console.log('[db] MongoDB connected to:', redactUri(cleanUri));
   } catch (err) {

@@ -285,6 +285,41 @@ async function quickLogin({ email, phone, name, password }) {
   return { user: sanitizedUser, accessToken, refreshToken };
 }
 
+async function phoneLogin({ phone, name, password, firebaseUid, idToken }) {
+  if (!phone) {
+    throw new ApiError(400, 'Mobile phone number is required');
+  }
+
+  const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+  if (cleanPhone.length !== 10) {
+    throw new ApiError(400, 'Please enter a valid 10-digit mobile number');
+  }
+
+  // Find existing user by phone or mobile guest email
+  const existingUser = await User.findOne({
+    $or: [
+      { phone: cleanPhone },
+      { email: `${cleanPhone}@guest.ama-yaar.com` },
+      { email: `${cleanPhone}@mobile.ama-yaar.com` },
+    ],
+  });
+
+  const userName =
+    name && name.trim()
+      ? name.trim()
+      : existingUser && existingUser.name && existingUser.name !== 'Customer'
+      ? existingUser.name
+      : `Customer ${cleanPhone.slice(-4)}`;
+
+  const result = await quickLogin({
+    phone: cleanPhone,
+    name: userName,
+    password: password && password.length >= 6 ? password : `ay_phone_${cleanPhone}_pwd`,
+  });
+
+  return result;
+}
+
 const otpStore = new Map();
 
 async function sendOtp({ phone, email }) {
@@ -392,7 +427,7 @@ async function verifyOtp({ phone, email, otp, name, password }) {
   }
 }
 
-async function googleLogin({ email, name, avatar, googleId }) {
+async function googleLogin({ email, name, avatar, googleId, phone }) {
   if (!email) {
     throw new ApiError(400, 'Google email is required');
   }
@@ -412,6 +447,7 @@ async function googleLogin({ email, name, avatar, googleId }) {
       email: cleanEmail,
       avatar: avatar || '',
       googleId: googleId || '',
+      phone: phone ? phone.replace(/\D/g, '') : '',
       password: hashedPassword,
       role: 'customer',
     });
@@ -445,6 +481,10 @@ async function googleLogin({ email, name, avatar, googleId }) {
       user.name = name;
       updated = true;
     }
+    if (phone && (!user.phone || user.phone === 'Google Sign-In')) {
+      user.phone = phone.replace(/\D/g, '');
+      updated = true;
+    }
     if (updated) await user.save();
   }
 
@@ -461,7 +501,10 @@ async function googleLogin({ email, name, avatar, googleId }) {
   sanitizedUser.isSuperAdmin = isMainAdmin;
   delete sanitizedUser.password;
 
-  return { user: sanitizedUser, accessToken, refreshToken };
+  const cleanPhone = (sanitizedUser.phone || '').replace(/\D/g, '');
+  const needsPhone = !cleanPhone || cleanPhone.length < 10 || sanitizedUser.phone === 'Google Sign-In';
+
+  return { user: sanitizedUser, accessToken, refreshToken, needsPhone };
 }
 
 async function saveFcmToken(userId, { token }) {
@@ -478,6 +521,7 @@ module.exports = {
   register,
   login,
   quickLogin,
+  phoneLogin,
   sendOtp,
   verifyOtp,
   googleLogin,

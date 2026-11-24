@@ -43,6 +43,11 @@ const quickLogin = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, data, 'Login successful'));
 });
 
+const phoneLogin = asyncHandler(async (req, res) => {
+  const data = await service.phoneLogin(req.body);
+  res.status(200).json(new ApiResponse(200, data, 'Phone login successful'));
+});
+
 const sendOtp = asyncHandler(async (req, res) => {
   const data = await service.sendOtp(req.body);
   res.status(200).json(new ApiResponse(200, data, data.message || 'OTP sent'));
@@ -67,6 +72,7 @@ module.exports = {
   register,
   login,
   quickLogin,
+  phoneLogin,
   sendOtp,
   verifyOtp,
   googleLogin,

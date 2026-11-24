@@ -51,6 +51,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [verifiedUser, setVerifiedUser] = useState(null);
+  const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
@@ -235,6 +236,42 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  // Handle Step 3: Save Mandatory Mobile Number after Google Sign-In
+  const handleSaveGooglePhone = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+      setError('Please enter a valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9)');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await api.put('/users/profile', { phone: cleanPhone });
+      const updatedUser = {
+        ...(pendingGoogleUser || {}),
+        phone: cleanPhone,
+        ...(res.data?.data || {}),
+      };
+
+      dispatch(setCredentials({ user: updatedUser }));
+      sessionStorage.setItem('auth_popup_shown', 'true');
+      setVerifiedUser(updatedUser);
+      setSuccess(true);
+
+      setTimeout(() => {
+        if (onSuccess) onSuccess(updatedUser);
+        onClose();
+      }, 900);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to save mobile number. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Handle Google Login via Firebase
   const handleGoogleSignIn = async () => {
     setError('');
@@ -269,6 +306,16 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
 
       if (resData?.refreshToken) {
         localStorage.setItem('ay_refresh_token', resData.refreshToken);
+      }
+
+      const cleanPhone = (userObj.phone || '').replace(/\D/g, '');
+      const hasValidPhone = cleanPhone.length === 10 && userObj.phone !== 'Google Sign-In';
+
+      if (!hasValidPhone || resData?.needsPhone) {
+        setPendingGoogleUser(userObj);
+        setPhone('');
+        setStep('google-phone');
+        return;
       }
 
       sessionStorage.setItem('auth_popup_shown', 'true');
@@ -364,6 +411,65 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                   Exclusive member deals activated
                 </div>
+              </div>
+            ) : step === 'google-phone' ? (
+              /* MANDATORY MOBILE NUMBER STEP AFTER GOOGLE LOGIN */
+              <div className="animate-in fade-in duration-200">
+                <div className="mb-4">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    Google Account Verified
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight mt-2">
+                    Enter Mobile Number
+                  </h3>
+                  <p className="text-xs text-neutral-500 font-medium mt-1 leading-relaxed">
+                    Signed in as <strong className="text-neutral-900 font-semibold">{pendingGoogleUser?.name || pendingGoogleUser?.email}</strong>. Mobile number is mandatory for courier delivery, SMS updates, and order confirmations.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="mb-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveGooglePhone} className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-700 block mb-1">
+                      10-Digit Mobile Number <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black transition overflow-hidden bg-white">
+                      <div className="bg-neutral-100 px-3 py-2.5 text-xs font-black text-neutral-700 border-r border-neutral-200 shrink-0">
+                        IN +91
+                      </div>
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        placeholder="98765 43210"
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value.replace(/\D/g, ''));
+                          setError('');
+                        }}
+                        className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                    <span className="text-[10px] text-neutral-400 font-medium mt-1 block">
+                      Required for live courier delivery tracking and shipping calls
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || phone.replace(/\D/g, '').length !== 10}
+                    className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Saving Mobile Number...' : 'SAVE & CONTINUE →'}
+                  </button>
+                </form>
               </div>
             ) : step === 'input' ? (
               /* STEP 1: EMAIL / PHONE INPUT + GOOGLE LOGIN */

@@ -1,5 +1,11 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+} from 'firebase/auth';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import api from './axios';
 
@@ -108,6 +114,88 @@ export function onMessageListener(callback) {
     console.log('[FCM] Foreground notification received:', payload);
     if (callback) callback(payload);
   });
+}
+
+/**
+ * Get or create invisible reCAPTCHA verifier for Phone Auth
+ * @param {string|HTMLElement} containerIdOrElement
+ */
+export function getRecaptchaVerifier(containerIdOrElement = 'recaptcha-container') {
+  if (!auth) {
+    throw new Error(
+      'Firebase Auth is not initialized. Please configure VITE_FIREBASE_API_KEY & VITE_FIREBASE_PROJECT_ID in frontend/.env'
+    );
+  }
+
+  // Clear previous verifier instance to prevent "RecaptchaVerifier already rendered" error
+  if (typeof window !== 'undefined' && window.ayRecaptchaVerifier) {
+    try {
+      window.ayRecaptchaVerifier.clear();
+    } catch (_) {}
+    window.ayRecaptchaVerifier = null;
+  }
+
+  // Ensure DOM container exists
+  let targetContainer = containerIdOrElement;
+  if (typeof containerIdOrElement === 'string' && typeof document !== 'undefined') {
+    let el = document.getElementById(containerIdOrElement);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = containerIdOrElement;
+      el.style.display = 'none';
+      document.body.appendChild(el);
+    }
+    targetContainer = el;
+  }
+
+  const verifier = new RecaptchaVerifier(auth, targetContainer, {
+    size: 'invisible',
+    callback: () => {
+      // reCAPTCHA solved
+    },
+    'expired-callback': () => {
+      console.warn('[Firebase Phone Auth] reCAPTCHA token expired. Resetting verifier...');
+      if (typeof window !== 'undefined' && window.ayRecaptchaVerifier) {
+        try {
+          window.ayRecaptchaVerifier.clear();
+        } catch (_) {}
+        window.ayRecaptchaVerifier = null;
+      }
+    },
+  });
+
+  if (typeof window !== 'undefined') {
+    window.ayRecaptchaVerifier = verifier;
+  }
+
+  return verifier;
+}
+
+/**
+ * Send SMS OTP to 10-digit mobile number using Firebase Phone Authentication
+ * @param {string} phoneNumber - Indian mobile number (e.g. 9876543210 or +919876543210)
+ * @param {string|HTMLElement} container - DOM element or ID for invisible reCAPTCHA
+ * @returns {Promise<import('firebase/auth').ConfirmationResult>}
+ */
+export async function sendFirebasePhoneOtp(phoneNumber, container = 'recaptcha-container') {
+  if (!auth) {
+    throw new Error(
+      'Firebase credentials not configured. Please add VITE_FIREBASE_API_KEY in frontend/.env'
+    );
+  }
+
+  const digits = String(phoneNumber).replace(/\D/g, '');
+  const clean10 = digits.slice(-10);
+  if (clean10.length !== 10) {
+    throw new Error('Please enter a valid 10-digit Indian mobile number');
+  }
+
+  // E.164 formatted number (+91XXXXXXXXXX)
+  const formattedPhone = String(phoneNumber).startsWith('+') ? phoneNumber : `+91${clean10}`;
+
+  const appVerifier = getRecaptchaVerifier(container);
+  const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+  return confirmationResult;
 }
 
 export { app, auth, googleProvider, messaging, isConfigured };
