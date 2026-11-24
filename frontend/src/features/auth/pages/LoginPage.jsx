@@ -66,6 +66,8 @@ export default function LoginPage() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [googlePhoneStep, setGooglePhoneStep] = useState(false);
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
+  const [phoneEmailStep, setPhoneEmailStep] = useState(false);
+  const [pendingPhoneUser, setPendingPhoneUser] = useState(null);
   const [customError, setCustomError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -126,7 +128,13 @@ export default function LoginPage() {
     } catch (fbErr) {
       console.error('[Firebase Phone Auth] Error:', fbErr);
       let msg = fbErr.message || 'Failed to send SMS OTP via Firebase.';
-      if (fbErr.code === 'auth/invalid-phone-number') {
+      if (fbErr.code === 'auth/billing-not-enabled') {
+        msg = 'Real SMS requires Firebase Blaze plan enabled in Firebase Console (10,000 verifications/month are free). Please upgrade to Blaze in Firebase Console, or sign in using Email OTP / Google.';
+      } else if (fbErr.code === 'auth/operation-not-allowed') {
+        msg = 'Phone SMS is not enabled for India (+91) in Firebase. Please enable "Phone" in Sign-in method and allow India (+91) in Authentication > Settings > SMS region policy (or add as test number).';
+      } else if (fbErr.message && fbErr.message.includes('already been rendered')) {
+        msg = 'Security verifier reset. Please click GET OTP again.';
+      } else if (fbErr.code === 'auth/invalid-phone-number') {
         msg = 'Invalid phone number format (+91 XXXXXXXXXX).';
       } else if (fbErr.code === 'auth/too-many-requests') {
         msg = 'Too many requests. Please wait a few moments before trying again.';
@@ -162,7 +170,7 @@ export default function LoginPage() {
     }
   };
 
-  // STEP 2: Verify OTP via Firebase + Name + Email + Password -> Sign In / Register
+  // STEP 2: Verify OTP via Firebase + Name + Email -> Sign In / Register (Passwordless)
   const handleVerifyOtpAndSignIn = async (e) => {
     e.preventDefault();
     setCustomError('');
@@ -175,21 +183,6 @@ export default function LoginPage() {
 
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
-
-    if (!isExistingUser) {
-      if (!cleanName) {
-        setCustomError('Please enter your full name');
-        return;
-      }
-      if (cleanEmail && (!cleanEmail.includes('@') || !cleanEmail.includes('.'))) {
-        setCustomError('Please enter a valid email address');
-        return;
-      }
-      if (!password || password.length < 6) {
-        setCustomError('Password must be at least 6 characters');
-        return;
-      }
-    }
 
     if (!confirmationResultRef.current) {
       setCustomError('OTP session expired. Please click "Change Number" and request a new OTP.');
@@ -208,7 +201,6 @@ export default function LoginPage() {
         phone: cleanPhone,
         name: cleanName || undefined,
         email: cleanEmail || undefined,
-        password: password || undefined,
         firebaseUid: fbUser.uid,
         idToken: idToken,
       });
@@ -236,6 +228,26 @@ export default function LoginPage() {
         localStorage.setItem('ay_refresh_token', resData.refreshToken);
       }
 
+      const isDummyEmail = (em) => {
+        if (!em) return true;
+        const l = em.trim().toLowerCase();
+        return (
+          l.includes('@guest.') ||
+          l.includes('@mobile.') ||
+          l.endsWith('@guest.ama-yaar.com') ||
+          l.endsWith('@mobile.ama-yaar.com') ||
+          !l.includes('@') ||
+          !l.includes('.')
+        );
+      };
+
+      if (resData?.needsEmail || isDummyEmail(userObj.email)) {
+        setPendingPhoneUser(userObj);
+        setEmail('');
+        setPhoneEmailStep(true);
+        return;
+      }
+
       handlePendingCartAndRedirect(userObj);
     } catch (err) {
       console.error('[Firebase Phone Auth] Confirm error:', err);
@@ -246,6 +258,45 @@ export default function LoginPage() {
       } else {
         setCustomError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
       }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Save Mandatory Email after Phone OTP
+  const handleSavePhoneEmail = async (e) => {
+    e.preventDefault();
+    setCustomError('');
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setCustomError('Please enter a valid email address (e.g. name@gmail.com)');
+      return;
+    }
+
+    if (
+      cleanEmail.includes('@guest.') ||
+      cleanEmail.includes('@mobile.') ||
+      cleanEmail.endsWith('@guest.ama-yaar.com') ||
+      cleanEmail.endsWith('@mobile.ama-yaar.com')
+    ) {
+      setCustomError('Please enter your actual personal or business email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await api.put('/users/profile', { email: cleanEmail });
+      const updatedUser = {
+        ...(pendingPhoneUser || {}),
+        email: cleanEmail,
+        ...(res.data?.data || {}),
+      };
+
+      dispatch(setCredentials({ user: updatedUser }));
+      handlePendingCartAndRedirect(updatedUser);
+    } catch (err) {
+      setCustomError(err.response?.data?.message || err.message || 'Failed to save email address');
     } finally {
       setIsSubmitting(false);
     }
@@ -348,7 +399,66 @@ export default function LoginPage() {
 
   return (
     <div className="af-wrap relative">
-      {googlePhoneStep ? (
+      {phoneEmailStep ? (
+        /* MANDATORY EMAIL ADDRESS STEP AFTER PHONE OTP */
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="rounded-xl bg-emerald-50 border border-emerald-200/80 p-3.5 flex items-center gap-3 text-xs text-emerald-800 shadow-2xs">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <div>
+              <p className="font-bold text-emerald-950">Phone Verified (+91 {phone.replace(/\D/g, '').slice(-10)})</p>
+              <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
+                SMS verification confirmed. Please enter your email address to complete sign in.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-base font-black uppercase tracking-tight text-neutral-900">
+              Enter Email Address <span className="text-rose-600">*</span>
+            </h2>
+            <p className="text-xs text-neutral-500 font-medium mt-1 leading-relaxed">
+              Email address is mandatory for order confirmations, GST tax invoices, and real-time delivery tracking.
+            </p>
+          </div>
+
+          {customError && (
+            <div className="af-error">
+              <span>⚠️ {customError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSavePhoneEmail} className="af-form">
+            <div className={`af-field ${focused === 'email_entry' ? 'af-field--focus' : ''}`}>
+              <label className="af-label">EMAIL ADDRESS <span className="text-rose-500">*</span></label>
+              <div className="af-input-box">
+                <Mail size={16} className="af-icon" />
+                <input
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setCustomError('');
+                  }}
+                  onFocus={() => setFocused('email_entry')}
+                  onBlur={() => setFocused('')}
+                  className="af-input"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || !email.includes('@')}
+              className="af-btn af-btn--primary w-full cursor-pointer disabled:opacity-50 shadow-md"
+            >
+              {isSubmitting ? 'Saving Email Address...' : 'COMPLETE SIGN IN →'}
+            </button>
+          </form>
+        </div>
+      ) : googlePhoneStep ? (
         /* MANDATORY MOBILE NUMBER STEP AFTER GOOGLE LOGIN */
         <div className="space-y-4 animate-in fade-in duration-200">
           <div className="rounded-xl bg-emerald-50 border border-emerald-200/80 p-3.5 flex items-center gap-3 text-xs text-emerald-800 shadow-2xs">
@@ -619,15 +729,14 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Full Name */}
+            {/* Full Name (Optional) */}
             <div className={`af-field ${focused === 'name' ? 'af-field--focus' : ''}`}>
-              <label className="af-label">FULL NAME {!isExistingUser && <span className="text-rose-500">*</span>}</label>
+              <label className="af-label">FULL NAME <span className="text-neutral-400 font-normal">(Optional)</span></label>
               <div className="af-input-box">
                 <User size={16} className="af-icon" />
                 <input
                   type="text"
-                  required={!isExistingUser}
-                  placeholder="Enter your full name"
+                  placeholder="Enter your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   onFocus={() => setFocused('name')}
@@ -636,54 +745,6 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-
-            {/* Email Address (Optional for New Users) */}
-            {!isExistingUser && (
-              <div className={`af-field ${focused === 'email_reg' ? 'af-field--focus' : ''}`}>
-                <label className="af-label">EMAIL ADDRESS <span className="text-neutral-400 font-normal">(Optional)</span></label>
-                <div className="af-input-box">
-                  <Mail size={16} className="af-icon" />
-                  <input
-                    type="email"
-                    placeholder="you@example.com (optional)"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocused('email_reg')}
-                    onBlur={() => setFocused('')}
-                    className="af-input"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Password (Required for New Users so they can log in via Email + Password) */}
-            {!isExistingUser && (
-              <div className={`af-field ${focused === 'pass_reg' ? 'af-field--focus' : ''}`}>
-                <label className="af-label">CREATE PASSWORD (MIN 6 CHARS) <span className="text-rose-500">*</span></label>
-                <div className="af-input-box">
-                  <Lock size={16} className="af-icon" />
-                  <input
-                    type={showOtpPassword ? 'text' : 'password'}
-                    required
-                    minLength={6}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setFocused('pass_reg')}
-                    onBlur={() => setFocused('')}
-                    className="af-input af-input--pass"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowOtpPassword((v) => !v)}
-                    className="af-eye"
-                    tabIndex={-1}
-                  >
-                    {showOtpPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Resend Link */}
             <div className="flex items-center justify-between text-xs py-1">
@@ -706,11 +767,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={
-                isSubmitting ||
-                otp.length < 6 ||
-                (!isExistingUser && (!name.trim() || password.length < 6))
-              }
+              disabled={isSubmitting || otp.length < 6}
               className="af-btn cursor-pointer"
             >
               {isSubmitting ? (

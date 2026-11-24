@@ -27,12 +27,25 @@ import {
 import { updateProfile } from '../../auth/authSlice';
 import api from '../../../lib/axios';
 
+const isDummyEmail = (em) => {
+  if (!em) return true;
+  const l = em.trim().toLowerCase();
+  return (
+    l.includes('@guest.') ||
+    l.includes('@mobile.') ||
+    l.endsWith('@guest.ama-yaar.com') ||
+    l.endsWith('@mobile.ama-yaar.com') ||
+    !l.includes('@') ||
+    !l.includes('.')
+  );
+};
+
 export default function ProfilePage() {
   const dispatch = useDispatch();
   const { user, loading, error } = useSelector((state) => state.auth);
 
   // Edit profile state
-  const [form, setForm] = useState({ name: '', phone: '' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '' });
   const [saved, setSaved] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -57,7 +70,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setForm({ name: user.name || '', phone: user.phone || '' });
+      setForm({
+        name: user.name || '',
+        phone: user.phone || '',
+        email: isDummyEmail(user.email) ? '' : (user.email || ''),
+      });
     }
   }, [user]);
 
@@ -87,7 +104,16 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await dispatch(updateProfile(form));
+    const payload = {
+      name: form.name,
+      phone: form.phone,
+    };
+    if (isDummyEmail(user?.email)) {
+      if (form.email && form.email.trim()) {
+        payload.email = form.email.trim();
+      }
+    }
+    const result = await dispatch(updateProfile(payload));
     if (updateProfile.fulfilled.match(result)) {
       setSaved(true);
       setIsEditing(false);
@@ -173,7 +199,11 @@ export default function ProfilePage() {
                 <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight uppercase">
                   {user?.name || 'Customer'}
                 </h2>
-                <p className="text-xs text-neutral-500 font-medium">{user?.email}</p>
+                <p className="text-xs text-neutral-500 font-medium">
+                  {isDummyEmail(user?.email)
+                    ? user?.phone ? `+91 ${user.phone}` : 'No email added'
+                    : user?.email}
+                </p>
               </div>
             </div>
 
@@ -206,6 +236,28 @@ export default function ProfilePage() {
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-xs font-bold text-emerald-800 flex items-center gap-2 animate-in fade-in">
           <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
           Profile updated successfully!
+        </div>
+      )}
+
+      {/* Alert for missing / dummy email */}
+      {isDummyEmail(user?.email) && !isEditing && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200/80 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="font-black text-amber-950">Add your email address</p>
+              <p className="text-[11px] text-amber-800 font-medium mt-0.5">
+                Your email is required for tax invoices, order confirmations, and delivery tracking.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="rounded-lg bg-black px-4 py-2 text-xs font-black uppercase text-white hover:bg-neutral-800 shrink-0 cursor-pointer transition shadow-xs"
+          >
+            + Add Email
+          </button>
         </div>
       )}
 
@@ -243,19 +295,29 @@ export default function ProfilePage() {
 
             <div>
               <label className="mb-2 block text-xs font-extrabold text-black uppercase tracking-wider">
-                Email Address
+                Email Address {isDummyEmail(user?.email) && <span className="text-rose-600">*</span>}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <input
                   type="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="w-full cursor-not-allowed rounded-lg border border-neutral-200 bg-neutral-100 pl-10 pr-4 py-3 text-sm text-neutral-500 font-medium"
+                  name="email"
+                  value={isDummyEmail(user?.email) ? form.email : (user?.email || '')}
+                  disabled={!isDummyEmail(user?.email)}
+                  onChange={handleChange}
+                  placeholder={isDummyEmail(user?.email) ? 'Enter your email address (e.g. name@gmail.com)' : ''}
+                  className={`w-full rounded-lg border border-neutral-200 pl-10 pr-4 py-3 text-sm font-semibold transition ${
+                    isDummyEmail(user?.email)
+                      ? 'bg-white text-black focus:border-black focus:outline-none focus:ring-1 focus:ring-black'
+                      : 'cursor-not-allowed bg-neutral-100 text-neutral-500 font-medium'
+                  }`}
                 />
               </div>
               <p className="mt-1.5 text-[11px] text-neutral-400 font-medium flex items-center gap-1">
-                <Shield className="h-3 w-3" /> Email address is locked to maintain order history security
+                <Shield className="h-3 w-3" />
+                {isDummyEmail(user?.email)
+                  ? 'Add your email to receive order confirmations, tracking alerts, and tax invoices'
+                  : 'Email address is locked to maintain order history security'}
               </p>
             </div>
 
@@ -280,7 +342,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex items-center gap-2 rounded-lg bg-black px-6 py-3 text-xs font-black uppercase tracking-wider text-white shadow-sm transition hover:bg-neutral-800 disabled:opacity-60"
+                className="flex items-center gap-2 rounded-lg bg-black px-6 py-3 text-xs font-black uppercase tracking-wider text-white shadow-sm transition hover:bg-neutral-800 disabled:opacity-60 cursor-pointer"
               >
                 <Save className="h-4 w-4" /> {loading ? 'Saving…' : 'Save Changes'}
               </button>
@@ -288,9 +350,15 @@ export default function ProfilePage() {
                 type="button"
                 onClick={() => {
                   setIsEditing(false);
-                  if (user) setForm({ name: user.name || '', phone: user.phone || '' });
+                  if (user) {
+                    setForm({
+                      name: user.name || '',
+                      phone: user.phone || '',
+                      email: isDummyEmail(user.email) ? '' : (user.email || ''),
+                    });
+                  }
                 }}
-                className="rounded-lg border border-neutral-200 px-6 py-3 text-xs font-bold text-neutral-600 hover:bg-neutral-50 transition"
+                className="rounded-lg border border-neutral-200 px-6 py-3 text-xs font-bold text-neutral-600 hover:bg-neutral-50 transition cursor-pointer"
               >
                 Discard
               </button>
@@ -314,7 +382,22 @@ export default function ProfilePage() {
                 <Mail className="h-4 w-4 text-neutral-400" />
                 <span className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider">Email Address</span>
               </div>
-              <p className="text-sm font-bold text-black">{user?.email || '—'}</p>
+              {isDummyEmail(user?.email) ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-600 flex items-center gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5" /> Not added yet
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="text-xs font-black text-black underline hover:text-neutral-700 cursor-pointer"
+                  >
+                    + Add Email
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm font-bold text-black">{user?.email || '—'}</p>
+              )}
             </div>
 
             {/* Phone */}

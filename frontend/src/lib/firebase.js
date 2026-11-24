@@ -117,7 +117,8 @@ export function onMessageListener(callback) {
 }
 
 /**
- * Get or create invisible reCAPTCHA verifier for Phone Auth
+ * Get or create invisible reCAPTCHA verifier for Phone Auth.
+ * Replaces container element with a fresh DOM node to eliminate "reCAPTCHA has already been rendered" errors.
  * @param {string|HTMLElement} containerIdOrElement
  */
 export function getRecaptchaVerifier(containerIdOrElement = 'recaptcha-container') {
@@ -127,7 +128,7 @@ export function getRecaptchaVerifier(containerIdOrElement = 'recaptcha-container
     );
   }
 
-  // Clear previous verifier instance to prevent "RecaptchaVerifier already rendered" error
+  // Clear previous verifier instance
   if (typeof window !== 'undefined' && window.ayRecaptchaVerifier) {
     try {
       window.ayRecaptchaVerifier.clear();
@@ -135,17 +136,29 @@ export function getRecaptchaVerifier(containerIdOrElement = 'recaptcha-container
     window.ayRecaptchaVerifier = null;
   }
 
-  // Ensure DOM container exists
+  // Ensure a completely fresh DOM container with no existing reCAPTCHA bindings
   let targetContainer = containerIdOrElement;
-  if (typeof containerIdOrElement === 'string' && typeof document !== 'undefined') {
-    let el = document.getElementById(containerIdOrElement);
-    if (!el) {
-      el = document.createElement('div');
-      el.id = containerIdOrElement;
-      el.style.display = 'none';
-      document.body.appendChild(el);
+  if (typeof document !== 'undefined') {
+    const containerId =
+      typeof containerIdOrElement === 'string'
+        ? containerIdOrElement
+        : containerIdOrElement?.id || 'recaptcha-container';
+
+    let existing = document.getElementById(containerId);
+    if (existing && existing.parentNode) {
+      const freshDiv = document.createElement('div');
+      freshDiv.id = containerId;
+      existing.parentNode.replaceChild(freshDiv, existing);
+      targetContainer = freshDiv;
+    } else if (!existing) {
+      const freshDiv = document.createElement('div');
+      freshDiv.id = containerId;
+      document.body.appendChild(freshDiv);
+      targetContainer = freshDiv;
+    } else {
+      existing.innerHTML = '';
+      targetContainer = existing;
     }
-    targetContainer = el;
   }
 
   const verifier = new RecaptchaVerifier(auth, targetContainer, {
@@ -193,9 +206,24 @@ export async function sendFirebasePhoneOtp(phoneNumber, container = 'recaptcha-c
   // E.164 formatted number (+91XXXXXXXXXX)
   const formattedPhone = String(phoneNumber).startsWith('+') ? phoneNumber : `+91${clean10}`;
 
-  const appVerifier = getRecaptchaVerifier(container);
-  const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-  return confirmationResult;
+  try {
+    const appVerifier = getRecaptchaVerifier(container);
+    const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+    return confirmationResult;
+  } catch (err) {
+    // If recaptcha was already rendered, force a fresh DOM container retry
+    if (err.message && err.message.includes('already been rendered')) {
+      if (typeof window !== 'undefined' && window.ayRecaptchaVerifier) {
+        try {
+          window.ayRecaptchaVerifier.clear();
+        } catch (_) {}
+        window.ayRecaptchaVerifier = null;
+      }
+      const retryVerifier = getRecaptchaVerifier(container);
+      return await signInWithPhoneNumber(auth, formattedPhone, retryVerifier);
+    }
+    throw err;
+  }
 }
 
 export { app, auth, googleProvider, messaging, isConfigured };

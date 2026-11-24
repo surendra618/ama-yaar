@@ -52,6 +52,8 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   const [success, setSuccess] = useState(false);
   const [verifiedUser, setVerifiedUser] = useState(null);
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
+  const [pendingPhoneUser, setPendingPhoneUser] = useState(null);
+  const [pendingAuthUser, setPendingAuthUser] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const confirmationResultRef = useRef(null);
 
@@ -74,6 +76,10 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       setIsSubmitting(false);
       setIsGoogleSubmitting(false);
       setResendCooldown(0);
+      setVerifiedUser(null);
+      setPendingGoogleUser(null);
+      setPendingPhoneUser(null);
+      setPendingAuthUser(null);
     }
   }, [isOpen, isPhoneLoginEnabled]);
 
@@ -115,7 +121,13 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       } catch (fbErr) {
         console.error('[Firebase Phone Auth] Error:', fbErr);
         let msg = fbErr.message || 'Failed to send SMS OTP via Firebase.';
-        if (fbErr.code === 'auth/invalid-phone-number') {
+        if (fbErr.code === 'auth/billing-not-enabled') {
+          msg = 'Real SMS requires Firebase Blaze plan enabled in Firebase Console (10,000 verifications/month are free). Please upgrade to Blaze in Firebase Console, or sign in using Email OTP / Google.';
+        } else if (fbErr.code === 'auth/operation-not-allowed') {
+          msg = 'Phone SMS is not enabled for India (+91) in Firebase. Please enable "Phone" in Sign-in method and allow India (+91) in Authentication > Settings > SMS region policy (or add as test number).';
+        } else if (fbErr.message && fbErr.message.includes('already been rendered')) {
+          msg = 'Security verifier reset. Please click GET OTP again.';
+        } else if (fbErr.code === 'auth/invalid-phone-number') {
           msg = 'Invalid phone number format (+91 XXXXXXXXXX).';
         } else if (fbErr.code === 'auth/too-many-requests') {
           msg = 'Too many requests. Please wait a few moments before trying again.';
@@ -193,7 +205,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // Handle Step 2: Verify OTP & Sign In
+  // Handle Step 2: Verify OTP & Sign In (Passwordless)
   const handleVerifyAndSignIn = async (e) => {
     e.preventDefault();
     setError('');
@@ -204,23 +216,13 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    const cleanName = name.trim();
-    if (!cleanName) {
-      setError('Please enter your full name to complete sign in');
-      return;
-    }
-
-    if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
       let userObj = null;
       let token = null;
       let refreshToken = null;
+      let resData = null;
 
       if (authMode === 'phone') {
         if (!confirmationResultRef.current) {
@@ -235,19 +237,17 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         const idToken = await fbUser.getIdToken();
         const cleanPhone = phone.replace(/\D/g, '').slice(-10);
 
-        // 2. Authenticate or register with backend
+        // 2. Authenticate or register with backend (passwordless)
         const { data } = await api.post('/auth/phone-login', {
           phone: cleanPhone,
-          name: cleanName,
-          password: password,
           firebaseUid: fbUser.uid,
           idToken: idToken,
         });
 
-        const resData = data?.data;
+        resData = data?.data;
         userObj = resData?.user || {
           _id: 'user_' + Date.now(),
-          name: cleanName,
+          name: 'Customer',
           email: `${cleanPhone}@mobile.ama-yaar.com`,
           phone: cleanPhone,
           role: 'customer',
@@ -255,39 +255,86 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
         token = resData?.accessToken || 'ay_token_' + Date.now();
         refreshToken = resData?.refreshToken;
       } else {
-        // Email OTP verification with backend
+        // Email OTP verification with backend (passwordless)
+        const cleanEmail = email.trim().toLowerCase();
         const payload = {
           otp: cleanOtp,
-          name: cleanName,
-          password: password,
-          email: email.trim().toLowerCase(),
+          email: cleanEmail,
         };
-        if (phone) payload.phone = phone.replace(/\D/g, '');
 
         const { data } = await api.post('/auth/verify-otp', payload);
-        const resData = data?.data;
+        resData = data?.data;
 
         userObj = resData?.user || {
           _id: 'user_' + Date.now(),
-          name: cleanName,
-          email: email || `${phone}@mobile.ama-yaar.com`,
-          phone: phone || '',
+          name: cleanEmail.split('@')[0],
+          email: cleanEmail,
+          phone: '',
           role: 'customer',
         };
         token = resData?.accessToken || 'ay_token_' + Date.now();
         refreshToken = resData?.refreshToken;
       }
 
+      // Persist access token in localStorage immediately
+      if (token) {
+        localStorage.setItem('ay_access_token', token);
+      }
+      if (refreshToken) {
+        localStorage.setItem('ay_refresh_token', refreshToken);
+      }
+
+      const isDummyEmail = (em) => {
+        if (!em) return true;
+        const l = em.trim().toLowerCase();
+        return (
+          l.includes('@guest.') ||
+          l.includes('@mobile.') ||
+          l.endsWith('@guest.ama-yaar.com') ||
+          l.endsWith('@mobile.ama-yaar.com') ||
+          !l.includes('@') ||
+          !l.includes('.')
+        );
+      };
+
+      if (authMode === 'phone' && (resData?.needsEmail || isDummyEmail(userObj.email))) {
+        setPendingPhoneUser(userObj);
+        setEmail('');
+        setStep('phone-email');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Check if user is missing either their Name or Phone Number
+      const cleanPhone = (userObj?.phone || phone || '').replace(/\D/g, '').slice(-10);
+      const hasValidPhone = cleanPhone.length === 10 && /^[6-9]\d{9}$/.test(cleanPhone);
+
+      const rawName = (userObj?.name || name || '').trim();
+      const emailPrefix = (email || '').split('@')[0].trim().toLowerCase();
+      const isDefaultName =
+        !rawName ||
+        rawName.toLowerCase() === 'customer' ||
+        rawName.toLowerCase().startsWith('customer ') ||
+        rawName.toLowerCase() === emailPrefix;
+      const hasValidName = !isDefaultName && rawName.length >= 2;
+
+      // If user is new or missing Name / Phone, navigate to profile details step
+      if (!hasValidName || !hasValidPhone) {
+        setPendingAuthUser({ user: userObj, accessToken: token, refreshToken });
+        setName(hasValidName ? rawName : '');
+        setPhone(hasValidPhone ? cleanPhone : '');
+        setStep('profile_details');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If already complete, sign in immediately
       dispatch(
         setCredentials({
           user: userObj,
           accessToken: token,
         })
       );
-
-      if (refreshToken) {
-        localStorage.setItem('ay_refresh_token', refreshToken);
-      }
 
       sessionStorage.setItem('auth_popup_shown', 'true');
       setVerifiedUser(userObj);
@@ -307,6 +354,118 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
       } else {
         setError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
       }
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle Step 3: Save Mandatory Full Name & Mobile Number after OTP Verification
+  const handleSaveProfileDetails = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    const cleanName = name.trim();
+    if (!cleanName || cleanName.length < 2) {
+      setError('Please enter your full name (at least 2 characters)');
+      return;
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+      setError('Please enter a valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9)');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const activeToken = pendingAuthUser?.accessToken || localStorage.getItem('ay_access_token');
+      const config = activeToken ? { headers: { Authorization: `Bearer ${activeToken}` } } : {};
+
+      const res = await api.put(
+        '/users/profile',
+        {
+          name: cleanName,
+          phone: cleanPhone,
+        },
+        config
+      );
+
+      const serverUserData = res.data?.data;
+      const updatedUser = {
+        ...(pendingAuthUser?.user || {}),
+        name: cleanName,
+        phone: cleanPhone,
+        ...(serverUserData || {}),
+      };
+
+      dispatch(
+        setCredentials({
+          user: updatedUser,
+          accessToken: activeToken,
+        })
+      );
+
+      if (pendingAuthUser?.refreshToken) {
+        localStorage.setItem('ay_refresh_token', pendingAuthUser.refreshToken);
+      }
+
+      sessionStorage.setItem('auth_popup_shown', 'true');
+      setVerifiedUser(updatedUser);
+      setSuccess(true);
+
+      setTimeout(() => {
+        if (onSuccess) onSuccess(updatedUser);
+        onClose();
+      }, 900);
+    } catch (err) {
+      console.error('Failed to update profile details:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to save profile details. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle Step: Save Mandatory Email after Phone OTP
+  const handleSavePhoneEmail = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setError('Please enter a valid email address (e.g. name@gmail.com)');
+      return;
+    }
+
+    if (
+      cleanEmail.includes('@guest.') ||
+      cleanEmail.includes('@mobile.') ||
+      cleanEmail.endsWith('@guest.ama-yaar.com') ||
+      cleanEmail.endsWith('@mobile.ama-yaar.com')
+    ) {
+      setError('Please enter your actual personal or business email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await api.put('/users/profile', { email: cleanEmail });
+      const updatedUser = {
+        ...(pendingPhoneUser || {}),
+        email: cleanEmail,
+        ...(res.data?.data || {}),
+      };
+
+      dispatch(setCredentials({ user: updatedUser }));
+      sessionStorage.setItem('auth_popup_shown', 'true');
+      setVerifiedUser(updatedUser);
+      setSuccess(true);
+
+      setTimeout(() => {
+        if (onSuccess) onSuccess(updatedUser);
+        onClose();
+      }, 900);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to save email address. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -486,6 +645,64 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                   Exclusive member deals activated
                 </div>
+              </div>
+            ) : step === 'phone-email' ? (
+              /* MANDATORY EMAIL ADDRESS STEP AFTER PHONE OTP */
+              <div className="animate-in fade-in duration-200">
+                <div className="mb-4">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    Phone Verified (+91 {phone.replace(/\D/g, '').slice(-10)})
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight mt-2">
+                    Enter Email Address <span className="text-rose-500">*</span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 font-medium mt-1 leading-relaxed">
+                    Email address is mandatory for order confirmations, digital invoices, and courier tracking updates.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="mb-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSavePhoneEmail} className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-700 block mb-1">
+                      Email Address <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative flex items-center rounded-xl border border-neutral-300 focus-within:border-black transition overflow-hidden bg-white">
+                      <div className="bg-neutral-100 px-3 py-2.5 text-xs font-black text-neutral-500 border-r border-neutral-200 shrink-0">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <input
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setError('');
+                        }}
+                        className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                    <span className="text-[10px] text-neutral-400 font-medium mt-1 block">
+                      We'll send your tax invoices and order receipts to this email
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !email.includes('@')}
+                    className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Saving Email Address...' : 'COMPLETE SIGN IN →'}
+                  </button>
+                </form>
               </div>
             ) : step === 'google-phone' ? (
               /* MANDATORY MOBILE NUMBER STEP AFTER GOOGLE LOGIN */
@@ -767,47 +984,20 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                     </div>
                   </div>
 
-                  {/* Full Name Input */}
+                  {/* Full Name Input (Optional) */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Full Name
+                      Full Name <span className="text-neutral-400 font-normal">(Optional)</span>
                     </label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                       <input
                         type="text"
-                        placeholder="Enter your full name"
+                        placeholder="Enter your name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full rounded-xl border border-neutral-300 pl-10 pr-4 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-0 transition"
-                        required
                       />
-                    </div>
-                  </div>
-
-                  {/* Password Input */}
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600 block mb-1">
-                      Password (Min 6 chars) <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Enter password (min 6 characters)"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300 pl-10 pr-10 py-2 text-xs sm:text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-0 transition"
-                        required
-                        minLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
                     </div>
                   </div>
 
@@ -833,13 +1023,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={
-                      isSubmitting ||
-                      otp.length < 6 ||
-                      !name.trim() ||
-                      !password ||
-                      password.length < 6
-                    }
+                    disabled={isSubmitting || otp.length < 6}
                     className="w-full rounded-xl bg-black py-3 text-center text-xs sm:text-sm font-black uppercase tracking-wider text-white hover:bg-neutral-800 transition cursor-pointer shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? 'Processing...' : 'VERIFY & SIGN IN'}

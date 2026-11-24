@@ -74,6 +74,34 @@ async function updateProfile(id, data) {
     if (data[key] !== undefined) updateData[key] = data[key];
   }
 
+  if (updateData.phone !== undefined && typeof updateData.phone === 'string') {
+    updateData.phone = updateData.phone.replace(/\D/g, '').slice(-10);
+  }
+
+  if (data.email !== undefined) {
+    const cleanEmail = data.email ? data.email.trim().toLowerCase() : '';
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      throw new ApiError(400, 'Please enter a valid email address');
+    }
+    if (
+      cleanEmail.includes('@guest.') ||
+      cleanEmail.includes('@mobile.') ||
+      cleanEmail.endsWith('@guest.ama-yaar.com') ||
+      cleanEmail.endsWith('@mobile.ama-yaar.com')
+    ) {
+      throw new ApiError(400, 'Please enter your actual personal or business email address');
+    }
+
+    const existingEmailUser = await User.findOne({ email: cleanEmail, _id: { $ne: id } });
+    if (existingEmailUser) {
+      throw new ApiError(
+        400,
+        'This email address is already linked with another account. Please use a different email or sign in with that email.'
+      );
+    }
+    updateData.email = cleanEmail;
+  }
+
   const user = await User.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
   if (!user) throw new ApiError(404, 'User not found');
   return user;

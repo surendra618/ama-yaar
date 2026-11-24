@@ -10,6 +10,19 @@ const { notifyAdmins } = require('../notification/adminNotifier');
 const { newUserTemplate, emailOtpTemplate } = require('../../utils/emailTemplates');
 const env = require('../../config/env');
 
+function isDummyEmail(em) {
+  if (!em) return true;
+  const l = em.trim().toLowerCase();
+  return (
+    l.includes('@guest.') ||
+    l.includes('@mobile.') ||
+    l.endsWith('@guest.ama-yaar.com') ||
+    l.endsWith('@mobile.ama-yaar.com') ||
+    !l.includes('@') ||
+    !l.includes('.')
+  );
+}
+
 async function register({ name, email, password, phone, role = 'customer' }) {
   if (!name || !email || !password) {
     throw new ApiError(400, 'Name, email and password are required');
@@ -72,7 +85,11 @@ async function register({ name, email, password, phone, role = 'customer' }) {
   sanitizedUser.isSuperAdmin = isMainAdmin;
   delete sanitizedUser.password;
 
-  return { user: sanitizedUser, accessToken, refreshToken };
+  const cleanUserPhone = (sanitizedUser.phone || '').replace(/\D/g, '');
+  const needsPhone = !cleanUserPhone || cleanUserPhone.length < 10 || sanitizedUser.phone === 'Google Sign-In';
+  const needsEmail = isDummyEmail(sanitizedUser.email);
+
+  return { user: sanitizedUser, accessToken, refreshToken, needsPhone, needsEmail };
 }
 
 async function login({ email, password, role }) {
@@ -115,7 +132,11 @@ async function login({ email, password, role }) {
   sanitizedUser.isSuperAdmin = isMainAdmin;
   delete sanitizedUser.password;
 
-  return { user: sanitizedUser, accessToken, refreshToken };
+  const cleanUserPhone = (sanitizedUser.phone || '').replace(/\D/g, '');
+  const needsPhone = !cleanUserPhone || cleanUserPhone.length < 10 || sanitizedUser.phone === 'Google Sign-In';
+  const needsEmail = isDummyEmail(sanitizedUser.email);
+
+  return { user: sanitizedUser, accessToken, refreshToken, needsPhone, needsEmail };
 }
 
 async function refreshToken({ token }) {
@@ -282,7 +303,11 @@ async function quickLogin({ email, phone, name, password }) {
   sanitizedUser.isSuperAdmin = isMainAdmin;
   delete sanitizedUser.password;
 
-  return { user: sanitizedUser, accessToken, refreshToken };
+  const cleanUserPhone = (sanitizedUser.phone || '').replace(/\D/g, '');
+  const needsPhone = !cleanUserPhone || cleanUserPhone.length < 10 || sanitizedUser.phone === 'Google Sign-In';
+  const needsEmail = isDummyEmail(sanitizedUser.email);
+
+  return { user: sanitizedUser, accessToken, refreshToken, needsPhone, needsEmail };
 }
 
 async function phoneLogin({ phone, name, password, firebaseUid, idToken }) {
@@ -503,8 +528,9 @@ async function googleLogin({ email, name, avatar, googleId, phone }) {
 
   const cleanPhone = (sanitizedUser.phone || '').replace(/\D/g, '');
   const needsPhone = !cleanPhone || cleanPhone.length < 10 || sanitizedUser.phone === 'Google Sign-In';
+  const needsEmail = isDummyEmail(sanitizedUser.email);
 
-  return { user: sanitizedUser, accessToken, refreshToken, needsPhone };
+  return { user: sanitizedUser, accessToken, refreshToken, needsPhone, needsEmail };
 }
 
 async function saveFcmToken(userId, { token }) {
