@@ -8,18 +8,20 @@ function getTransporter() {
 
   if (!transporter) {
     const isGmail = env.smtp.host.includes('gmail.com');
+    const cleanUser = env.smtp.user.trim();
+    const cleanPass = env.smtp.pass.replace(/\s+/g, '');
     transporter = nodemailer.createTransport(
       isGmail
         ? {
             service: 'gmail',
-            auth: { user: env.smtp.user.trim(), pass: env.smtp.pass.trim() },
+            auth: { user: cleanUser, pass: cleanPass },
             tls: { rejectUnauthorized: false },
           }
         : {
-            host: env.smtp.host,
+            host: env.smtp.host.trim(),
             port: env.smtp.port,
             secure: env.smtp.port === 465,
-            auth: { user: env.smtp.user.trim(), pass: env.smtp.pass.trim() },
+            auth: { user: cleanUser, pass: cleanPass },
             tls: { rejectUnauthorized: false },
           }
     );

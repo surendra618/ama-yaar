@@ -24,10 +24,10 @@ module.exports = {
     keySecret: process.env.RAZORPAY_KEY_SECRET || '',
   },
   smtp: {
-    host: process.env.SMTP_HOST,
+    host: process.env.SMTP_HOST ? process.env.SMTP_HOST.trim() : undefined,
     port: Number(process.env.SMTP_PORT) || 587,
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.SMTP_USER ? process.env.SMTP_USER.trim() : undefined,
+    pass: process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : undefined,
   },
   adminSeed: {
     email: process.env.ADMIN_SEED_EMAIL || 'admin@ama-yaar.com',
