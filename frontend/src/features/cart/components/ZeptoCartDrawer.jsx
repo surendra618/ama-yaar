@@ -277,6 +277,7 @@ export default function ZeptoCartDrawer() {
                   const p = item.product || {};
                   const rawImg = p.images?.[0] || p.image;
                   const displayImg = getMediaUrl(rawImg, p.name);
+                  const productUrl = p.slug || p._id ? `/products/${p.slug || p._id}` : null;
 
                   return (
                     <div
@@ -284,21 +285,49 @@ export default function ZeptoCartDrawer() {
                       className="flex items-center gap-3.5 rounded-2xl border border-neutral-200/80 bg-white p-3 shadow-2xs"
                     >
                       {/* Product Thumbnail */}
-                      <img
-                        src={displayImg}
-                        alt={p.name || 'Product'}
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = getFallbackForName(p.name);
-                        }}
-                        className="h-20 w-16 rounded-xl object-cover bg-neutral-100 shrink-0 border border-neutral-200/60"
-                      />
+                      {productUrl ? (
+                        <Link
+                          to={productUrl}
+                          onClick={() => dispatch(closeDrawer())}
+                          className="shrink-0 block rounded-xl overflow-hidden"
+                        >
+                          <img
+                            src={displayImg}
+                            alt={p.name || 'Product'}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = getFallbackForName(p.name);
+                            }}
+                            className="h-20 w-16 rounded-xl object-cover bg-neutral-100 border border-neutral-200/60 transition hover:opacity-90"
+                          />
+                        </Link>
+                      ) : (
+                        <img
+                          src={displayImg}
+                          alt={p.name || 'Product'}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = getFallbackForName(p.name);
+                          }}
+                          className="h-20 w-16 rounded-xl object-cover bg-neutral-100 shrink-0 border border-neutral-200/60"
+                        />
+                      )}
 
                       {/* Info & Variants */}
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-xs font-bold text-black line-clamp-1">
-                          {p.name || 'Product'}
-                        </h4>
+                        {productUrl ? (
+                          <Link
+                            to={productUrl}
+                            onClick={() => dispatch(closeDrawer())}
+                            className="block text-xs font-bold text-black line-clamp-1 hover:text-neutral-600 hover:underline transition-colors"
+                          >
+                            {p.name || 'Product'}
+                          </Link>
+                        ) : (
+                          <h4 className="text-xs font-bold text-black line-clamp-1">
+                            {p.name || 'Product'}
+                          </h4>
+                        )}
 
                         <div className="flex items-center gap-2 mt-0.5">
                           {item.variant?.size && (

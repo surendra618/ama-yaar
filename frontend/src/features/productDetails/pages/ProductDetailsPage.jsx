@@ -706,11 +706,6 @@ export default function ProductDetailsPage() {
             <h1 className="text-xl sm:text-2xl lg:text-[27px] font-bold tracking-tight text-neutral-900 leading-[1.2]">
               {product.name || "Men's Oversized Puffer Winter Bubble Jacket"}
             </h1>
-            {product.sku && (
-              <p className="mt-1 font-mono text-[10px] text-neutral-400 font-semibold tracking-wider uppercase">
-                SKU: {product.sku}
-              </p>
-            )}
 
             {/* Price & MRP Row */}
             <div className="mt-2.5 flex items-baseline gap-2.5 flex-wrap">
@@ -1333,14 +1328,6 @@ export default function ProductDetailsPage() {
 
                 {activeTab === "details" && (
                   <div className="space-y-2 animate-in fade-in duration-200">
-                    {product.sku && (
-                      <div className="flex justify-between py-1 border-b border-neutral-100">
-                        <span className="font-semibold text-neutral-500">SKU / Item Code</span>
-                        <span className="font-mono text-[11px] font-bold text-neutral-900 bg-neutral-100 px-1.5 py-0.5 rounded">
-                          {product.sku}
-                        </span>
-                      </div>
-                    )}
                     <div className="flex justify-between py-1 border-b border-neutral-100">
                       <span className="font-semibold text-neutral-500">Fabric</span>
                       <span className="font-medium text-neutral-900">

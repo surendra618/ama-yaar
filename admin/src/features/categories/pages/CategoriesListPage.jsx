@@ -1,7 +1,21 @@
-import { useEffect, useState, useMemo } from 'react';
+import { Fragment, useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Plus, Pencil, Trash2, FolderTree, CheckCircle2, CornerDownRight, Layers, Sparkles, MoreVertical } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  FolderTree,
+  CheckCircle2,
+  CornerDownRight,
+  Layers,
+  Sparkles,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Table2,
+  LayoutGrid,
+} from 'lucide-react';
 import { fetchCategories, updateCategory, deleteCategory } from '../categoriesSlice';
 import ConfirmDialog from '../../../components/ConfirmDialog';
 import getMediaUrl from '../../../utils/mediaUrl';
@@ -12,17 +26,13 @@ export default function CategoriesListPage() {
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
-  const [activeMenuId, setActiveMenuId] = useState(null);
+  const [viewMode, setViewMode] = useState('table');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedIds, setExpandedIds] = useState({});
 
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
-
-  useEffect(() => {
-    const handleOutsideClick = () => setActiveMenuId(null);
-    document.addEventListener('click', handleOutsideClick);
-    return () => document.removeEventListener('click', handleOutsideClick);
-  }, []);
 
   const handleToggleActive = async (c) => {
     setTogglingId(c._id);
@@ -41,7 +51,14 @@ export default function CategoriesListPage() {
     return getMediaUrl(image);
   };
 
-  // Group items into Root Cards with their respective subcategories inside
+  const toggleExpand = (rootId) => {
+    setExpandedIds((prev) => ({
+      ...prev,
+      [rootId]: !prev[rootId],
+    }));
+  };
+
+  // Group items into Root Categories with their respective subcategories inside
   const rootCategoryCards = useMemo(() => {
     if (!items || items.length === 0) return [];
 
@@ -81,32 +98,135 @@ export default function CategoriesListPage() {
     return cards;
   }, [items]);
 
+  // Filter grouped categories by search query
+  const filteredGroups = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return rootCategoryCards;
+
+    return rootCategoryCards
+      .map(({ root, subcategories }) => {
+        const rootMatches =
+          root.name?.toLowerCase().includes(q) || root.slug?.toLowerCase().includes(q);
+        if (rootMatches) {
+          return { root, subcategories };
+        }
+        const matchingSubs = subcategories.filter(
+          (sub) => sub.name?.toLowerCase().includes(q) || sub.slug?.toLowerCase().includes(q)
+        );
+        if (matchingSubs.length > 0) {
+          return { root, subcategories: matchingSubs };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [rootCategoryCards, searchQuery]);
+
+  const allExpanded =
+    filteredGroups.some(({ subcategories }) => subcategories.length > 0) &&
+    filteredGroups.every(({ root, subcategories }) => subcategories.length === 0 || !!expandedIds[root._id]);
+
+  const handleToggleAll = () => {
+    if (allExpanded) {
+      setExpandedIds({});
+    } else {
+      const next = {};
+      filteredGroups.forEach(({ root, subcategories }) => {
+        if (subcategories.length > 0) next[root._id] = true;
+      });
+      setExpandedIds(next);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header Row */}
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center border-b border-slate-200 pb-4">
+      <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center border-b border-slate-200 pb-3">
         <div>
-          <h1 className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+          <h1 className="text-lg font-black tracking-tight text-slate-900 flex items-center gap-1.5">
             Categories & Subcategories
             <Sparkles className="h-4 w-4 text-amber-500" />
           </h1>
-          <p className="text-xs font-medium text-slate-500">
-            Every Root Category is displayed as a Card, with its Child Subcategories grouped inside.
+          <p className="text-[11px] font-medium text-slate-500">
+            Manage root categories and their nested subcategories.
           </p>
         </div>
-        <Link
-          to="/categories/new"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2.5 text-xs font-extrabold text-slate-900 shadow-xs transition hover:bg-amber-300 hover:scale-105 active:scale-95"
-        >
-          <Plus className="h-4 w-4" /> Add Root Category
-        </Link>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View Switcher */}
+          <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
+                viewMode === 'table'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Table2 className="h-3.5 w-3.5" /> Table
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('cards')}
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
+                viewMode === 'cards'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" /> Cards
+            </button>
+          </div>
+
+          <Link
+            to="/categories/new"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-extrabold text-slate-900 shadow-xs transition hover:bg-amber-300"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add Root Category
+          </Link>
+        </div>
       </div>
+
+      {/* Filter & Controls Bar */}
+      {status !== 'loading' && rootCategoryCards.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search categories or slugs..."
+              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2.5 text-[11px] text-slate-500">
+            <span>
+              <strong className="text-slate-800">{filteredGroups.length}</strong> roots •{' '}
+              <strong className="text-slate-800">
+                {filteredGroups.reduce((acc, g) => acc + g.subcategories.length, 0)}
+              </strong>{' '}
+              subs
+            </span>
+            {viewMode === 'table' && (
+              <button
+                type="button"
+                onClick={handleToggleAll}
+                className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition"
+              >
+                {allExpanded ? 'Collapse All' : 'Expand All'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {status === 'loading' ? (
         <div className="flex items-center justify-center py-12 rounded-xl border border-slate-200 bg-white">
           <div className="flex items-center gap-3">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent" />
-            <span className="text-xs font-bold text-slate-700">Loading category cards...</span>
+            <span className="text-xs font-bold text-slate-700">Loading categories...</span>
           </div>
         </div>
       ) : rootCategoryCards.length === 0 ? (
@@ -121,9 +241,255 @@ export default function CategoriesListPage() {
             <Plus className="h-4 w-4" /> Create Category
           </Link>
         </div>
+      ) : filteredGroups.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-slate-300 bg-white text-center">
+          <Search className="h-8 w-8 text-slate-300 mb-2" />
+          <p className="text-sm font-bold text-slate-700">No categories match "{searchQuery}"</p>
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="mt-2 text-xs font-bold text-indigo-600 hover:underline"
+          >
+            Clear search
+          </button>
+        </div>
+      ) : viewMode === 'table' ? (
+        /* CLEAN COMPACT HIERARCHICAL TABLE VIEW */
+        <div className="rounded-lg border border-slate-200 bg-white shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[740px] text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Category
+                  </th>
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Slug
+                  </th>
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Type
+                  </th>
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">
+                    Products
+                  </th>
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Status
+                  </th>
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-right">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredGroups.map(({ root, subcategories }) => {
+                  const isExpanded = searchQuery.trim().length > 0 || !!expandedIds[root._id];
+                  const hasSubs = subcategories.length > 0;
+
+                  return (
+                    <Fragment key={root._id}>
+                      {/* ROOT CATEGORY ROW */}
+                      <tr className="bg-slate-50/50 hover:bg-slate-100/70 transition-colors">
+                        <td className="px-3 py-1.5 align-middle">
+                          <div className="flex items-center gap-2">
+                            {hasSubs ? (
+                              <button
+                                type="button"
+                                onClick={() => toggleExpand(root._id)}
+                                className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 transition"
+                                title={isExpanded ? 'Collapse subcategories' : 'Expand subcategories'}
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </button>
+                            ) : (
+                              <span className="w-5 shrink-0" />
+                            )}
+
+                            {root.image ? (
+                              <img
+                                src={getImageUrl(root.image)}
+                                alt={root.name}
+                                className="h-7 w-7 rounded object-cover ring-1 ring-slate-200 shrink-0"
+                              />
+                            ) : (
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-slate-900 text-white">
+                                <Layers className="h-3.5 w-3.5" />
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-extrabold text-slate-900">{root.name}</span>
+                              <span className="rounded bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                                {subcategories.length} {subcategories.length === 1 ? 'sub' : 'subs'}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-3 py-1.5 align-middle font-mono text-[11px] text-slate-600">
+                          /{root.slug}
+                        </td>
+
+                        <td className="px-3 py-1.5 align-middle">
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-800 border border-blue-200">
+                            ROOT
+                          </span>
+                        </td>
+
+                        <td className="px-3 py-1.5 align-middle text-center">
+                          <span className="inline-flex min-w-[1.5rem] items-center justify-center rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold text-slate-700">
+                            {root.productCount ?? 0}
+                          </span>
+                        </td>
+
+                        <td className="px-3 py-1.5 align-middle">
+                          {root.isActive !== undefined && !root.isVirtual ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(root)}
+                              disabled={togglingId === root._id}
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition border ${
+                                root.isActive
+                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                  : 'border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              }`}
+                              title={root.isActive ? 'Click to Disable' : 'Click to Activate'}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  root.isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                                }`}
+                              />
+                              {root.isActive ? 'Active' : 'Disabled'}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
+                        </td>
+
+                        <td className="px-3 py-1.5 align-middle text-right">
+                          {!root.isVirtual && (
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <Link
+                                to={`/categories/new?parent=${root._id}`}
+                                className="inline-flex items-center gap-1 rounded bg-slate-900 px-2 py-1 text-[10px] font-bold text-white hover:bg-slate-800 transition"
+                              >
+                                <Plus className="h-3 w-3" /> Sub
+                              </Link>
+                              <Link
+                                to={`/categories/${root._id}/edit`}
+                                className="inline-flex items-center gap-1 rounded border border-indigo-200 bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-700 hover:bg-indigo-100 transition"
+                                title="Edit Root Category"
+                              >
+                                <Pencil className="h-3 w-3" /> Edit
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => setToDelete(root)}
+                                className="rounded border border-rose-200 bg-rose-50 p-1 text-rose-600 hover:bg-rose-100 transition"
+                                title="Delete Root Category"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+
+                      {/* CHILD SUBCATEGORY ROWS */}
+                      {isExpanded &&
+                        subcategories.map((sub) => (
+                          <tr key={sub._id} className="bg-white hover:bg-purple-50/30 transition-colors">
+                            <td className="px-3 py-1.5 align-middle">
+                              <div className="flex items-center gap-2 pl-6">
+                                <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+                                {sub.image ? (
+                                  <img
+                                    src={getImageUrl(sub.image)}
+                                    alt={sub.name}
+                                    className="h-6 w-6 rounded object-cover ring-1 ring-slate-200 shrink-0"
+                                  />
+                                ) : (
+                                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-purple-100 text-purple-700 border border-purple-200">
+                                    <FolderTree className="h-3 w-3" />
+                                  </div>
+                                )}
+                                <span className="text-xs font-semibold text-slate-800">{sub.name}</span>
+                              </div>
+                            </td>
+
+                            <td className="px-3 py-1.5 align-middle font-mono text-[11px] text-slate-500">
+                              /{sub.slug}
+                            </td>
+
+                            <td className="px-3 py-1.5 align-middle">
+                              <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800 border border-purple-200">
+                                SUB
+                              </span>
+                            </td>
+
+                            <td className="px-3 py-1.5 align-middle text-center">
+                              <span className="inline-flex min-w-[1.5rem] items-center justify-center rounded bg-slate-50 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600">
+                                {sub.productCount ?? 0}
+                              </span>
+                            </td>
+
+                            <td className="px-3 py-1.5 align-middle">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleActive(sub)}
+                                disabled={togglingId === sub._id}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition border ${
+                                  sub.isActive
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                    : 'border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                }`}
+                                title={sub.isActive ? 'Active - Click to Disable' : 'Disabled - Click to Activate'}
+                              >
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${
+                                    sub.isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                                  }`}
+                                />
+                                {sub.isActive ? 'Active' : 'Disabled'}
+                              </button>
+                            </td>
+
+                            <td className="px-3 py-1.5 align-middle text-right">
+                              <div className="inline-flex items-center justify-end gap-1">
+                                <Link
+                                  to={`/categories/${sub._id}/edit`}
+                                  className="inline-flex items-center gap-1 rounded border border-indigo-200 bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-700 hover:bg-indigo-100 transition"
+                                  title="Edit Subcategory"
+                                >
+                                  <Pencil className="h-3 w-3" /> Edit
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => setToDelete(sub)}
+                                  className="rounded border border-rose-200 bg-rose-50 p-1 text-rose-600 hover:bg-rose-100 transition"
+                                  title="Delete Subcategory"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
+        /* CARDS VIEW */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          {rootCategoryCards.map(({ root, subcategories }) => (
+          {filteredGroups.map(({ root, subcategories }) => (
             <div
               key={root._id}
               className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-all duration-200 hover:border-slate-300 flex flex-col"
@@ -151,15 +517,17 @@ export default function CategoriesListPage() {
                       </span>
                       {root.isActive !== undefined && (
                         <span
-                          className={`rounded-md px-1.5 py-0.2 text-[9px] font-bold ${root.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
-                            }`}
+                          className={`rounded-md px-1.5 py-0.2 text-[9px] font-bold ${
+                            root.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                          }`}
                         >
                           {root.isActive ? 'Active' : 'Disabled'}
                         </span>
                       )}
                     </div>
                     <p className="text-[11px] font-mono text-slate-500 truncate mt-0.5">
-                      /{root.slug} • <strong className="text-slate-800">{subcategories.length} Subs</strong> • {root.productCount ?? 0} Prods
+                      /{root.slug} • <strong className="text-slate-800">{subcategories.length} Subs</strong> •{' '}
+                      {root.productCount ?? 0} Prods
                     </p>
                   </div>
                 </div>
@@ -176,10 +544,11 @@ export default function CategoriesListPage() {
                     <button
                       onClick={() => handleToggleActive(root)}
                       disabled={togglingId === root._id}
-                      className={`rounded-sm border p-1 transition ${root.isActive
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                        : 'border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100'
-                        }`}
+                      className={`rounded-sm border p-1 transition ${
+                        root.isActive
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                          : 'border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100'
+                      }`}
                       title={root.isActive ? 'Click to Disable' : 'Click to Activate'}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
@@ -220,7 +589,7 @@ export default function CategoriesListPage() {
 
                 {subcategories.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {subcategories.map((sub, subIdx) => (
+                    {subcategories.map((sub) => (
                       <div
                         key={sub._id}
                         className="flex items-center justify-between gap-2 border border-slate-200 bg-slate-50/70 p-2.5 hover:bg-white hover:border-purple-300 transition shadow-2xs group"
