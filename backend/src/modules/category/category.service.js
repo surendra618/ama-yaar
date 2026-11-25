@@ -113,6 +113,28 @@ async function create(data) {
   if (!data.parent || data.parent === '' || data.parent === 'null' || !mongoose.Types.ObjectId.isValid(data.parent)) {
     data.parent = null;
   }
+
+  const existing = await Category.findOne({ slug: data.slug }).lean();
+  if (existing) {
+    const existingParent = existing.parent ? existing.parent.toString() : null;
+    const newParent = data.parent ? data.parent.toString() : null;
+
+    if (newParent && existingParent !== newParent) {
+      const parentDoc = await Category.findById(newParent).select('slug').lean();
+      if (parentDoc?.slug) {
+        data.slug = `${parentDoc.slug}-${data.slug}`;
+        const existingScoped = await Category.findOne({ slug: data.slug }).lean();
+        if (existingScoped) {
+          throw new ApiError(409, `Subcategory "${data.name}" already exists under this parent category.`);
+        }
+      } else {
+        throw new ApiError(409, `Category "${data.name}" already exists. Please use a different name.`);
+      }
+    } else {
+      throw new ApiError(409, `Category "${data.name}" already exists. Please use a different name.`);
+    }
+  }
+
   const created = await Category.create(data);
   clearCategoryCache();
   return created;
@@ -128,6 +150,27 @@ async function update(id, data) {
   if (data.parent !== undefined) {
     if (!data.parent || data.parent === '' || data.parent === 'null' || !mongoose.Types.ObjectId.isValid(data.parent)) {
       data.parent = null;
+    }
+  }
+  if (data.slug) {
+    const existing = await Category.findOne({ slug: data.slug, _id: { $ne: id } }).lean();
+    if (existing) {
+      const existingParent = existing.parent ? existing.parent.toString() : null;
+      const newParent = data.parent ? data.parent.toString() : null;
+      if (newParent && existingParent !== newParent) {
+        const parentDoc = await Category.findById(newParent).select('slug').lean();
+        if (parentDoc?.slug) {
+          data.slug = `${parentDoc.slug}-${data.slug}`;
+          const existingScoped = await Category.findOne({ slug: data.slug, _id: { $ne: id } }).lean();
+          if (existingScoped) {
+            throw new ApiError(409, `Subcategory "${data.name || data.slug}" already exists under this parent category.`);
+          }
+        } else {
+          throw new ApiError(409, `Category "${data.name || data.slug}" already exists. Please use a different name.`);
+        }
+      } else {
+        throw new ApiError(409, `Category "${data.name || data.slug}" already exists. Please use a different name.`);
+      }
     }
   }
   const doc = await Category.findByIdAndUpdate(id, data, { new: true, runValidators: true });

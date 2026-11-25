@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import Loader from '../components/Loader';
+import ToastContainer from '../components/ToastContainer';
 import { checkAdminAuth } from '../features/auth/authSlice';
 
 export default function DashboardLayout() {
@@ -51,6 +52,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <ToastContainer />
     </div>
   );
 }

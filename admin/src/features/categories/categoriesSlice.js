@@ -58,6 +58,7 @@ const categoriesSlice = createSlice({
   reducers: {
     clearCurrentCategory: (state) => {
       state.current = null;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {

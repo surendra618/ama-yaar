@@ -11,6 +11,7 @@ import {
 } from '../categoriesSlice';
 import api from '../../../lib/axios';
 import getMediaUrl from '../../../utils/mediaUrl';
+import toast from '../../../utils/toast';
 
 const emptyForm = { name: '', parent: '', image: '', banner: '', isActive: true };
 
@@ -19,10 +20,9 @@ export default function CategoryFormPage() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { items, current, saving, error } = useSelector((state) => state.categories);
+  const { items, current, saving } = useSelector((state) => state.categories);
   const [form, setForm] = useState(emptyForm);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -57,12 +57,11 @@ export default function CategoryFormPage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setUploadError('Please select a valid image file (PNG, JPG, WEBP).');
+      toast.error('Please select a valid image file (PNG, JPG, WEBP).');
       return;
     }
 
     setUploadingImage(true);
-    setUploadError('');
 
     try {
       const formData = new FormData();
@@ -75,9 +74,10 @@ export default function CategoryFormPage() {
       const uploadedUrl = res.data?.data?.url;
       if (uploadedUrl) {
         setForm((f) => ({ ...f, [fieldName]: uploadedUrl }));
+        toast.success('Image uploaded successfully!');
       }
     } catch (err) {
-      setUploadError(err.response?.data?.message || 'Failed to upload image. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to upload image. Please try again.');
     } finally {
       setUploadingImage(false);
     }
@@ -88,7 +88,12 @@ export default function CategoryFormPage() {
     const payload = { ...form, parent: form.parent || null };
     const action = isEdit ? updateCategory({ id, payload }) : createCategory(payload);
     const result = await dispatch(action);
-    if (!result.error) navigate('/categories');
+    if (!result.error) {
+      toast.success(isEdit ? 'Category updated successfully!' : 'Category created successfully!');
+      navigate('/categories');
+    } else {
+      toast.error(result.payload || result.error?.message || 'Failed to save category.');
+    }
   };
 
   const parentOptions = items.filter((c) => c._id !== id);
@@ -125,15 +130,6 @@ export default function CategoryFormPage() {
           {isEdit ? 'Update category name, parent hierarchy, and category card image' : 'Fill in the details to add a new category slider card'}
         </p>
       </div>
-
-      {(error || uploadError) && (
-        <div className="rounded-md border border-rose-200 bg-rose-50 p-3.5 text-xs font-semibold text-rose-700 flex items-center justify-between shadow-xs">
-          <span>{error || uploadError}</span>
-          <button onClick={() => setUploadError('')} className="p-1 hover:opacity-75">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* FORM LEFT COLUMN */}
