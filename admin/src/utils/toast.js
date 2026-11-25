@@ -1,14 +1,28 @@
 // Lightweight event-driven toast notification utility for the admin panel.
 
 const listeners = new Set();
+let lastToastKey = '';
+let lastToastTime = 0;
 
 function emit(type, message, options = {}) {
   if (!message) return null;
-  const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const text = String(message).trim();
+  if (!text) return null;
+
+  // Deduplicate identical messages fired within 1.5s (e.g. global interceptor + local catch)
+  const key = `${type}:${text}`;
+  const now = Date.now();
+  if (key === lastToastKey && now - lastToastTime < 1500) {
+    return null;
+  }
+  lastToastKey = key;
+  lastToastTime = now;
+
+  const id = `toast_${now}_${Math.random().toString(36).slice(2, 7)}`;
   const payload = {
     id,
     type, // 'success' | 'error' | 'info' | 'warning'
-    message: String(message),
+    message: text,
     duration: options.duration ?? (type === 'error' ? 5000 : 3500),
   };
   listeners.forEach((cb) => cb({ action: 'add', toast: payload }));

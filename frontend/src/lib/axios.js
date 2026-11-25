@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from '../utils/toast';
 
 const sanitizeUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
@@ -128,6 +129,23 @@ api.interceptors.response.use(
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
+      }
+    }
+
+    if (!axios.isCancel(error) && !error.config?.skipErrorToast) {
+      const status = error.response?.status;
+      const method = (error.config?.method || 'get').toLowerCase();
+      const url = error.config?.url || '';
+      const isSilentGet401 = method === 'get' && status === 401;
+      const isSilentAuthCheck = url.includes('/auth/me') || url.includes('/auth/refresh-token');
+
+      if (!isSilentGet401 && !isSilentAuthCheck) {
+        const errMessage =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          'Something went wrong. Please try again.';
+        toast.error(errMessage);
       }
     }
 
