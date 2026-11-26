@@ -55,10 +55,6 @@ export const fetchCardSliders = createAsyncThunk(
     try {
       const { data } = await api.get('/card-sliders', {
         params: { ...params, _t: Date.now() },
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          Pragma: 'no-cache',
-        },
       });
       return data.data;
     } catch (err) {

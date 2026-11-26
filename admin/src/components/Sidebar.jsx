@@ -24,7 +24,6 @@ import {
   LogOut,
   Search,
   Sparkles,
-  ShieldCheck,
   ChevronRight,
   Truck,
   Settings,
@@ -39,7 +38,7 @@ const NAV_GROUPS = [
     title: 'MAIN',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-      { to: '/activity', label: 'Activity Log', icon: Bell, badge: 'LOG', badgeColor: 'bg-indigo-100 text-indigo-700', keywords: 'notifications activity history alerts orders users' },
+      { to: '/activity', label: 'Activity Log', icon: Bell, keywords: 'notifications activity history alerts orders users' },
     ],
   },
   {
@@ -53,19 +52,19 @@ const NAV_GROUPS = [
     items: [
       { to: '/products', label: 'Products', icon: Package },
       { to: '/categories', label: 'Categories', icon: FolderTree },
-      { to: '/orders', label: 'Orders', icon: ShoppingBag, badge: 'LIVE', badgeColor: 'bg-emerald-100 text-emerald-700' },
-      { to: '/reviews', label: 'Product Reviews', icon: Star, badge: 'NEW', badgeColor: 'bg-amber-100 text-amber-800', keywords: 'reviews ratings customer feedback comments product reviews' },
+      { to: '/orders', label: 'Orders', icon: ShoppingBag },
+      { to: '/reviews', label: 'Product Reviews', icon: Star, keywords: 'reviews ratings customer feedback comments product reviews' },
     ],
   },
   {
     title: 'MARKETING & CONTENT',
     items: [
-      { to: '/creators', label: 'Creators & Affiliates', icon: Sparkles, badge: 'PRO', badgeColor: 'bg-amber-100 text-amber-700' },
+      { to: '/creators', label: 'Creators & Affiliates', icon: Sparkles },
       { to: '/coupons', label: 'Coupons', icon: Percent },
       { to: '/banners', label: 'Banners', icon: Image },
-      { to: '/card-sliders', label: 'Shop By Category', icon: LayoutGrid, badge: 'HOMEPAGE', badgeColor: 'bg-amber-100 text-amber-800', keywords: 'card slider categories homepage rail shop by category' },
-      { to: '/homepage-showcase', label: 'Showcase & Instagram', icon: Shirt, badge: 'NEW', badgeColor: 'bg-emerald-100 text-emerald-800', keywords: 'workout top picks peak performance nocta collection interactive editorial homepage showcase banner instagram banner redirect' },
-      { to: '/happy-customers', label: 'Happy Customers Reviews', icon: Star, badge: 'HOMEPAGE', badgeColor: 'bg-amber-100 text-amber-800', keywords: 'happy customers reviews testimonials our happy customers homepage' },
+      { to: '/card-sliders', label: 'Shop By Category', icon: LayoutGrid, keywords: 'card slider categories homepage rail shop by category' },
+      { to: '/homepage-showcase', label: 'Showcase & Instagram', icon: Shirt, keywords: 'workout top picks peak performance nocta collection interactive editorial homepage showcase banner instagram banner redirect' },
+      { to: '/happy-customers', label: 'Happy Customers Reviews', icon: Star, keywords: 'happy customers reviews testimonials our happy customers homepage' },
       { to: '/reels', label: 'Reels Manager', icon: Video },
       { to: '/blogs', label: 'Blog & Stories', icon: BookOpen },
     ],
@@ -73,7 +72,7 @@ const NAV_GROUPS = [
   {
     title: 'SUPPORT & SERVICE',
     items: [
-      { to: '/contact-messages', label: 'Customer Messages', icon: MessageSquare, badge: 'NEW', badgeColor: 'bg-indigo-100 text-indigo-700' },
+      { to: '/contact-messages', label: 'Customer Messages', icon: MessageSquare },
       { to: '/returns', label: 'Returns', icon: RotateCcw },
     ],
   },
@@ -87,9 +86,9 @@ const NAV_GROUPS = [
   {
     title: 'STORE CONFIGURATION',
     items: [
-      { to: '/settings/team', label: 'Team & Admins Settings', icon: Shield, badge: 'STAFF', badgeColor: 'bg-purple-100 text-purple-700', keywords: 'team admin staff settings members permissions roles users' },
-      { to: '/settings/notifications', label: 'Email & Alerts Settings', icon: Bell, badge: 'ALERTS', badgeColor: 'bg-indigo-100 text-indigo-700' },
-      { to: '/settings/delivery', label: 'Delivery & Policy Settings', icon: Truck, badge: 'CONFIG', badgeColor: 'bg-indigo-100 text-indigo-700' },
+      { to: '/settings/team', label: 'Team & Admins Settings', icon: Shield, keywords: 'team admin staff settings members permissions roles users' },
+      { to: '/settings/notifications', label: 'Email & Alerts Settings', icon: Bell },
+      { to: '/settings/delivery', label: 'Delivery & Policy Settings', icon: Truck },
     ],
   },
 ];
@@ -123,9 +122,6 @@ export default function Sidebar() {
       {/* 1. Brand Header */}
       <div className="flex h-20 items-center justify-between border-b border-slate-100 px-5 py-3">
         <AdminLogo size="md" />
-        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-700 px-2 py-0.5 rounded-sm border border-slate-200">
-          <ShieldCheck className="h-3 w-3 text-indigo-600" /> PRO
-        </span>
       </div>
 
       {/* 2. Quick Menu Search */}
@@ -150,7 +146,7 @@ export default function Sidebar() {
               {group.title}
             </h4>
             <div className="space-y-0.5">
-              {group.items.map(({ to, label, icon: Icon, end, badge, badgeColor }) => (
+              {group.items.map(({ to, label, icon: Icon, end }) => (
                 <NavLink
                   key={`${to}-${label}`}
                   to={to}
@@ -174,18 +170,7 @@ export default function Sidebar() {
                         <span className="truncate">{label}</span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {badge && (
-                          <span
-                            className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md border border-slate-200 ${
-                              isActive ? 'bg-[#facc15] text-black border-transparent' : badgeColor || 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            {badge}
-                          </span>
-                        )}
-                        {isActive && <div className="h-1.5 w-1.5 rounded-full bg-[#facc15]" />}
-                      </div>
+                      {isActive && <div className="h-1.5 w-1.5 rounded-full bg-[#facc15] shrink-0" />}
                     </>
                   )}
                 </NavLink>

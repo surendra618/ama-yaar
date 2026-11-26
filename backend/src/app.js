@@ -37,24 +37,24 @@ const allowedOrigins = [
   'http://192.168.1.12:5174',
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      const isAllowed =
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.amayaar.in') ||
-        origin.endsWith('.vercel.app') ||
-        /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+):(5173|5174|5000)$/.test(origin);
-      callback(null, isAllowed ? origin : true);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    exposedHeaders: ['Set-Cookie'],
-  })
-);
-app.options('*', cors());
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.amayaar.in') ||
+      origin.endsWith('.vercel.app') ||
+      /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+):(5173|5174|5000)$/.test(origin);
+    callback(null, isAllowed ? origin : true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cache-Control', 'Pragma'],
+  exposedHeaders: ['Set-Cookie'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Ensure Vary: Origin and optimize caching on public API routes
 app.use((req, res, next) => {

@@ -89,4 +89,4 @@ export const router = createBrowserRouter([
     element: <AuthLayout />,
     children: [{ path: '/login', element: <AdminLoginPage /> }],
   },
-]);
+], { basename: import.meta.env.BASE_URL.replace(/\/+$/, '') || '/' });

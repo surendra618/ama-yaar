@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "concurrently -n \"BACKEND,FRONTEND,ADMIN\" -c \"blue.bold,green.bold,magenta.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\" \"npm --prefix admin run dev\"",
     "dev:app": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue.bold,green.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:ngrok": "node scripts/dev-ngrok.mjs",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:admin": "npm --prefix admin run dev",
@@ -15,6 +16,7 @@
     "seed:prod": "npm --prefix backend run seed:prod"
   },
   "devDependencies": {
+    "@ngrok/ngrok": "^1.8.1",
     "concurrently": "^9.1.2"
   }
 }
