@@ -39,6 +39,8 @@ const emptyForm = {
   brand: 'AMAYAAR',
   sku: '',
   category: '',
+  additionalCategories: [],
+  gender: 'Unisex',
   description: '',
   detailedDescription: '',
   keyFeatures: [],
@@ -148,6 +150,10 @@ export default function ProductFormPage() {
         brand: current.brand || 'AMAYAAR',
         sku: current.sku || '',
         category: current.category?._id || current.category || '',
+        additionalCategories: Array.isArray(current.additionalCategories)
+          ? current.additionalCategories.map((c) => (typeof c === 'object' ? c._id : c)).filter(Boolean)
+          : [],
+        gender: current.gender || 'Unisex',
         description: current.description || '',
         detailedDescription: current.detailedDescription || '',
         keyFeatures:
@@ -422,6 +428,10 @@ export default function ProductFormPage() {
       ...form,
       sku: form.sku?.trim() || undefined,
       category: form.category || null,
+      additionalCategories: Array.isArray(form.additionalCategories)
+        ? form.additionalCategories.filter((cid) => cid && cid !== form.category)
+        : [],
+      gender: form.gender || 'Unisex',
       price: Number(form.price),
       mrp: Number(form.mrp),
       discount: calculatedDiscount,
@@ -613,7 +623,7 @@ export default function ProductFormPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Category <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                  Primary Category <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
                 </label>
                 <select
                   name="category"
@@ -621,7 +631,7 @@ export default function ProductFormPage() {
                   onChange={handleChange}
                   className="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-black focus:outline-none"
                 >
-                  <option value="">None / No Category (Optional)</option>
+                  <option value="">None / Uncategorized</option>
                   {categories.map((c) => {
                     const parentName =
                       c.parent?.name ||
@@ -633,6 +643,64 @@ export default function ProductFormPage() {
                     );
                   })}
                 </select>
+              </div>
+            </div>
+
+            {/* Audience / Gender & Additional Multi-Category Mapping (for common items like Belts) */}
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 rounded-lg border border-slate-200/80 bg-slate-50/70 p-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Audience / Gender
+                </label>
+                <select
+                  name="gender"
+                  value={form.gender || 'Unisex'}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-black focus:outline-none"
+                >
+                  <option value="Unisex">Unisex (Common — Men & Women)</option>
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                  <option value="Kids">Kids</option>
+                </select>
+                <p className="mt-1 text-[10.5px] text-slate-500">
+                  Unisex items (e.g. Belts, Caps) automatically show in both Men & Women filters.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Also Show In Categories <span className="text-slate-400 font-normal text-[10.5px]">(Multi-Category)</span>
+                </label>
+                <div className="max-h-24 overflow-y-auto rounded-md border border-slate-200 bg-white p-2 space-y-1">
+                  {categories
+                    .filter((c) => c._id !== form.category)
+                    .map((c) => {
+                      const checked = (form.additionalCategories || []).includes(c._id);
+                      const parentName =
+                        c.parent?.name ||
+                        (typeof c.parent === 'string' && categories.find((p) => p._id === c.parent)?.name);
+                      return (
+                        <label
+                          key={c._id}
+                          className="flex items-center gap-2 text-[11px] font-medium text-slate-700 cursor-pointer hover:text-black"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...(form.additionalCategories || []), c._id]
+                                : (form.additionalCategories || []).filter((idVal) => idVal !== c._id);
+                              setForm((f) => ({ ...f, additionalCategories: next }));
+                            }}
+                            className="h-3.5 w-3.5 rounded border-slate-300 text-black focus:ring-black"
+                          />
+                          <span className="truncate">{parentName ? `${parentName} → ${c.name}` : c.name}</span>
+                        </label>
+                      );
+                    })}
+                </div>
               </div>
             </div>
 

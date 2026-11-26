@@ -24,6 +24,7 @@ export default function ProductListPage() {
   // Extract query params
   const search = searchParams.get('search') || '';
   const category = searchParams.get('category') || '';
+  const gender = searchParams.get('gender') || '';
   const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
   const minRating = searchParams.get('minRating') || '';
@@ -81,6 +82,7 @@ export default function ProductListPage() {
 
   const activeFilterCount = [
     category,
+    gender,
     minPrice,
     maxPrice,
     minRating,
@@ -140,15 +142,15 @@ export default function ProductListPage() {
 
         {/* Main Content Area without fixed sidebar */}
         <main>
-          {/* Toolbar: Filter on Left side, Sort by: on Right side in the same row */}
-          <div className="mb-6 flex items-center justify-between gap-3 border-b border-neutral-200 pb-3.5">
+          {/* Toolbar: Filter on Left side, Sort by: on Right side */}
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-neutral-200 pb-3.5">
             {/* Filter Button & Clear All */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
                 onClick={() => setFilterDrawerOpen(true)}
-                className="inline-flex items-center gap-2 border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-900 hover:border-black transition cursor-pointer"
+                className="inline-flex items-center gap-2 whitespace-nowrap border border-neutral-300 bg-white px-3 sm:px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-900 hover:border-black transition cursor-pointer"
               >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
                 <span>Filters</span>
                 {activeFilterCount > 0 && (
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
@@ -160,7 +162,7 @@ export default function ProductListPage() {
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-xs font-bold text-rose-600 hover:underline uppercase tracking-wider cursor-pointer"
+                  className="whitespace-nowrap text-[11px] sm:text-xs font-bold text-rose-600 hover:underline uppercase tracking-wider cursor-pointer"
                 >
                   Clear all
                 </button>
@@ -168,12 +170,14 @@ export default function ProductListPage() {
             </div>
 
             {/* Sort Selector */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-neutral-500 uppercase tracking-wider font-bold text-[11px]">Sort by:</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0 ml-auto">
+              <span className="whitespace-nowrap text-neutral-500 uppercase tracking-wider font-bold text-[10px] sm:text-[11px]">
+                Sort by:
+              </span>
               <select
                 value={sort}
                 onChange={(e) => updateFilter('sort', e.target.value)}
-                className="border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-black focus:border-black focus:outline-none focus:ring-0 cursor-pointer"
+                className="border border-neutral-300 bg-white px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-black focus:border-black focus:outline-none focus:ring-0 cursor-pointer"
               >
                 <option value="newest">Newest First</option>
                 <option value="price-asc">Price: Low to High</option>
@@ -316,8 +320,33 @@ export default function ProductListPage() {
 
             {/* Drawer Filter Controls */}
             <div className="flex-1 overflow-y-auto py-5 space-y-6 text-xs divide-y divide-neutral-100">
-              {/* Category */}
+              {/* Gender / Audience */}
               <div>
+                <h4 className="font-black text-black uppercase tracking-wider mb-2.5">Shop For</h4>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { label: 'All', val: '' },
+                    { label: 'Men', val: 'men' },
+                    { label: 'Women', val: 'women' },
+                    { label: 'Unisex', val: 'unisex' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => updateFilter('gender', opt.val)}
+                      className={`px-3 py-2 text-xs font-bold border transition cursor-pointer ${
+                        gender === opt.val
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-neutral-700 border-neutral-200 hover:border-black'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category */}
+              <div className="pt-5">
                 <h4 className="font-black text-black uppercase tracking-wider mb-2.5">Category</h4>
                 <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                   <button

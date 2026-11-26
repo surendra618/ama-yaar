@@ -58,30 +58,47 @@ export default function CategoriesListPage() {
     }));
   };
 
-  // Group items into Root Categories with their respective subcategories inside
+  // Group items into Root Categories with their nested subcategories (supporting multi-level hierarchy)
   const rootCategoryCards = useMemo(() => {
     if (!items || items.length === 0) return [];
 
+    const byId = new Map();
+    items.forEach((c) => byId.set(c._id.toString(), c));
+
     const roots = items.filter((c) => !c.parent);
     const children = items.filter((c) => c.parent);
-
-    const cards = roots.map((root) => {
-      const subs = children.filter((child) => {
-        const pId = child.parent?._id || child.parent;
-        return pId && pId.toString() === root._id.toString();
-      });
-
-      return {
-        root,
-        subcategories: subs,
-      };
-    });
-
     const rootIds = new Set(roots.map((r) => r._id.toString()));
-    const orphans = children.filter((child) => {
-      const pId = child.parent?._id || child.parent;
-      return !pId || !rootIds.has(pId.toString());
+
+    const findRootId = (cat) => {
+      const visited = new Set();
+      let curr = cat;
+      while (curr && curr.parent) {
+        const pId = (curr.parent?._id || curr.parent)?.toString();
+        if (!pId || visited.has(pId)) return null;
+        if (rootIds.has(pId)) return pId;
+        visited.add(pId);
+        curr = byId.get(pId);
+      }
+      return null;
+    };
+
+    const groupedSubs = new Map();
+    const orphans = [];
+
+    children.forEach((child) => {
+      const rId = findRootId(child);
+      if (rId) {
+        if (!groupedSubs.has(rId)) groupedSubs.set(rId, []);
+        groupedSubs.get(rId).push(child);
+      } else {
+        orphans.push(child);
+      }
     });
+
+    const cards = roots.map((root) => ({
+      root,
+      subcategories: groupedSubs.get(root._id.toString()) || [],
+    }));
 
     if (orphans.length > 0) {
       cards.push({

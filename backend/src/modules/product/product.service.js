@@ -95,6 +95,8 @@ async function list(query = {}) {
       search,
       category,
       subCategory,
+      gender,
+      uncategorized,
       brand,
       minPrice,
       maxPrice,
@@ -113,6 +115,7 @@ async function list(query = {}) {
     } = query;
 
     const filter = {};
+    const andConditions = [];
 
     // By default, only active products are returned to public/users.
     // Inactive products are only included if caller explicitly passes activeOnly='false' or includeInactive='true'.
@@ -125,28 +128,68 @@ async function list(query = {}) {
     }
 
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { brand: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } },
-      ];
+      andConditions.push({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { sku: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { brand: { $regex: search, $options: 'i' } },
+          { tags: { $in: [new RegExp(search, 'i')] } },
+        ],
+      });
     }
 
-    if (category) {
+    if (uncategorized === 'true' || uncategorized === true) {
+      andConditions.push({
+        $or: [{ category: null }, { category: { $exists: false } }],
+      });
+    } else if (category) {
+      let rootCatId = null;
       if (!category.match(/^[0-9a-fA-F]{24}$/)) {
-        const catDoc = await Category.findOne({ slug: category });
-        if (catDoc) {
-          const childCats = await Category.find({ parent: catDoc._id }).select('_id');
-          const catIds = [catDoc._id, ...childCats.map((c) => c._id)];
-          filter.category = { $in: catIds };
-        }
+        const catDoc = await Category.findOne({ slug: category }).select('_id');
+        if (catDoc) rootCatId = catDoc._id;
       } else {
-        const childCats = await Category.find({ parent: category }).select('_id');
-        const catIds = [category, ...childCats.map((c) => c._id)];
-        filter.category = { $in: catIds };
+        rootCatId = category;
       }
+
+      if (rootCatId) {
+        const childCats = await Category.find({ parent: rootCatId }).select('_id');
+        const childIds = childCats.map((c) => c._id);
+        const grandChildCats = childIds.length
+          ? await Category.find({ parent: { $in: childIds } }).select('_id')
+          : [];
+        const catIds = [rootCatId, ...childIds, ...grandChildCats.map((c) => c._id)];
+        andConditions.push({
+          $or: [
+            { category: { $in: catIds } },
+            { subCategory: { $in: catIds } },
+            { additionalCategories: { $in: catIds } },
+          ],
+        });
+      }
+    }
+
+    if (gender) {
+      const g = String(gender).trim().toLowerCase();
+      if (g === 'men') {
+        andConditions.push({
+          $or: [{ gender: { $in: ['Men', 'Unisex'] } }, { gender: { $exists: false } }],
+        });
+      } else if (g === 'women') {
+        andConditions.push({
+          $or: [{ gender: { $in: ['Women', 'Unisex'] } }, { gender: { $exists: false } }],
+        });
+      } else if (g === 'kids') {
+        filter.gender = 'Kids';
+      } else if (g === 'unisex') {
+        andConditions.push({
+          $or: [{ gender: 'Unisex' }, { gender: { $exists: false } }],
+        });
+      }
+    }
+
+    if (andConditions.length > 0) {
+      filter.$and = andConditions;
     }
 
     if (subCategory) {
@@ -193,6 +236,7 @@ async function list(query = {}) {
     const products = await Product.find(filter)
       .populate('category', 'name slug')
       .populate('subCategory', 'name slug')
+      .populate('additionalCategories', 'name slug')
       .sort(sortOption)
       .skip(skip)
       .limit(limitNum);
@@ -231,12 +275,14 @@ async function getByIdOrSlug(idOrSlug, query = {}) {
     if (idOrSlug.match(/^[0-9a-fA-F]{24}$/)) {
       doc = await Product.findById(idOrSlug)
         .populate('category', 'name slug parent')
-        .populate('subCategory', 'name slug');
+        .populate('subCategory', 'name slug')
+        .populate('additionalCategories', 'name slug');
     }
     if (!doc) {
       doc = await Product.findOne({ slug: idOrSlug })
         .populate('category', 'name slug parent')
-        .populate('subCategory', 'name slug');
+        .populate('subCategory', 'name slug')
+        .populate('additionalCategories', 'name slug');
     }
     if (!doc) throw new ApiError(404, 'Product not found');
 

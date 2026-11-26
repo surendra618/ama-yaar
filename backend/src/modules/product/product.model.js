@@ -10,6 +10,8 @@ const productSchema = new mongoose.Schema(
     brand: { type: String, trim: true },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: false, default: null },
     subCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
+    additionalCategories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
+    gender: { type: String, enum: ['Unisex', 'Men', 'Women', 'Kids'], default: 'Unisex' },
     images: [{ type: String }],
     sku: { type: String, trim: true, default: '' },
     price: { type: Number, required: true },

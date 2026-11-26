@@ -13,6 +13,7 @@ export default function ProductsListPage() {
   const dispatch = useDispatch();
   const { items, pagination, status } = useSelector((state) => state.products);
   const [search, setSearch] = useState('');
+  const [uncategorizedOnly, setUncategorizedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -20,8 +21,8 @@ export default function ProductsListPage() {
   const [importModalOpen, setImportModalOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchProducts({ search, page, limit: 10 }));
-  }, [dispatch, search, page]);
+    dispatch(fetchProducts({ search, page, limit: 10, uncategorized: uncategorizedOnly ? 'true' : undefined }));
+  }, [dispatch, search, page, uncategorizedOnly]);
 
   const handleToggleActive = async (p) => {
     setTogglingId(p._id);
@@ -73,9 +74,21 @@ export default function ProductsListPage() {
       key: 'category',
       header: 'Category',
       render: (p) => (
-        <span className="text-sm font-medium text-slate-600">
-          {p.category?.name || '—'}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          {p.category?.name ? (
+            <span className="text-sm font-medium text-slate-700">{p.category.name}</span>
+          ) : (
+            <span className="inline-flex w-fit items-center rounded bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200/70">
+              Uncategorized
+            </span>
+          )}
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
+            <span>{p.gender || 'Unisex'}</span>
+            {Array.isArray(p.additionalCategories) && p.additionalCategories.length > 0 && (
+              <span className="text-indigo-600">+{p.additionalCategories.length} more</span>
+            )}
+          </div>
+        </div>
       ),
     },
     {
@@ -187,8 +200,8 @@ export default function ProductsListPage() {
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-slate-100 p-3.5 bg-slate-50/40">
-          <div className="relative max-w-xs">
+        <div className="border-b border-slate-100 p-3.5 bg-slate-50/40 flex flex-wrap items-center justify-between gap-3">
+          <div className="relative max-w-xs flex-1 min-w-[200px]">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <input
               type="text"
@@ -201,6 +214,20 @@ export default function ProductsListPage() {
               className="w-full rounded-md border border-slate-200 py-1.5 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setPage(1);
+              setUncategorizedOnly((v) => !v);
+            }}
+            className={`rounded-md border px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+              uncategorizedOnly
+                ? 'border-amber-500 bg-amber-50 text-amber-800 shadow-2xs'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {uncategorizedOnly ? 'Showing Uncategorized Only' : 'Filter: Uncategorized'}
+          </button>
         </div>
 
         <DataTable columns={columns} rows={items} loading={status === 'loading'} emptyLabel="No products found" />
