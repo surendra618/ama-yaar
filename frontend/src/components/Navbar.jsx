@@ -997,13 +997,6 @@ export default function Navbar() {
                   OVERSIZED FITS
                 </Link>
                 <Link
-                  to="/products?category=sleeveless-acid-wash"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-black hover:text-neutral-500 border-b border-neutral-100 transition"
-                >
-                  ACID WASH
-                </Link>
-                <Link
                   to="/track"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-2 py-3 text-xs sm:text-sm font-black tracking-widest uppercase text-amber-700 hover:text-black border-b border-neutral-100 transition"
