@@ -74,6 +74,18 @@ const settingSchema = new mongoose.Schema(
     customerWelcomeEmail: { type: Boolean, default: true },
     customerOrderConfirmationEmail: { type: Boolean, default: true },
     customerOrderStatusEmail: { type: Boolean, default: true },
+
+    // 7. Storefront Contact & Support Info
+    contactPhone: { type: String, default: '+91 98765 43210 / +91 88000 11223' },
+    contactPhoneHours: { type: String, default: 'Available Mon – Sat, 10:00 AM to 7:00 PM IST' },
+    contactEmail: { type: String, default: 'support@amayaan.in' },
+    contactEmailNote: { type: String, default: 'We respond to all customer emails within 24 hours.' },
+    contactAddress: {
+      type: String,
+      default: 'AMA YAAR Apparel HQ, Plot 42, Fashion Hub Complex, Okhla Phase III, New Delhi, India 110020',
+    },
+    contactHours: { type: String, default: 'Monday – Saturday: 10:00 AM – 7:00 PM IST' },
+    contactHoursNote: { type: String, default: 'Sunday: Closed for drop processing & maintenance' },
   },
   { timestamps: true }
 );

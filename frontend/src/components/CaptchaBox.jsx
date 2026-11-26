@@ -108,12 +108,14 @@ export default function CaptchaBox({
 
   return (
     <div className="space-y-1.5 w-full">
-      <div className="flex items-center justify-between">
-        <label className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-          <ShieldCheck className="h-3 w-3 text-emerald-500" />
+      <div className="flex items-center justify-between gap-2">
+        <label className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1 whitespace-nowrap ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+          <ShieldCheck className="h-3 w-3 text-emerald-500 shrink-0" />
           Security Verification
         </label>
-        <span className="text-[10px] text-neutral-400 font-medium">Case-insensitive</span>
+        <span className="hidden sm:inline text-[10px] text-neutral-400 font-medium whitespace-nowrap">
+          Case-insensitive
+        </span>
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2">
@@ -123,13 +125,13 @@ export default function CaptchaBox({
             ref={canvasRef}
             width={112}
             height={38}
-            className="block w-[100px] xs:w-[112px] h-[36px] sm:h-[38px]"
+            className="block w-[92px] sm:w-[112px] h-[34px] sm:h-[38px]"
             title="Captcha Challenge"
           />
           <button
             type="button"
             onClick={refreshCaptcha}
-            className={`flex h-[36px] sm:h-[38px] w-8 items-center justify-center transition border-l cursor-pointer ${isDark
+            className={`flex h-[34px] sm:h-[38px] w-7 sm:w-8 items-center justify-center transition border-l cursor-pointer ${isDark
                 ? 'border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-800'
                 : 'border-neutral-300 text-neutral-600 hover:text-black hover:bg-neutral-200'
               }`}
@@ -150,7 +152,7 @@ export default function CaptchaBox({
           required
           autoComplete="off"
           spellCheck="false"
-          className={`flex-1 min-w-0 w-full rounded-lg px-2 sm:px-2.5 py-2 sm:py-2.5 text-center text-xs sm:text-sm font-black tracking-normal uppercase transition outline-none ${isDark
+          className={`flex-1 min-w-0 w-full rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2.5 text-center text-xs sm:text-sm font-black tracking-normal uppercase transition outline-none ${isDark
               ? 'bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 focus:border-white focus:outline-none focus:ring-0'
               : 'bg-white border border-neutral-300 text-black placeholder-neutral-400 focus:border-black focus:outline-none focus:ring-0'
             } ${error ? 'border-red-500 ring-1 ring-red-500' : ''}`}

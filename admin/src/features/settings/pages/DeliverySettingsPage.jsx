@@ -24,6 +24,8 @@ import {
   Lock,
   EyeOff,
   Link2,
+  Phone,
+  Mail,
 } from 'lucide-react';
 import api from '../../../lib/axios';
 import Loader from '../../../components/Loader';
@@ -84,6 +86,15 @@ export default function DeliverySettingsPage() {
     defaultPackageLength: 25,
     defaultPackageBreadth: 20,
     defaultPackageHeight: 5,
+    // Contact & Support Info
+    contactPhone: '+91 98765 43210 / +91 88000 11223',
+    contactPhoneHours: 'Available Mon – Sat, 10:00 AM to 7:00 PM IST',
+    contactEmail: 'support@amayaan.in',
+    contactEmailNote: 'We respond to all customer emails within 24 hours.',
+    contactAddress:
+      'AMA YAAR Apparel HQ, Plot 42, Fashion Hub Complex, Okhla Phase III, New Delhi, India 110020',
+    contactHours: 'Monday – Saturday: 10:00 AM – 7:00 PM IST',
+    contactHoursNote: 'Sunday: Closed for drop processing & maintenance',
   });
 
   const [previewSubtotal, setPreviewSubtotal] = useState(399);
@@ -140,6 +151,15 @@ export default function DeliverySettingsPage() {
           defaultPackageLength: data.defaultPackageLength ?? 25,
           defaultPackageBreadth: data.defaultPackageBreadth ?? 20,
           defaultPackageHeight: data.defaultPackageHeight ?? 5,
+          contactPhone: data.contactPhone || '+91 98765 43210 / +91 88000 11223',
+          contactPhoneHours: data.contactPhoneHours || 'Available Mon – Sat, 10:00 AM to 7:00 PM IST',
+          contactEmail: data.contactEmail || 'support@amayaan.in',
+          contactEmailNote: data.contactEmailNote || 'We respond to all customer emails within 24 hours.',
+          contactAddress:
+            data.contactAddress ||
+            'AMA YAAR Apparel HQ, Plot 42, Fashion Hub Complex, Okhla Phase III, New Delhi, India 110020',
+          contactHours: data.contactHours || 'Monday – Saturday: 10:00 AM – 7:00 PM IST',
+          contactHoursNote: data.contactHoursNote || 'Sunday: Closed for drop processing & maintenance',
         });
       }
     } catch (err) {
@@ -283,6 +303,13 @@ export default function DeliverySettingsPage() {
         defaultPackageLength: Number(formData.defaultPackageLength) || 25,
         defaultPackageBreadth: Number(formData.defaultPackageBreadth) || 20,
         defaultPackageHeight: Number(formData.defaultPackageHeight) || 5,
+        contactPhone: String(formData.contactPhone).trim(),
+        contactPhoneHours: String(formData.contactPhoneHours).trim(),
+        contactEmail: String(formData.contactEmail).trim(),
+        contactEmailNote: String(formData.contactEmailNote).trim(),
+        contactAddress: String(formData.contactAddress).trim(),
+        contactHours: String(formData.contactHours).trim(),
+        contactHoursNote: String(formData.contactHoursNote).trim(),
       };
 
       const res = await api.put('/settings/delivery', payload);
@@ -421,6 +448,17 @@ export default function DeliverySettingsPage() {
           <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded-full uppercase">
             Own Platform
           </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('contact')}
+          className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${activeTab === 'contact'
+            ? 'border-indigo-600 text-indigo-600'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+        >
+          <Phone className="h-4 w-4" /> Contact &amp; Support Info
         </button>
 
         <button
@@ -1485,6 +1523,119 @@ export default function DeliverySettingsPage() {
                 <p className="font-mono text-xs font-bold text-slate-900 select-all">http://localhost:5050/api/v1</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CONTACT & SUPPORT INFO */}
+      {activeTab === 'contact' && (
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-6">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Phone className="h-4 w-4 text-indigo-600" /> Storefront Contact &amp; Support Cards
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Update the Helpline, Email Support, Headquarters &amp; Lab address, and Operational Hours shown on the Contact Us page.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-slate-400" /> Helpline &amp; WhatsApp Numbers
+              </label>
+              <input
+                type="text"
+                value={formData.contactPhone}
+                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                placeholder="+91 98765 43210 / +91 88000 11223"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-900 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Helpline Availability Note</label>
+              <input
+                type="text"
+                value={formData.contactPhoneHours}
+                onChange={(e) => setFormData({ ...formData, contactPhoneHours: e.target.value })}
+                placeholder="Available Mon – Sat, 10:00 AM to 7:00 PM IST"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-900 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-slate-400" /> Email Support Address
+              </label>
+              <input
+                type="email"
+                value={formData.contactEmail}
+                onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                placeholder="support@amayaan.in"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-900 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Email Response Note</label>
+              <input
+                type="text"
+                value={formData.contactEmailNote}
+                onChange={(e) => setFormData({ ...formData, contactEmailNote: e.target.value })}
+                placeholder="We respond to all customer emails within 24 hours."
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-900 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-slate-400" /> Headquarters &amp; Lab Address
+              </label>
+              <textarea
+                rows={2}
+                value={formData.contactAddress}
+                onChange={(e) => setFormData({ ...formData, contactAddress: e.target.value })}
+                placeholder="AMA YAAR Apparel HQ, Plot 42, Fashion Hub Complex, Okhla Phase III, New Delhi, India 110020"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-900 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-slate-400" /> Operational Hours
+              </label>
+              <input
+                type="text"
+                value={formData.contactHours}
+                onChange={(e) => setFormData({ ...formData, contactHours: e.target.value })}
+                placeholder="Monday – Saturday: 10:00 AM – 7:00 PM IST"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-900 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Closed / Maintenance Note</label>
+              <input
+                type="text"
+                value={formData.contactHoursNote}
+                onChange={(e) => setFormData({ ...formData, contactHoursNote: e.target.value })}
+                placeholder="Sunday: Closed for drop processing & maintenance"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-900 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition cursor-pointer"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {saving ? 'Saving...' : 'Save Contact Info'}
+            </button>
           </div>
         </div>
       )}

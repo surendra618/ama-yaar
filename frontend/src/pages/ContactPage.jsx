@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../lib/axios';
 import {
   Mail,
@@ -105,6 +105,35 @@ const FAQS = [
 ];
 
 export default function ContactPage() {
+  const [contactInfo, setContactInfo] = useState({
+    contactPhone: '+91 98765 43210 / +91 88000 11223',
+    contactPhoneHours: 'Available Mon – Sat, 10:00 AM to 7:00 PM IST',
+    contactEmail: 'support@amayaan.in',
+    contactEmailNote: 'We respond to all customer emails within 24 hours.',
+    contactAddress:
+      'AMA YAAR Apparel HQ, Plot 42, Fashion Hub Complex, Okhla Phase III, New Delhi, India 110020',
+    contactHours: 'Monday – Saturday: 10:00 AM – 7:00 PM IST',
+    contactHoursNote: 'Sunday: Closed for drop processing & maintenance',
+  });
+
+  useEffect(() => {
+    api
+      .get('/settings/delivery')
+      .then((res) => {
+        const d = res.data?.data;
+        if (!d) return;
+        setContactInfo((prev) => ({
+          contactPhone: d.contactPhone || prev.contactPhone,
+          contactPhoneHours: d.contactPhoneHours || prev.contactPhoneHours,
+          contactEmail: d.contactEmail || prev.contactEmail,
+          contactEmailNote: d.contactEmailNote || prev.contactEmailNote,
+          contactAddress: d.contactAddress || prev.contactAddress,
+          contactHours: d.contactHours || prev.contactHours,
+          contactHoursNote: d.contactHoursNote || prev.contactHoursNote,
+        }));
+      })
+      .catch(() => {});
+  }, []);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
@@ -174,8 +203,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Helpline &amp; WhatsApp</h3>
-                  <p className="text-xs font-semibold text-slate-700 mt-1">+91 98765 43210 / +91 88000 11223</p>
-                  <p className="text-[11px] text-slate-500 mt-1 font-medium">Available Mon – Sat, 10:00 AM to 7:00 PM IST</p>
+                  <p className="text-xs font-semibold text-slate-700 mt-1">{contactInfo.contactPhone}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 font-medium">{contactInfo.contactPhoneHours}</p>
                 </div>
               </div>
             </div>
@@ -187,8 +216,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Email Support</h3>
-                  <p className="text-xs font-semibold text-slate-700 mt-1">support@amayaan.in</p>
-                  <p className="text-[11px] text-slate-500 mt-1 font-medium">We respond to all customer emails within 24 hours.</p>
+                  <p className="text-xs font-semibold text-slate-700 mt-1">{contactInfo.contactEmail}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 font-medium">{contactInfo.contactEmailNote}</p>
                 </div>
               </div>
             </div>
@@ -201,7 +230,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Headquarters &amp; Lab</h3>
                   <p className="text-xs font-medium text-slate-600 mt-1 leading-relaxed">
-                    AMA YAAR Apparel HQ, Plot 42, Fashion Hub Complex, Okhla Phase III, New Delhi, India 110020
+                    {contactInfo.contactAddress}
                   </p>
                 </div>
               </div>
@@ -214,8 +243,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Operational Hours</h3>
-                  <p className="text-xs font-semibold text-slate-700 mt-1">Monday – Saturday: 10:00 AM – 7:00 PM IST</p>
-                  <p className="text-[11px] text-slate-500 mt-1 font-medium">Sunday: Closed for drop processing &amp; maintenance</p>
+                  <p className="text-xs font-semibold text-slate-700 mt-1">{contactInfo.contactHours}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 font-medium">{contactInfo.contactHoursNote}</p>
                 </div>
               </div>
             </div>

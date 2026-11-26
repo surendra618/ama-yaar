@@ -578,59 +578,59 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
     >
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[840px] overflow-hidden rounded-[26px] bg-black text-white p-6 sm:p-10 border border-neutral-800 shadow-2xl"
+        className="relative w-full max-w-[820px] max-h-[94vh] overflow-y-auto rounded-2xl sm:rounded-[26px] bg-black text-white p-4 sm:p-8 border border-neutral-800 shadow-2xl"
       >
         {/* Close Button on Top Right */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 sm:right-6 sm:top-6 z-20 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition cursor-pointer"
+          className="absolute right-3 top-3 sm:right-5 sm:top-5 z-20 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition cursor-pointer"
           aria-label="Close"
         >
           <X className="h-5 w-5" />
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 md:gap-8 items-center">
           {/* LEFT COLUMN: AMAYAAR + KwikPass branding & Welcome message */}
-          <div className="flex flex-col justify-between py-2 sm:py-4">
+          <div className="flex flex-col justify-between py-0.5 md:py-4 pr-8 md:pr-0">
             {/* Brand Header with Divider & KwikPass */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3">
               <div>
-                <span className="font-sans text-2xl sm:text-3xl font-black uppercase tracking-tight text-white block leading-none">
+                <span className="font-sans text-lg sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white block leading-none">
                   AMAYAAR
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-black tracking-[0.25em] uppercase text-neutral-400 block mt-1">
+                <span className="text-[9px] sm:text-[10px] font-black tracking-[0.22em] uppercase text-neutral-400 block mt-0.5 sm:mt-1">
                   STYLE KA LAFDA
                 </span>
               </div>
-              <div className="h-8 w-[1.5px] bg-neutral-700 mx-1.5" />
-              <div className="flex items-center gap-1.5 text-white font-bold text-sm tracking-wide">
-                <span className="text-white font-black text-sm sm:text-base">Kwik</span>
-                <span className="text-[#facc15] text-base leading-none font-black">⚡</span>
-                <span className="text-white font-black text-sm sm:text-base">Pass</span>
+              <div className="h-6 sm:h-8 w-[1.5px] bg-neutral-700 mx-1" />
+              <div className="flex items-center gap-1 text-white font-bold text-xs sm:text-sm tracking-wide">
+                <span className="text-white font-black text-xs sm:text-base">Kwik</span>
+                <span className="text-[#facc15] text-sm sm:text-base leading-none font-black">⚡</span>
+                <span className="text-white font-black text-xs sm:text-base">Pass</span>
               </div>
             </div>
 
-            {/* Welcome Tagline */}
-            <div className="mt-8 sm:mt-14">
-              <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.28em] text-neutral-400 block mb-2">
+            {/* Welcome Tagline (shown on desktop/tablet to keep mobile compact) */}
+            <div className="hidden md:block mt-12">
+              <span className="text-xs font-black uppercase tracking-[0.28em] text-neutral-400 block mb-2">
                 FAST &amp; SECURE SIGN IN
               </span>
-              <h2 className="text-2xl sm:text-3xl lg:text-[32px] font-black tracking-tight text-white leading-[1.18]">
+              <h2 className="text-3xl lg:text-[32px] font-black tracking-tight text-white leading-[1.18]">
                 Unlock instant access to exclusive fits!
               </h2>
-              <p className="mt-3 text-xs text-neutral-400 leading-relaxed font-normal hidden sm:block">
+              <p className="mt-3 text-xs text-neutral-400 leading-relaxed font-normal">
                 Sign in with Email OTP or Google to manage your orders, wishlist, and exclusive streetwear drops.
               </p>
             </div>
           </div>
 
           {/* RIGHT COLUMN: White Card Container */}
-          <div className="rounded-[22px] bg-white p-6 sm:p-8 text-neutral-900 shadow-xl flex flex-col justify-center min-h-[380px]">
+          <div className="rounded-2xl sm:rounded-[22px] bg-white p-4 sm:p-7 text-neutral-900 shadow-xl flex flex-col justify-center md:min-h-[360px]">
             {success ? (
               <div className="flex flex-col items-center justify-center py-6 text-center">
                 <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-4 animate-bounce">
@@ -771,7 +771,7 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
               <div>
                 {/* Optional Tabs if Phone Login is enabled via env */}
                 {isPhoneLoginEnabled && (
-                  <div className="flex rounded-xl bg-neutral-100 p-1 mb-4">
+                  <div className="flex rounded-xl bg-neutral-100 p-1 mb-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -805,26 +805,26 @@ export default function AuthPopupModal({ isOpen, onClose, onSuccess }) {
                   </div>
                 )}
 
-                <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
+                <h3 className="text-base sm:text-xl font-black text-neutral-900 tracking-tight">
                   {authMode === 'email' ? 'Enter Email Address' : 'Enter Mobile Number'}
                 </h3>
-                <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                <p className="text-[11px] sm:text-xs text-neutral-500 font-medium mt-0.5">
                   Sign in or create account with instant verification OTP
                 </p>
 
                 {error && (
-                  <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
+                  <div className="mt-2.5 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
                     {error}
                   </div>
                 )}
 
                 {/* Google Sign In Button */}
-                <div className="mt-4">
+                <div className="mt-3">
                   <button
                     type="button"
                     onClick={handleGoogleSignIn}
                     disabled={isGoogleSubmitting || isSubmitting}
-                    className="w-full flex items-center justify-center gap-3 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-xs font-bold text-neutral-800 hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.99] transition cursor-pointer shadow-xs disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-neutral-300 bg-white py-2 px-3 text-xs font-bold text-neutral-800 hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.99] transition cursor-pointer shadow-xs disabled:opacity-50 whitespace-nowrap"
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24">
                       <path

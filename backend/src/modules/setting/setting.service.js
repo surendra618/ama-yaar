@@ -99,6 +99,15 @@ async function updateDeliverySettings(data = {}) {
   if (data.defaultStylingTip !== undefined) update.defaultStylingTip = String(data.defaultStylingTip).trim();
   if (data.defaultWhatsOnPrint !== undefined) update.defaultWhatsOnPrint = String(data.defaultWhatsOnPrint).trim();
 
+  // Storefront Contact & Support Info
+  if (data.contactPhone !== undefined) update.contactPhone = String(data.contactPhone).trim();
+  if (data.contactPhoneHours !== undefined) update.contactPhoneHours = String(data.contactPhoneHours).trim();
+  if (data.contactEmail !== undefined) update.contactEmail = String(data.contactEmail).trim();
+  if (data.contactEmailNote !== undefined) update.contactEmailNote = String(data.contactEmailNote).trim();
+  if (data.contactAddress !== undefined) update.contactAddress = String(data.contactAddress).trim();
+  if (data.contactHours !== undefined) update.contactHours = String(data.contactHours).trim();
+  if (data.contactHoursNote !== undefined) update.contactHoursNote = String(data.contactHoursNote).trim();
+
   // 4. Shiprocket Logistics Integration
   if (data.shiprocketEnabled !== undefined) update.shiprocketEnabled = Boolean(data.shiprocketEnabled);
   if (data.shiprocketEmail !== undefined) update.shiprocketEmail = String(data.shiprocketEmail).trim();
