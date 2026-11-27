@@ -1,5 +1,6 @@
 import axios from 'axios';
 import toast from '../utils/toast';
+import { startLoading, stopLoading } from '../utils/networkLoader';
 
 const sanitizeUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
@@ -27,6 +28,9 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  if (!config.skipLoader) {
+    startLoading();
+  }
   const token = localStorage.getItem('ay_admin_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -59,8 +63,18 @@ const clearAdminSessionAndRedirect = () => {
 };
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (!response.config?.skipLoader && !response.config?._loaderStopped) {
+      if (response.config) response.config._loaderStopped = true;
+      stopLoading();
+    }
+    return response;
+  },
   async (error) => {
+    if (error.config && !error.config.skipLoader && !error.config._loaderStopped) {
+      error.config._loaderStopped = true;
+      stopLoading();
+    }
     if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
       return Promise.reject(error);
     }

@@ -260,7 +260,7 @@ export default function ProductListPage() {
             {pagination.pages > 1 && (
               <div className="mt-14 flex items-center justify-center gap-2">
                 <button
-                  disabled={pagination.page <= 1}
+                  disabled={loading || pagination.page <= 1}
                   onClick={() => updateFilter('page', pagination.page - 1)}
                   className="border border-neutral-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black disabled:opacity-40 hover:bg-neutral-100 cursor-pointer"
                 >
@@ -269,8 +269,9 @@ export default function ProductListPage() {
                 {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((p) => (
                   <button
                     key={p}
+                    disabled={loading}
                     onClick={() => updateFilter('page', p)}
-                    className={`h-9 w-9 text-xs font-bold transition cursor-pointer ${
+                    className={`h-9 w-9 text-xs font-bold transition cursor-pointer disabled:opacity-50 ${
                       pagination.page === p
                         ? 'bg-black text-white'
                         : 'border border-neutral-300 bg-white text-black hover:bg-neutral-100'
@@ -280,7 +281,7 @@ export default function ProductListPage() {
                   </button>
                 ))}
                 <button
-                  disabled={pagination.page >= pagination.pages}
+                  disabled={loading || pagination.page >= pagination.pages}
                   onClick={() => updateFilter('page', pagination.page + 1)}
                   className="border border-neutral-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black disabled:opacity-40 hover:bg-neutral-100 cursor-pointer"
                 >

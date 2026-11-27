@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import Loader from '../components/Loader';
+import TopProgressBar from '../components/TopProgressBar';
 import { checkAdminAuth } from '../features/auth/authSlice';
 
 export default function DashboardLayout() {
@@ -26,6 +27,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
+      <TopProgressBar />
       <div className="hidden md:flex md:shrink-0 h-full">
         <Sidebar />
       </div>

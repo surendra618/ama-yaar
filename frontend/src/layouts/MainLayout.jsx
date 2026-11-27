@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ScrollToTop from '../components/ScrollToTop';
+import TopProgressBar from '../components/TopProgressBar';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import ZeptoCartDrawer from '../features/cart/components/ZeptoCartDrawer';
@@ -42,6 +43,7 @@ export default function MainLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <TopProgressBar />
       <ScrollToTop />
       <Navbar />
       <main className="flex-1">
