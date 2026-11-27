@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 
 function generateAccessToken(payload) {
-  return jwt.sign(payload, env.jwt.accessSecret, { expiresIn: env.jwt.accessExpires });
+  const expiresIn = payload?.role === 'admin' ? '24h' : env.jwt.accessExpires;
+  return jwt.sign(payload, env.jwt.accessSecret, { expiresIn });
 }
 
 function generateRefreshToken(payload) {
