@@ -6,6 +6,7 @@ import {
   X,
   Star,
   RotateCcw,
+  Loader2,
 } from 'lucide-react';
 import { fetchProducts, fetchCategories, fetchFilterOptions } from '../productsSlice';
 import ProductCard from '../../../components/ProductCard';
@@ -220,14 +221,20 @@ export default function ProductListPage() {
 
           {/* Product Grid Area (Always 4 Columns on Desktop) */}
           {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-5 lg:gap-x-6 gap-y-8 sm:gap-y-12">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="animate-pulse flex flex-col">
-                  <div className="aspect-[3/4.2] bg-neutral-200 w-full rounded-xs" />
-                  <div className="mt-3 h-4 bg-neutral-200 w-3/4" />
-                  <div className="mt-2 h-4 bg-neutral-200 w-1/3" />
-                </div>
-              ))}
+            <div className="space-y-6">
+              <div className="flex items-center justify-center gap-2.5 py-4 text-xs font-extrabold uppercase tracking-widest text-black">
+                <Loader2 className="h-5 w-5 animate-spin text-black" />
+                <span>{search ? `Searching "${search}"…` : 'Loading products…'}</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-5 lg:gap-x-6 gap-y-8 sm:gap-y-12">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="animate-pulse flex flex-col">
+                    <div className="aspect-[3/4.2] bg-neutral-200 w-full rounded-xs" />
+                    <div className="mt-3 h-4 bg-neutral-200 w-3/4" />
+                    <div className="mt-2 h-4 bg-neutral-200 w-1/3" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : products.length === 0 ? (
             <EmptyState

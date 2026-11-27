@@ -97,10 +97,7 @@ const productsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchProducts.pending, (state) => {
-        // If we already have cached items, don't flash a full screen spinner
-        if (!state.items || state.items.length === 0) {
-          state.loading = true;
-        }
+        state.loading = true;
         state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
