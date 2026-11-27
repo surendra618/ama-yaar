@@ -5,6 +5,9 @@ export const loginAdmin = createAsyncThunk('auth/login', async ({ email, passwor
   try {
     const { data } = await api.post('/auth/login', { email, password, role: 'admin' });
     localStorage.setItem('ay_admin_token', data.data.accessToken);
+    if (data.data.refreshToken) {
+      localStorage.setItem('ay_admin_refresh_token', data.data.refreshToken);
+    }
     localStorage.setItem('ay_admin_user', JSON.stringify(data.data.user));
     return data.data;
   } catch (err) {
@@ -15,13 +18,18 @@ export const loginAdmin = createAsyncThunk('auth/login', async ({ email, passwor
 export const checkAdminAuth = createAsyncThunk('auth/checkAuth', async (_, { rejectWithValue }) => {
   try {
     const token = localStorage.getItem('ay_admin_token');
-    if (!token) return null;
+    const refreshToken = localStorage.getItem('ay_admin_refresh_token');
+    if (!token && !refreshToken) return null;
     const { data } = await api.get('/auth/me');
     if (data.data.role !== 'admin') return rejectWithValue('Not an admin account');
+    localStorage.setItem('ay_admin_user', JSON.stringify(data.data));
     return data.data;
   } catch (err) {
-    localStorage.removeItem('ay_admin_token');
-    localStorage.removeItem('ay_admin_user');
+    if (err.response?.status === 401 || err.response?.status === 403) {
+      localStorage.removeItem('ay_admin_token');
+      localStorage.removeItem('ay_admin_refresh_token');
+      localStorage.removeItem('ay_admin_user');
+    }
     return rejectWithValue(err.response?.data?.message || err.message);
   }
 });
@@ -49,6 +57,7 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       localStorage.removeItem('ay_admin_token');
+      localStorage.removeItem('ay_admin_refresh_token');
       localStorage.removeItem('ay_admin_user');
     },
     clearAuthError: (state) => {

@@ -34,30 +34,107 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+const clearAdminSessionAndRedirect = () => {
+  localStorage.removeItem('ay_admin_token');
+  localStorage.removeItem('ay_admin_refresh_token');
+  localStorage.removeItem('ay_admin_user');
+  if (!window.location.pathname.includes('/login')) {
+    const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
+    window.location.href = `${base}/login`;
+  }
+};
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (axios.isCancel(error)) {
+  async (error) => {
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
       return Promise.reject(error);
     }
 
-    const status = error.response?.status;
-    const reqUrl = error.config?.url || '';
-    const isSilentAuthCheck = status === 401 && reqUrl.includes('/auth/me');
+    const originalRequest = error.config;
+    const method = (originalRequest?.method || 'get').toLowerCase();
 
-    if (status === 401 && !reqUrl.includes('/auth/login')) {
-      localStorage.removeItem('ay_admin_token');
-      localStorage.removeItem('ay_admin_user');
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+    // Retry once on transient network / serverless cold-start errors for GET requests
+    if (!error.response && error.code === 'ERR_NETWORK' && originalRequest && !originalRequest._netRetry && method === 'get') {
+      originalRequest._netRetry = true;
+      await new Promise((r) => setTimeout(r, 400));
+      return api(originalRequest);
+    }
+
+    const status = error.response?.status;
+    const reqUrl = originalRequest?.url || '';
+    const isAuthEndpoint = reqUrl.includes('/auth/login') || reqUrl.includes('/auth/refresh-token');
+
+    // Automatically refresh expired access token using refreshToken instead of logging admin out
+    if (status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
+      const refreshToken = localStorage.getItem('ay_admin_refresh_token');
+
+      if (!refreshToken) {
+        clearAdminSessionAndRedirect();
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((newToken) => {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const { data } = await axios.post(`${defaultBaseUrl}/auth/refresh-token`, { token: refreshToken });
+        const newAccessToken = data.data.accessToken;
+        const newRefreshToken = data.data.refreshToken;
+
+        localStorage.setItem('ay_admin_token', newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem('ay_admin_refresh_token', newRefreshToken);
+        }
+
+        api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        processQueue(null, newAccessToken);
+        return api(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        clearAdminSessionAndRedirect();
+        toast.error('Session expired. Please sign in again.');
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
       }
     }
 
-    if (!error.config?.skipErrorToast && !isSilentAuthCheck) {
+    const isSilentAuthCheck = status === 401 && reqUrl.includes('/auth/me');
+    if (!originalRequest?.skipErrorToast && !isSilentAuthCheck) {
       const errMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
-        error.message ||
+        (!error.response && error.code === 'ERR_NETWORK'
+          ? 'Unable to reach server. Please check your connection and try again.'
+          : error.message) ||
         'Something went wrong. Please try again.';
       toast.error(errMessage);
     }
