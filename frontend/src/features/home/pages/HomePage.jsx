@@ -858,6 +858,10 @@ export default function HomePage() {
   );
   const categoryRailRef = useRef(null);
   const isCategoryHoveredRef = useRef(false);
+  const isDraggingCatRef = useRef(false);
+  const catDragStartXRef = useRef(0);
+  const catScrollStartRef = useRef(0);
+  const hasDraggedCatRef = useRef(false);
 
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [selectedReelIndex, setSelectedReelIndex] = useState(null);
@@ -1331,8 +1335,36 @@ export default function HomePage() {
             }}
             onMouseLeave={() => {
               isCategoryHoveredRef.current = false;
+              isDraggingCatRef.current = false;
             }}
-            className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-hide pb-2 pt-1 snap-x snap-mandatory scroll-smooth"
+            onMouseDown={(e) => {
+              if (!categoryRailRef.current) return;
+              isDraggingCatRef.current = true;
+              hasDraggedCatRef.current = false;
+              catDragStartXRef.current = e.pageX - categoryRailRef.current.offsetLeft;
+              catScrollStartRef.current = categoryRailRef.current.scrollLeft;
+            }}
+            onMouseMove={(e) => {
+              if (!isDraggingCatRef.current || !categoryRailRef.current) return;
+              const x = e.pageX - categoryRailRef.current.offsetLeft;
+              const walk = (x - catDragStartXRef.current) * 1.4;
+              if (Math.abs(walk) > 6) {
+                hasDraggedCatRef.current = true;
+                e.preventDefault();
+                categoryRailRef.current.scrollLeft = catScrollStartRef.current - walk;
+              }
+            }}
+            onMouseUp={() => {
+              isDraggingCatRef.current = false;
+            }}
+            onClickCapture={(e) => {
+              if (hasDraggedCatRef.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                hasDraggedCatRef.current = false;
+              }
+            }}
+            className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-hide pb-2 pt-1 cursor-grab active:cursor-grabbing select-none"
           >
             {displayCardSliders.map((item, idx) => (
               <motion.div
@@ -1343,11 +1375,13 @@ export default function HomePage() {
               >
                 <Link
                   to={item.link || '/products'}
+                  draggable={false}
                   className="group relative block h-full w-full overflow-hidden rounded-2xl bg-neutral-900"
                 >
                   <img
                     src={item.image}
                     alt={item.name}
+                    draggable={false}
                     loading={idx < 5 ? "eager" : "lazy"}
                     decoding="async"
                     fetchPriority={idx < 3 ? "high" : "auto"}

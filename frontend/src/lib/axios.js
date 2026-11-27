@@ -51,7 +51,19 @@ const processQueue = (error, token = null) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
+    const reqMethod = (originalRequest?.method || 'get').toLowerCase();
+
+    // Retry once on transient network / serverless cold-start errors for GET requests
+    if (!error.response && error.code === 'ERR_NETWORK' && originalRequest && !originalRequest._netRetry && reqMethod === 'get') {
+      originalRequest._netRetry = true;
+      await new Promise((r) => setTimeout(r, 400));
+      return api(originalRequest);
+    }
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
@@ -143,7 +155,9 @@ api.interceptors.response.use(
         const errMessage =
           error.response?.data?.message ||
           error.response?.data?.error ||
-          error.message ||
+          (!error.response && error.code === 'ERR_NETWORK'
+            ? 'Unable to reach server. Please check your connection and try again.'
+            : error.message) ||
           'Something went wrong. Please try again.';
         toast.error(errMessage);
       }

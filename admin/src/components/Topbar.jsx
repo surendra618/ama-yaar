@@ -38,7 +38,7 @@ export default function Topbar({ onMenuClick }) {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await api.get('/notifications');
+        const res = await api.get('/notifications', { skipErrorToast: true });
         const list = res.data?.data?.notifications || [];
         if (list.length > 0) {
           setNotificationsList(
