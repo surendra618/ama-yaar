@@ -863,6 +863,28 @@ export default function HomePage() {
   const catScrollStartRef = useRef(0);
   const hasDraggedCatRef = useRef(false);
 
+  useEffect(() => {
+    const handleWindowMouseMove = (e) => {
+      if (!isDraggingCatRef.current || !categoryRailRef.current) return;
+      const walk = (e.clientX - catDragStartXRef.current) * 1.4;
+      if (Math.abs(walk) > 6) {
+        hasDraggedCatRef.current = true;
+        categoryRailRef.current.scrollLeft = catScrollStartRef.current - walk;
+      }
+    };
+
+    const handleWindowMouseUp = () => {
+      isDraggingCatRef.current = false;
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, []);
+
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [selectedReelIndex, setSelectedReelIndex] = useState(null);
   const [dbReels, setDbReels] = useState([]);
@@ -1335,27 +1357,13 @@ export default function HomePage() {
             }}
             onMouseLeave={() => {
               isCategoryHoveredRef.current = false;
-              isDraggingCatRef.current = false;
             }}
             onMouseDown={(e) => {
-              if (!categoryRailRef.current) return;
+              if (e.button !== 0 || !categoryRailRef.current) return;
               isDraggingCatRef.current = true;
               hasDraggedCatRef.current = false;
-              catDragStartXRef.current = e.pageX - categoryRailRef.current.offsetLeft;
+              catDragStartXRef.current = e.clientX;
               catScrollStartRef.current = categoryRailRef.current.scrollLeft;
-            }}
-            onMouseMove={(e) => {
-              if (!isDraggingCatRef.current || !categoryRailRef.current) return;
-              const x = e.pageX - categoryRailRef.current.offsetLeft;
-              const walk = (x - catDragStartXRef.current) * 1.4;
-              if (Math.abs(walk) > 6) {
-                hasDraggedCatRef.current = true;
-                e.preventDefault();
-                categoryRailRef.current.scrollLeft = catScrollStartRef.current - walk;
-              }
-            }}
-            onMouseUp={() => {
-              isDraggingCatRef.current = false;
             }}
             onClickCapture={(e) => {
               if (hasDraggedCatRef.current) {
@@ -1371,7 +1379,7 @@ export default function HomePage() {
                 key={item.id || item.name}
                 variants={categoryCardVariants}
                 whileHover={{ y: -8, transition: { duration: 0.25 } }}
-                className={`shrink-0 w-[220px] sm:w-[250px] lg:w-[calc(20%-1rem)] min-w-[210px] snap-start ${item.cardStyle}`}
+                className={`shrink-0 w-[220px] sm:w-[250px] lg:w-[calc(20%-1rem)] min-w-[210px] ${item.cardStyle}`}
               >
                 <Link
                   to={item.link || '/products'}

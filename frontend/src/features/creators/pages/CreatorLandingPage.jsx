@@ -131,19 +131,19 @@ export default function CreatorLandingPage() {
 
               {/* 4 Quick Pillars */}
               <div className="pt-4 sm:pt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center sm:text-left border-t border-white/[0.08]">
-                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.02]">
                   <p className="text-lg sm:text-2xl font-black text-amber-400">10%</p>
                   <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-neutral-400 mt-0.5">Starting Cut</p>
                 </div>
-                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.02]">
                   <p className="text-lg sm:text-2xl font-black text-white">30 Days</p>
                   <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-neutral-400 mt-0.5">Attribution</p>
                 </div>
-                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.02]">
                   <p className="text-lg sm:text-2xl font-black text-emerald-400">₹500</p>
                   <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-neutral-400 mt-0.5">Min Cashout</p>
                 </div>
-                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.02]">
                   <p className="text-lg sm:text-2xl font-black text-white">₹0</p>
                   <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-neutral-400 mt-0.5">Joining Fee</p>
                 </div>
@@ -158,7 +158,7 @@ export default function CreatorLandingPage() {
               <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 via-purple-500/20 to-transparent rounded-3xl blur-2xl -z-10" />
 
               {/* Main Lookbook Poster Card */}
-              <div className="relative w-full max-w-[340px] sm:max-w-[380px] lg:max-w-[410px] rounded-3xl border border-white/10 bg-gradient-to-b from-neutral-900/80 via-neutral-950/90 to-black p-4 sm:p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+              <div className="relative w-full max-w-[340px] sm:max-w-[380px] lg:max-w-[410px] rounded-3xl bg-gradient-to-b from-neutral-900/80 via-neutral-950/90 to-black p-4 sm:p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
 
                 {/* Top Creator Tag */}
                 <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
@@ -179,7 +179,7 @@ export default function CreatorLandingPage() {
                 </div>
 
                 {/* Model / Streetwear Visual Frame - Scaled up to give prominent visual impact */}
-                <div className="relative my-3 rounded-2xl overflow-hidden bg-neutral-900 border border-white/5 flex items-center justify-center group h-[260px] sm:h-[300px] lg:h-[320px]">
+                <div className="relative my-3 rounded-2xl overflow-hidden bg-neutral-900 flex items-center justify-center group h-[260px] sm:h-[300px] lg:h-[320px]">
                   <img
                     src="/Streetwear Model in Oversized Hoodie.png"
                     alt="Amayaar Streetwear Creator"
@@ -188,7 +188,7 @@ export default function CreatorLandingPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
 
                   {/* Floating Overlay Badge 1 */}
-                  <div className="absolute bottom-3 left-3 right-3 rounded-xl border border-white/15 bg-black/80 backdrop-blur-md p-2.5 sm:p-3 flex items-center justify-between shadow-xl">
+                  <div className="absolute bottom-3 left-3 right-3 rounded-xl bg-black/80 backdrop-blur-md p-2.5 sm:p-3 flex items-center justify-between shadow-xl">
                     <div>
                       <p className="text-[9px] sm:text-[10px] uppercase font-bold text-neutral-400">Audience Discount</p>
                       <p className="text-xs sm:text-sm font-mono font-bold text-amber-400">CODE: AYPRIYA5 (5% OFF)</p>
@@ -201,11 +201,11 @@ export default function CreatorLandingPage() {
 
                 {/* Live Performance Stat Teaser */}
                 <div className="grid grid-cols-2 gap-2 pt-1.5">
-                  <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5 sm:p-3">
+                  <div className="rounded-xl bg-white/[0.02] p-2.5 sm:p-3">
                     <span className="text-[9px] font-bold uppercase text-neutral-500 block">Attributed Sales</span>
                     <span className="text-xs sm:text-sm font-black text-white">₹1,84,200</span>
                   </div>
-                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-2.5 sm:p-3">
+                  <div className="rounded-xl bg-amber-500/5 p-2.5 sm:p-3">
                     <span className="text-[9px] font-bold uppercase text-amber-400 block">Commission Earned</span>
                     <span className="text-xs sm:text-sm font-black text-amber-400">+₹18,420</span>
                   </div>
@@ -236,7 +236,7 @@ export default function CreatorLandingPage() {
           </div>
 
           {/* Calculator Glass Card */}
-          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-black/80 backdrop-blur-xl p-5 sm:p-8 md:p-10 shadow-2xl space-y-6 sm:space-y-8">
+          <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-b from-white/[0.04] to-black/80 backdrop-blur-xl p-5 sm:p-8 md:p-10 shadow-2xl space-y-6 sm:space-y-8">
 
             {/* Range Slider */}
             <div className="space-y-3 sm:space-y-4">
@@ -270,7 +270,7 @@ export default function CreatorLandingPage() {
             {/* Calculations Display */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-white/[0.08]">
 
-              <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.02] p-4 sm:p-5">
+              <div className="rounded-xl sm:rounded-2xl bg-white/[0.02] p-4 sm:p-5">
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-neutral-400 block">
                   Eligible Sales Driven
                 </span>
@@ -280,7 +280,7 @@ export default function CreatorLandingPage() {
                 <p className="text-[9px] sm:text-[10px] text-neutral-500 mt-0.5">Average basket ₹1,900</p>
               </div>
 
-              <div className="rounded-xl sm:rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 sm:p-5 shadow-lg relative sm:-translate-y-2">
+              <div className="rounded-xl sm:rounded-2xl bg-amber-500/10 p-4 sm:p-5 shadow-lg relative sm:-translate-y-2">
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400 block">
                   Your Monthly Income (10%)
                 </span>
@@ -290,7 +290,7 @@ export default function CreatorLandingPage() {
                 <p className="text-[9px] sm:text-[10px] text-amber-200/70 mt-0.5">Direct to Bank / UPI</p>
               </div>
 
-              <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.02] p-4 sm:p-5">
+              <div className="rounded-xl sm:rounded-2xl bg-white/[0.02] p-4 sm:p-5">
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-neutral-400 block">
                   Unlocked Creator Tier
                 </span>
@@ -361,14 +361,14 @@ export default function CreatorLandingPage() {
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-amber-400/40 p-5 sm:p-6 flex flex-col justify-between transition duration-300 group shadow-lg backdrop-blur-md"
+                  className="rounded-2xl sm:rounded-3xl bg-white/[0.02] hover:bg-white/[0.05] p-5 sm:p-6 flex flex-col justify-between transition duration-300 group shadow-lg backdrop-blur-md"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                       <span className="text-xs font-mono font-black text-neutral-500 group-hover:text-amber-400 transition">
                         {s.step}
                       </span>
-                      <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-neutral-900 border border-white/10 text-white flex items-center justify-center group-hover:scale-110 transition">
+                      <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center group-hover:scale-110 transition">
                         <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400" />
                       </div>
                     </div>
@@ -400,7 +400,7 @@ export default function CreatorLandingPage() {
             {FAQS.map((faq, idx) => (
               <div
                 key={idx}
-                className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] p-4 sm:p-6 transition backdrop-blur-md"
+                className="rounded-xl sm:rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] p-4 sm:p-6 transition backdrop-blur-md"
               >
                 <h3 className="text-xs sm:text-sm font-black uppercase tracking-wide text-white flex items-center gap-2">
                   <span className="text-amber-400 font-mono text-xs">Q.</span>
@@ -414,7 +414,7 @@ export default function CreatorLandingPage() {
           </div>
 
           {/* Bottom Banner Card */}
-          <div className="mt-10 sm:mt-14 rounded-2xl sm:rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-neutral-900 to-black p-6 sm:p-10 text-center space-y-3 sm:space-y-4">
+          <div className="mt-10 sm:mt-14 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-500/10 via-neutral-900 to-black p-6 sm:p-10 text-center space-y-3 sm:space-y-4">
             <h3 className="text-xl sm:text-2xl font-black uppercase text-white">
               Ready to Turn Your Fits Into Income?
             </h3>

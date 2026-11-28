@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { STORE_URL } from '../utils/storeUrl';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   LayoutDashboard,
@@ -202,7 +203,7 @@ export default function Sidebar() {
         {/* Store Link & Logout Buttons */}
         <div className="grid grid-cols-2 gap-2">
           <a
-            href="http://localhost:5173"
+            href={STORE_URL}
             target="_blank"
             rel="noreferrer"
             className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-100 py-2 px-2 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 transition"

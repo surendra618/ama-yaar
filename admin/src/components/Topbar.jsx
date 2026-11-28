@@ -19,6 +19,7 @@ import { logout } from '../features/auth/authSlice';
 import AdminLogo from './AdminLogo';
 import socket, { joinAdminRoom } from '../lib/socket';
 import api from '../lib/axios';
+import { STORE_URL } from '../utils/storeUrl';
 
 export default function Topbar({ onMenuClick }) {
   const dispatch = useDispatch();
@@ -177,7 +178,7 @@ export default function Topbar({ onMenuClick }) {
 
         {/* View Customer Store button */}
         <a
-          href="http://localhost:5173"
+          href={STORE_URL}
           target="_blank"
           rel="noreferrer"
           className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50/60 px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-100/80 transition"
@@ -316,7 +317,7 @@ export default function Topbar({ onMenuClick }) {
 
               <div className="space-y-0.5">
                 <a
-                  href="http://localhost:5173"
+                  href={STORE_URL}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
