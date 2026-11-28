@@ -987,17 +987,20 @@ export default function ProductDetailsPage() {
 
           {/* RIGHT COLUMN: Color & Size Selectors, ADD TO CART Button, Details Tabs */}
           <div className="lg:col-span-3 flex flex-col justify-start order-3 pl-0 lg:pl-2 space-y-4 pt-0 sm:pt-1">
-            {/* Color Selector (if product has multiple colours) */}
+            {/* Color Selector (Image Swatches like Myntra / Zara) */}
             {colorOptions.length > 0 && (
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="block text-xs font-medium text-neutral-500">
-                    Color: <strong className="text-neutral-900 font-bold">{selectedColor || colorOptions[0].name}</strong>
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="block text-xs text-neutral-700">
+                    <strong className="font-bold text-neutral-950">Selected Color:</strong>{" "}
+                    <span className="font-medium text-neutral-600">{selectedColor || colorOptions[0].name}</span>
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 flex-wrap">
                   {colorOptions.map((c) => {
                     const isSelected = (selectedColor || colorOptions[0].name) === c.name;
+                    const thumbRaw = c.images?.[0] || product?.images?.[0];
+                    const thumbUrl = thumbRaw ? getMediaUrl(thumbRaw) : null;
                     return (
                       <button
                         key={c.name}
@@ -1008,13 +1011,28 @@ export default function ProductDetailsPage() {
                         }}
                         title={c.name}
                         aria-label={`Select color ${c.name}`}
-                        className={`h-8 w-8 rounded-full border transition-all cursor-pointer flex items-center justify-center ${
+                        className={`relative h-16 w-[52px] sm:h-[68px] sm:w-[54px] rounded-xl p-1 border transition-all cursor-pointer overflow-hidden bg-white shrink-0 ${
                           isSelected
-                            ? "ring-2 ring-black ring-offset-2 border-neutral-400 scale-105"
-                            : "border-neutral-300 hover:scale-105 hover:border-neutral-500"
+                            ? "border-neutral-900 ring-1 ring-neutral-900 shadow-xs"
+                            : "border-neutral-200 hover:border-neutral-400"
                         }`}
-                        style={{ backgroundColor: c.hex || "#111111" }}
-                      />
+                      >
+                        {thumbUrl ? (
+                          <img
+                            src={thumbUrl}
+                            alt={c.name}
+                            className="h-full w-full rounded-lg object-cover object-top"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="h-full w-full rounded-lg border border-neutral-200"
+                            style={{ backgroundColor: c.hex || "#111111" }}
+                          />
+                        )}
+                      </button>
                     );
                   })}
                 </div>
