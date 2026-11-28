@@ -20,11 +20,22 @@ export default function ProductCard({ product }) {
 
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [selectedColorIdx, setSelectedColorIdx] = useState(null);
+
+  const colorOptions = Array.isArray(product.colorOptions)
+    ? product.colorOptions.filter((c) => c && c.name)
+    : [];
+  const activeColorImages =
+    selectedColorIdx !== null && colorOptions[selectedColorIdx]?.images?.length > 0
+      ? colorOptions[selectedColorIdx].images
+      : null;
 
   // Normalize images array
-  const rawImages = (product.images && product.images.length > 0)
-    ? product.images
-    : [product.image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80'];
+  const rawImages = activeColorImages
+    ? activeColorImages
+    : (product.images && product.images.length > 0)
+      ? product.images
+      : [product.image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80'];
 
   const images = rawImages.map((img) => {
     return getMediaUrl(img, product.name || product.slug);
@@ -202,6 +213,38 @@ export default function ProductCard({ product }) {
             </span>
           )}
         </div>
+
+        {/* Color Swatches (if product has multiple colours) */}
+        {colorOptions.length > 0 && (
+          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+            {colorOptions.slice(0, 5).map((col, idx) => {
+              const isSelected = selectedColorIdx === idx;
+              return (
+                <button
+                  key={col.name || idx}
+                  type="button"
+                  title={col.name}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedColorIdx(idx);
+                    setActiveImgIndex(0);
+                  }}
+                  className={`h-3.5 w-3.5 rounded-full border transition-transform cursor-pointer ${
+                    isSelected
+                      ? 'ring-1.5 ring-black ring-offset-1 border-neutral-400 scale-110'
+                      : 'border-neutral-300 hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: col.hex || '#111111' }}
+                  aria-label={`Preview ${col.name}`}
+                />
+              );
+            })}
+            {colorOptions.length > 5 && (
+              <span className="text-[10px] font-bold text-neutral-500">+{colorOptions.length - 5}</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

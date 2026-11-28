@@ -290,7 +290,16 @@ export default function ProductDetailsPage() {
     setReviewVideos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const rawImages = (product?.images || [])
+  const colorOptions = Array.isArray(product?.colorOptions)
+    ? product.colorOptions.filter((c) => c && c.name)
+    : [];
+  const activeColorObj = colorOptions.find((c) => c.name === selectedColor);
+  const colorSpecificImages =
+    activeColorObj && Array.isArray(activeColorObj.images) && activeColorObj.images.length > 0
+      ? activeColorObj.images
+      : null;
+
+  const rawImages = (colorSpecificImages || product?.images || [])
     .filter(Boolean)
     .map((img) => getMediaUrl(img));
   const displayImages = rawImages.length > 0 ? rawImages : PLACEHOLDER_GALLERY;
@@ -545,11 +554,17 @@ export default function ProductDetailsPage() {
   useEffect(() => {
     if (product?._id) {
       dispatch(fetchProductReviews(product._id));
-      if (product.variants?.length > 0) {
-        if (product.variants[0].size) setSelectedSize(product.variants[0].size);
-        if (product.variants[0].color)
-          setSelectedColor(product.variants[0].color);
+      if (product.colorOptions?.length > 0 && product.colorOptions[0]?.name) {
+        setSelectedColor(product.colorOptions[0].name);
+      } else if (product.variants?.length > 0 && product.variants[0].color) {
+        setSelectedColor(product.variants[0].color);
+      } else {
+        setSelectedColor("");
       }
+      if (product.variants?.length > 0 && product.variants[0].size) {
+        setSelectedSize(product.variants[0].size);
+      }
+      setSelectedImage(0);
     }
   }, [dispatch, product?._id]);
 
@@ -970,8 +985,42 @@ export default function ProductDetailsPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN: Size Selectors, ADD TO CART Button, Details Tabs */}
+          {/* RIGHT COLUMN: Color & Size Selectors, ADD TO CART Button, Details Tabs */}
           <div className="lg:col-span-3 flex flex-col justify-start order-3 pl-0 lg:pl-2 space-y-4 pt-0 sm:pt-1">
+            {/* Color Selector (if product has multiple colours) */}
+            {colorOptions.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="block text-xs font-medium text-neutral-500">
+                    Color: <strong className="text-neutral-900 font-bold">{selectedColor || colorOptions[0].name}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {colorOptions.map((c) => {
+                    const isSelected = (selectedColor || colorOptions[0].name) === c.name;
+                    return (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => {
+                          setSelectedColor(c.name);
+                          setSelectedImage(0);
+                        }}
+                        title={c.name}
+                        aria-label={`Select color ${c.name}`}
+                        className={`h-8 w-8 rounded-full border transition-all cursor-pointer flex items-center justify-center ${
+                          isSelected
+                            ? "ring-2 ring-black ring-offset-2 border-neutral-400 scale-105"
+                            : "border-neutral-300 hover:scale-105 hover:border-neutral-500"
+                        }`}
+                        style={{ backgroundColor: c.hex || "#111111" }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Size Selector */}
             <div>
               <div className="flex items-center justify-between mb-2">

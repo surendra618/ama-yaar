@@ -62,6 +62,7 @@ const emptyForm = {
   mrp: '',
   stock: '',
   variants: [],
+  colorOptions: [],
   images: [],
   isFeatured: false,
   isActive: true,
@@ -187,6 +188,7 @@ export default function ProductFormPage() {
             sku: v.sku || '',
           }))
           : [],
+        colorOptions: Array.isArray(current.colorOptions) ? current.colorOptions : [],
         images: current.images?.length ? current.images : [],
         isFeatured: !!current.isFeatured,
         isActive: current.isActive !== false,
@@ -437,6 +439,16 @@ export default function ProductFormPage() {
       discount: calculatedDiscount,
       stock: Number(form.stock),
       variants: form.variants || [],
+      colorOptions: Array.isArray(form.colorOptions)
+        ? form.colorOptions
+            .filter((c) => c && c.name && c.name.trim())
+            .map((c) => ({
+              name: c.name.trim(),
+              hex: c.hex || '#000000',
+              images: Array.isArray(c.images) ? c.images.filter(Boolean) : [],
+              ...(c.stock !== undefined && c.stock !== '' ? { stock: Number(c.stock) } : {}),
+            }))
+        : [],
       exchangeDays: form.exchangeDays ? Number(form.exchangeDays) : 7,
       customSizeChart: Array.isArray(form.customSizeChart)
         ? form.customSizeChart
@@ -883,6 +895,206 @@ export default function ProductFormPage() {
                 <p className="text-[11px] text-slate-400 italic">
                   No individual size counts configured. Click a Quick Add button above to add sizes like XS, XXL, or Free Size.
                 </p>
+              )}
+            </div>
+
+            {/* Color Variants & Swatches Manager */}
+            <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800">
+                    Color Variants & Swatches <span className="text-[11px] font-normal text-slate-400">(Same design in multiple colours)</span>
+                  </label>
+                  <p className="text-[11px] text-slate-500">
+                    Add multiple colours with swatch hex &amp; colour-specific images. Customers can switch colours on the product page.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      colorOptions: [
+                        ...(f.colorOptions || []),
+                        { name: '', hex: '#18181b', images: [] },
+                      ],
+                    }))
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add Custom Color
+                </button>
+              </div>
+
+              {/* Quick-add preset colour chips */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { name: 'Black', hex: '#111111' },
+                  { name: 'White', hex: '#f8fafc' },
+                  { name: 'Navy', hex: '#1e3a8a' },
+                  { name: 'Olive', hex: '#3f6212' },
+                  { name: 'Beige', hex: '#d6c7b2' },
+                  { name: 'Grey', hex: '#64748b' },
+                  { name: 'Maroon', hex: '#7f1d1d' },
+                  { name: 'Sky Blue', hex: '#38bdf8' },
+                ].map((preset) => {
+                  const alreadyAdded = (form.colorOptions || []).some(
+                    (c) => c.name?.toLowerCase() === preset.name.toLowerCase()
+                  );
+                  return (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      disabled={alreadyAdded}
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          colorOptions: [
+                            ...(f.colorOptions || []),
+                            { name: preset.name, hex: preset.hex, images: [] },
+                          ],
+                        }))
+                      }
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold border transition ${
+                        alreadyAdded
+                          ? 'bg-slate-100 text-slate-300 border-slate-200/50 cursor-not-allowed'
+                          : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400 hover:bg-slate-50 cursor-pointer shadow-2xs'
+                      }`}
+                    >
+                      <span
+                        className="h-3 w-3 rounded-full border border-slate-300 shrink-0"
+                        style={{ backgroundColor: preset.hex }}
+                      />
+                      <span>+ {preset.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active color option cards */}
+              {(form.colorOptions || []).length > 0 && (
+                <div className="space-y-2.5 pt-1">
+                  {form.colorOptions.map((col, cIdx) => (
+                    <div
+                      key={cIdx}
+                      className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-2.5"
+                    >
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <input
+                          type="color"
+                          value={col.hex || '#000000'}
+                          onChange={(e) => {
+                            const updated = [...form.colorOptions];
+                            updated[cIdx] = { ...updated[cIdx], hex: e.target.value };
+                            setForm((f) => ({ ...f, colorOptions: updated }));
+                          }}
+                          className="h-8 w-9 cursor-pointer rounded border border-slate-300 bg-white p-0.5 shrink-0"
+                          title="Pick colour swatch"
+                        />
+                        <input
+                          type="text"
+                          value={col.name || ''}
+                          onChange={(e) => {
+                            const updated = [...form.colorOptions];
+                            updated[cIdx] = { ...updated[cIdx], name: e.target.value };
+                            setForm((f) => ({ ...f, colorOptions: updated }));
+                          }}
+                          placeholder="Colour Name (e.g. Washed Black)"
+                          className="flex-1 min-w-[140px] rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-black focus:outline-none"
+                        />
+                        <label className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-50 cursor-pointer shrink-0">
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>Upload Colour Image(s)</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (!files.length) return;
+                              setUploadingImage(true);
+                              try {
+                                const uploadedUrls = [];
+                                for (const file of files) {
+                                  const fd = new FormData();
+                                  fd.append('image', file);
+                                  const res = await api.post('/uploads/single', fd, {
+                                    headers: { 'Content-Type': 'multipart/form-data' },
+                                  });
+                                  const u = res.data?.data?.url || res.data?.url;
+                                  if (u) uploadedUrls.push(u);
+                                }
+                                if (uploadedUrls.length) {
+                                  setForm((f) => {
+                                    const updated = [...(f.colorOptions || [])];
+                                    const existingImgs = Array.isArray(updated[cIdx]?.images) ? updated[cIdx].images : [];
+                                    updated[cIdx] = {
+                                      ...updated[cIdx],
+                                      images: [...existingImgs, ...uploadedUrls],
+                                    };
+                                    return { ...f, colorOptions: updated };
+                                  });
+                                }
+                              } catch (_) {
+                              } finally {
+                                setUploadingImage(false);
+                                e.target.value = '';
+                              }
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((f) => ({
+                              ...f,
+                              colorOptions: f.colorOptions.filter((_, idx) => idx !== cIdx),
+                            }))
+                          }
+                          className="h-7 w-7 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-100 transition cursor-pointer"
+                          title="Remove colour"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Colour-specific image thumbnails */}
+                      {Array.isArray(col.images) && col.images.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          {col.images.map((imgUrl, imgIdx) => (
+                            <div key={imgIdx} className="relative h-12 w-12 rounded-lg overflow-hidden border border-slate-200 bg-white group">
+                              <img
+                                src={getMediaUrl(imgUrl)}
+                                alt={`${col.name} ${imgIdx + 1}`}
+                                className="h-full w-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...form.colorOptions];
+                                  updated[cIdx] = {
+                                    ...updated[cIdx],
+                                    images: updated[cIdx].images.filter((_, i) => i !== imgIdx),
+                                  };
+                                  setForm((f) => ({ ...f, colorOptions: updated }));
+                                }}
+                                className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                                title="Remove image"
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[10.5px] text-slate-400">
+                          No colour-specific images uploaded (main product images will be used as fallback).
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
